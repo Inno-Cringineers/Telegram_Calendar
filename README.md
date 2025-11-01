@@ -9,6 +9,7 @@
     - [ ]  Threshold of Success
     - [ ]  Description
     - [ ]  Project Context Diagram (stakeholders, external systems)
+    ![Context diagram](./context_diagram.png)
     - [ ]  Feature Roadmap (a checklist with both implemented and not)
 - [ ]  Documentation.
 - [ ]  Links to the ./docs/sprints and ./docs/ai-usage.md with a brief explanation of what's in there.
