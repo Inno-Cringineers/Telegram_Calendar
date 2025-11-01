@@ -63,6 +63,6 @@ Functional and Non-Functional requirements will be discussed in more detail at t
 
 # Transcript of the recording with timestamps and speaker labels.
 
-Transcript of the recording with timestamps and speaker labels (./meeting_1_Transcript/"IT Product_speaker_en_bilingual_timestamps.txt") available via the link:
+Transcript of the recording with timestamps and speaker labels (./meeting_1_Transcript/"IT Product_speaker_en_bilingual_timestamps") available via the link:
 
 https://drive.google.com/drive/folders/1lFrmgIr-B6MBpstlfxNTnKZliYNLUD5s?usp=drive_link
