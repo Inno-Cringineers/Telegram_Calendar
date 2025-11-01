@@ -1,26 +1,10 @@
 # First meeting script
 
-## Notes
-
-1. The problem was explained and understood before the interview, so there was no point in asking what problem we were solving.
-    ```
-    Otherwise, the questions would be aimed primarily at clarifying the problem, focusing on the person's real experiences and behaviors.
-    ```
-2. A market analysis was conducted before the interview, therefore, we had an idea of which features could be implemented, an approximate vision of the project was formed, it only remained to clarify with the customer the choice between different feature options.
-    ```
-    There is no need to come up with innovative solution to the problem, the solutions available on the market to one degree or another cover the functionality necessary for an optimal solution to the problem. Our goal is to determine which functionality of our project will satisfy the customer's expectations and solve his problem, for which many ideas can be borrowed from existing solutions.
-    ```
-    
-3.  The customer is a technically skilled person, which made it possible to communicate with him in his language, which accelerated the process.
-    ```
-    Otherwise, the questions would not contain about technical aspects, would be reformulated in such a way that they would be understood by anyone, would be more aimed at user experience, as well as would help the customer determine his expectations, perhaps would direct him to the necessary reflections on the problem.
-    ```
-
 ## Questions:
 
 Who are the product users, stakeholders?
 
-What problems should product resolve? Have you some user stories scenario? 
+What problems do you have with calendars? Have you some user stories scenario which we need to resolve these problems in tg bot? 
 
 Why are you need Telegram Bot? Interface should be only telegram bot interface or we also need web app?
 
@@ -56,4 +40,23 @@ What additional requirements you have?
 
 ## Mom test
 
-The questions were originally compiled based on the considerations described in the notes. We also knew my mother's test before that (we were told at the requirements development course). The questions were originally formulated in such a way that they could be answered unambiguously and unbiasedly.
+The questions were originally compiled based on the considerations described in the notes. We also knew my mother's test before that (we were told at the requirements development course). The questions were originally formulated in such a way that they could be answered unambiguously and unbiasedly. 
+
+On example: `what do you want to see in TG bot?` -> `What problems do you have with calendars?`
+
+
+## Notes
+
+1. The problem was explained and understood before the interview, so there was no point in asking what problem we were solving.
+    ```
+    Otherwise, the questions would be aimed primarily at clarifying the problem, focusing on the person's real experiences and behaviors.
+    ```
+2. A market analysis was conducted before the interview, therefore, we had an idea of which features could be implemented, an approximate vision of the project was formed, it only remained to clarify with the customer the choice between different feature options.
+    ```
+    There is no need to come up with innovative solution to the problem, the solutions available on the market to one degree or another cover the functionality necessary for an optimal solution to the problem. Our goal is to determine which functionality of our project will satisfy the customer's expectations and solve his problem, for which many ideas can be borrowed from existing solutions.
+    ```
+    
+3.  The customer is a technically skilled person, which made it possible to communicate with him in his language, which accelerated the process.
+    ```
+    Otherwise, the questions would not contain about technical aspects, would be reformulated in such a way that they would be understood by anyone, would be more aimed at user experience, as well as would help the customer determine his expectations, perhaps would direct him to the necessary reflections on the problem.
+    ```
