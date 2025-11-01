@@ -40,7 +40,7 @@ What additional requirements you have?
 
 ## Mom test
 
-The questions were originally compiled based on the considerations described in the notes. We also knew my mother's test before that (we were told at the requirements development course). The questions were originally formulated in such a way that they could be answered unambiguously and unbiasedly. 
+The questions were originally compiled based on the considerations described in the notes. We also knew mom test before that (we learnt it at the requirements engineering course). The questions were originally formulated in such a way that they could be answered unambiguously and unbiasedly. 
 
 On example: `what do you want to see in TG bot?` -> `What problems do you have with calendars?` and `how to integrate calendar events into TG bot` -> `what calendars are you using and what calendar events do you need in TG bot?`
 
