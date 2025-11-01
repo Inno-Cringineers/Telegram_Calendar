@@ -32,5 +32,7 @@ Do we need to user able mute bot for a while?
 
 Do we need to sending daily plans (events list on today)?
 
+Do we need to export events from bot?
+
 What additional requirements you have?
 
