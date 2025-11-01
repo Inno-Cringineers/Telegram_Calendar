@@ -6,7 +6,9 @@
 A telegram bot as a frontend for the joint calendar and calendar synchronization plugins that can go and collect info from your calendars.
 
 ## Project goal
-Give users a tool to create their own planning service (self hosted). which will allow you to perform event CRUD operations through the telegram bot interface and receive reminders.
+Provide to users a tool to create their own planning service (self hosted). Which will Combine notifications from multiple calendars in one place (telegram bot) and provide the opportunity to perform CRUD operations with events and receive reminders centralized from all provided calendars and events.
+
+MVP features have to be done before ITPD Course finish (19.12.2025) 
 
 ## Threshold of Success
 - **Time:** Project have to be done before ITPD Course finish (19.12.2025)
@@ -15,7 +17,7 @@ Give users a tool to create their own planning service (self hosted). which will
 - **Quality:**: The application meets non-functional requirements and quality attributes
 
 ## Description
-The project is a self-hosted solution that allows the user to run it on their server and get a service for working with events and reminders. User gets the opportunity to perform CRUD operations on events through the interface of the telegram bot. The service allows you to integrate data from existing calendars (Google, Outlook).
+The project is a self-hosted solution that allows the user to run it on their server and get a service for working with events and reminders. User gets the opportunity to perform CRUD operations on events through the interface of the telegram bot. The telegram bot will notify the user about upcoming events at the frequency specified by the user, and send plans for the day. The service allows you to integrate data from existing calendars (Google, Outlook). 
 
 ## Reminder Context Diagram
 <div style="display: flex; justify-content: center; background: white; padding: 6px;">
@@ -28,7 +30,7 @@ Key Features Identified:
 - [ ] Time zones support (manual user setting).
 - [ ] A "Daily Plan" feature - a summary of the day's events sent at a user-defined time.
 - [ ] Integration with calendars via standardized iCal (ICS) format files.
-- [ ] Integration with calendars via OAuth methods
+- [ ] Integration with calendars via OAuth methods (if integratuin via ICS failed)
     - [ ] Outlook
     - [ ] Google
 - [ ] Ability to add, edit, and delete events directly within the bot (these events will be stored internally in the bot's database, not synced to external calendars).
