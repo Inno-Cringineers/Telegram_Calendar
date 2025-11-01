@@ -18,7 +18,7 @@ You need the bot for personal usage or for groups? The bot should write in priva
 
 Do need to set the frequency of notifications (including how long before the event the notifications should arrive)?
 
-There is two ways to do integration of calendars:
+What calendars are you using and what calendar events do you need in TG bot? There is two ways to do integration of calendars:
 
 - using ical link to calendar (the user will have to login to the calendar he uses, copy the ics link from there and paste it to bot)
 
@@ -42,7 +42,7 @@ What additional requirements you have?
 
 The questions were originally compiled based on the considerations described in the notes. We also knew my mother's test before that (we were told at the requirements development course). The questions were originally formulated in such a way that they could be answered unambiguously and unbiasedly. 
 
-On example: `what do you want to see in TG bot?` -> `What problems do you have with calendars?`
+On example: `what do you want to see in TG bot?` -> `What problems do you have with calendars?` and `how to integrate calendar events into TG bot` -> `what calendars are you using and what calendar events do you need in TG bot?`
 
 
 ## Notes
