@@ -5,6 +5,8 @@ meeting ended at 31.10.2025 17:55
 
 # Link to the playable recording with sound.
 
+playable recording with sound (meeting_1_at_20251031_172710.m4a) available via the link:
+
 https://drive.google.com/drive/folders/1lFrmgIr-B6MBpstlfxNTnKZliYNLUD5s?usp=drive_link
 
 # Summary of the meeting.
@@ -59,3 +61,6 @@ Functional and Non-Functional requirements will be discussed in more detail at t
 
 # Transcript of the recording with timestamps and speaker labels.
 
+Transcript of the recording with timestamps and speaker labels (./meeting_1_Transcript/"IT Product_speaker_en_bilingual_timestamps.txt") available via the link:
+
+https://drive.google.com/drive/folders/1lFrmgIr-B6MBpstlfxNTnKZliYNLUD5s?usp=drive_link
