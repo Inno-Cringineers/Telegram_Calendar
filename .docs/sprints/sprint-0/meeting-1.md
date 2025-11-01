@@ -20,11 +20,11 @@ Open-Source: The project will use the MIT license.
 
 Key Features Identified: 
 - Reminders with configurable number of time before an event.
-- Support for multiple time zones (manual user setting).
+- Time zones support (manual user setting).
 - A "Daily Plan" feature—a summary of the day's events sent at a user-defined time.
 - Ability to add, edit, and delete events directly within the bot (these events will be stored internally in the bot's database, not synced to external calendars).
 - Users must be able to export their internally-created events, likely in JSON or ICS format, for backup or transfer.
-- Event Viewing:  Users will primarily view all events by clicking a provided link that opens their native calendar.
+- Event Viewing:  Users will primarily view all events by clicking a provided link that opens their calendar.
 - Notifications are for private chats only. Support for group chats was deferred for future consideration.
 - Quiet Hours: A "Do Not Disturb" feature to mute notifications during specific hours was agreed upon as a useful addition.
 
@@ -39,8 +39,6 @@ External Calendar Integration Strategy:
 
 User Guidance: The bot will include guides (e.g., "How to get your Google Calendar ICS link") to facilitate the primary integration method.
 
-Monetization: Not a current goal. However, a future freemium model was brainstormed, where a free tier allows one calendar connection and a paid subscription unlocks multiple calendars.
-
 Localization: The bot will support both Russian and English.
 
 Technical Architecture & Hosting 
@@ -50,15 +48,18 @@ Technical Architecture & Hosting
 Customer Non-Functional & Future Requirements
 - The bot must have high uptime, and reminders must be delivered punctually (with a tolerance of less than one minute of delay).
 - Database instances (e.g., MongoDB) must be secured to prevent unauthorized access.
-- The architecture should allow new calendar integrations to be added with minimal effort (target: less than one week of development).
+- The architecture should allow new calendar integrations to be added with minimal effort (target: less than one week).
 
 Functional and Non-Functional requirements will be discussed in more detail at the next meeting.
 
 # List of speakers. (Github usernames).
 
-- Customer - deemp
-- main speaker - rikire
-- secondary speakers - Ten-Do, 03sano30, abdra04-gif
+- **Customer** - [deemp](https://github.com/deemp)
+- **Main Speaker** - [rikire](https://github.com/rikire)
+- **Secondary Speakers**:
+  - [Ten-Do](https://github.com/Ten-Do)
+  - [03sano30](https://github.com/03sano30)
+  - [abdra04-gif](https://github.com/abdra04-gif)
 
 # Transcript of the recording with timestamps and speaker labels.
 
