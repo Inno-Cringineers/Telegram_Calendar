@@ -18,7 +18,9 @@ Give users a tool to create their own planning service (self hosted). which will
 The project is a self-hosted solution that allows the user to run it on their server and get a service for working with events and reminders. User gets the opportunity to perform CRUD operations on events through the interface of the telegram bot. The service allows you to integrate data from existing calendars (Google, Outlook).
 
 ## Reminder Context Diagram
-![Context diagram](./images/context_diagram.png)
+<div style="display: flex; justify-content: center; background: white; padding: 6px;">
+<img src="./images/context_diagram.png">
+</div>
 
 ## Feature Roadmap
 Key Features Identified: 
