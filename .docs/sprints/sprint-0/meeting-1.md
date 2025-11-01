@@ -21,7 +21,7 @@ Open-Source: The project will use the MIT license.
 Key Features Identified: 
 - Reminders with configurable number of time before an event.
 - Support for multiple time zones (manual user setting).
-- A "Daily Plan" feature—a summary of the day's events sent at a user-defined time.
+- A "Daily Plan" feature - a summary of the day's events sent at a user-defined time.
 - Ability to add, edit, and delete events directly within the bot (these events will be stored internally in the bot's database, not synced to external calendars).
 - Users must be able to export their internally-created events, likely in JSON or ICS format, for backup or transfer.
 - Event Viewing:  Users will primarily view all events by clicking a provided link that opens their native calendar.
