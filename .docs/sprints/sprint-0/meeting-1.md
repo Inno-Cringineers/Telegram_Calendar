@@ -36,7 +36,7 @@ External Calendar Integration Strategy:
     
 - Fallback Method:  If obtaining a private ICS link proves difficult for major providers, a dedicated OAuth integration will be built for Google Calendar and Microsoft Outlook, involving a web app for authentication.
 
-User Guidance:  The bot will include guides (e.g., "How to get your Google Calendar ICS link") to facilitate the primary integration method.
+User Guidance: The bot will include guides (e.g., "How to get your Google Calendar ICS link") to facilitate the primary integration method.
 
 Monetization: Not a current goal. However, a future freemium model was brainstormed, where a free tier allows one calendar connection and a paid subscription unlocks multiple calendars.
 
