@@ -10,11 +10,10 @@
 
 # What need to be clarified
 
-At the next meeting with the customer, we need to clarify functional requirements, non-functional requirements, and quality attributes.
+At the next meeting with the customer, we need to clarify functional requirements, non-functional requirements and quality attributes.
 
 # Next steps
 
-- Scope MVP
 - Form software requirements specification
 - Design a project architecture
 - Next steps (like what to develop, how to deploy and etc.) will be clarified with requirements and design
