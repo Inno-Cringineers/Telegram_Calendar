@@ -1,0 +1,100 @@
+@startuml
+!theme plain
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor LightGreen
+  BorderColor Black
+}
+
+left to right direction
+
+actor System as system
+
+package "Calendar Synchronization" {
+  usecase "Fetch ICS Calendar Files" as UC_FetchICS
+  usecase "Parse ICS Files" as UC_ParseICS
+  usecase "Update Calendar Events in Database" as UC_UpdateCalendarEvents
+}
+
+package "Reminder Management" {
+  usecase "Check Upcoming Events" as UC_CheckEvents
+  usecase "Calculate Reminder Time" as UC_CalculateReminder
+  usecase "Check Quiet Hours" as UC_CheckQuietHours
+  usecase "Send Reminder Notification" as UC_SendReminder
+  usecase "Schedule Reminders" as UC_ScheduleReminders
+}
+
+package "Daily Plan Management" {
+  usecase "Check Daily Plan Time" as UC_CheckDailyPlanTime
+  usecase "Collect Daily Events" as UC_CollectDailyEvents
+  usecase "Format Daily Plan" as UC_FormatDailyPlan
+  usecase "Send Daily Plan" as UC_SendDailyPlan
+}
+
+package "Data Management" {
+  usecase "Store Events in Database" as UC_StoreEvents
+  usecase "Retrieve Events from Database" as UC_RetrieveEvents
+  usecase "Update Event in Database" as UC_UpdateEvent
+  usecase "Delete Event from Database" as UC_DeleteEvent
+  usecase "Manage User Settings" as UC_ManageUserSettings
+}
+
+package "Notification Delivery" {
+  usecase "Send Telegram Message" as UC_SendTelegramMessage
+  usecase "Handle Message Delivery" as UC_HandleDelivery
+  usecase "Log Notification Status" as UC_LogNotification
+}
+
+' System connections to Calendar Synchronization
+system --> UC_FetchICS
+system --> UC_ParseICS
+system --> UC_UpdateCalendarEvents
+
+' System connections to Reminder Management
+system --> UC_CheckEvents
+system --> UC_CalculateReminder
+system --> UC_CheckQuietHours
+system --> UC_SendReminder
+system --> UC_ScheduleReminders
+
+' System connections to Daily Plan Management
+system --> UC_CheckDailyPlanTime
+system --> UC_CollectDailyEvents
+system --> UC_FormatDailyPlan
+system --> UC_SendDailyPlan
+
+' System connections to Data Management
+system --> UC_StoreEvents
+system --> UC_RetrieveEvents
+system --> UC_UpdateEvent
+system --> UC_DeleteEvent
+system --> UC_ManageUserSettings
+
+' System connections to Notification Delivery
+system --> UC_SendTelegramMessage
+system --> UC_HandleDelivery
+system --> UC_LogNotification
+
+' Relationships between use cases
+UC_FetchICS ..> UC_ParseICS : <<include>>
+UC_ParseICS ..> UC_UpdateCalendarEvents : <<include>>
+UC_UpdateCalendarEvents ..> UC_StoreEvents : <<include>>
+
+UC_ScheduleReminders ..> UC_CheckEvents : <<include>>
+UC_CheckEvents ..> UC_RetrieveEvents : <<include>>
+UC_CheckEvents ..> UC_CalculateReminder : <<include>>
+UC_CalculateReminder ..> UC_CheckQuietHours : <<extend>>
+UC_CheckQuietHours ..> UC_SendReminder : <<extend>>
+UC_SendReminder ..> UC_SendTelegramMessage : <<include>>
+
+UC_CheckDailyPlanTime ..> UC_CollectDailyEvents : <<include>>
+UC_CollectDailyEvents ..> UC_RetrieveEvents : <<include>>
+UC_CollectDailyEvents ..> UC_FormatDailyPlan : <<include>>
+UC_FormatDailyPlan ..> UC_SendDailyPlan : <<include>>
+UC_SendDailyPlan ..> UC_SendTelegramMessage : <<include>>
+
+UC_SendTelegramMessage ..> UC_HandleDelivery : <<include>>
+UC_HandleDelivery ..> UC_LogNotification : <<include>>
+
+@enduml
+

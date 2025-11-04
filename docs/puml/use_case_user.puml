@@ -1,0 +1,70 @@
+@startuml
+!theme plain
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor LightBlue
+  BorderColor Black
+}
+
+left to right direction
+
+actor User as user
+
+package "Event Management" {
+  usecase "Create Event" as UC_CreateEvent
+  usecase "Edit Event" as UC_EditEvent
+  usecase "Delete Event" as UC_DeleteEvent
+  usecase "View Events" as UC_ViewEvents
+  usecase "Export Events" as UC_ExportEvents
+  usecase "Import Events" as UC_ImportEvents
+}
+
+package "Reminder" {
+  usecase "Set Reminder Time" as UC_ConfigureReminder
+  usecase "Set Quiet Hours" as UC_QuietHours
+  usecase "Receive Reminder" as UC_ReceiveReminder
+}
+
+package "Calendar Synchronization" {
+  usecase "Sync Calendar via ICS link" as UC_SyncICS
+}
+
+package "Daily Plan" {
+  usecase "Set Daily Plan Time" as UC_ConfigureDailyPlan
+  usecase "Receive Daily Plan" as UC_ReceiveDailyPlan
+}
+
+package "Settings" {
+  usecase "Set Timezone" as UC_ConfigureTimezone
+  usecase "Set Language" as UC_ConfigureLanguage
+}
+
+' User connections to Event Management
+user --> UC_CreateEvent
+user --> UC_EditEvent
+user --> UC_DeleteEvent
+user --> UC_ViewEvents
+
+' User connections to Reminder Configuration
+user --> UC_ConfigureReminder
+user --> UC_QuietHours
+user --> UC_ReceiveReminder
+
+' User connections to Calendar Synchronization
+user --> UC_SyncICS
+
+' User connections to Daily Plan
+user --> UC_ConfigureDailyPlan
+user --> UC_ReceiveDailyPlan
+
+' User connections to Settings
+user --> UC_ConfigureTimezone
+user --> UC_ConfigureLanguage
+user --> UC_ExportEvents
+user --> UC_ImportEvents
+
+' Relationships between use cases
+UC_ConfigureReminder ..> UC_ReceiveReminder : <<include>>
+UC_ConfigureDailyPlan ..> UC_ReceiveDailyPlan : <<include>>
+
+@enduml

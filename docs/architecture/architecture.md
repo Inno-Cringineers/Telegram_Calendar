@@ -14,26 +14,28 @@
 
 ## Context diagram
 
-![Context Diagram](../images/context_diagram.png)
+<div align="center">
+<img src="./assets/context_diagram.png">
+</div>
 
-**External actors:**
-- User
-- Google Calendar
-- Outlook Calendar
-- Telegram Bot API
+| Actor               | Description                                                                  |
+| ------------------- | ---------------------------------------------------------------------------- |
+| Calendar ICal       | Calendar API that allow us to get `.ics` files                               |
+| Telegram bot API    | Telegram API that allow us to use telegram app as client side for our system |
+| User                | Person who interacs with tg bot and also hosting our system                  |
+| Software components | Software that user need to install to hosting our system (example: Docker)   |
 
 ## Use case diagram
 
-```plantuml
-@startuml
-[User] --> (Manage Events)
-[User] --> (Configure Reminders)
-[User] --> (Sync Calendars)
-[User] --> (View Daily Plan)
-@enduml
-```
+<div align="center">
+<img src="./assets/use_case_user.png">
+<img src="./assets/use_case_system.png">
+</div>
+
+Чтобы не переусложнять диаграмму мы не добавили на нее TG API и Calendar API и нашу систему, т.к. нас интересует только то, как пользователь взаимдодействует с системой.
 
 **Actors:**
+
 - User
 
 ## Component diagram
@@ -70,6 +72,7 @@ database "Database" {
 ```
 
 **Components:**
+
 - Bot Handler - receives and routes Telegram messages
 - Command Processor - processes user commands
 - Event Manager - CRUD operations for events
@@ -81,29 +84,4 @@ database "Database" {
 
 #### User Story: Create Event
 
-```plantuml
-@startuml
-User -> Bot Handler: /create event
-Bot Handler -> Command Processor: parse command
-Command Processor -> Event Manager: create event
-Event Manager -> Database: save event
-Database --> Event Manager: event saved
-Event Manager --> Command Processor: success
-Command Processor --> Bot Handler: confirmation
-Bot Handler --> User: event created
-@enduml
-```
-
 #### Quality Requirement: Reminder Response Time
-
-```plantuml
-@startuml
-Reminder Scheduler -> Event Manager: get upcoming events
-Event Manager -> Database: query events
-Database --> Event Manager: events list
-Event Manager --> Reminder Scheduler: events
-Reminder Scheduler -> Bot Handler: send notification
-Bot Handler -> User: reminder message
-@enduml
-```
-

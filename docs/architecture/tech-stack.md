@@ -3,34 +3,38 @@
 ## Backend
 
 ### Language
-**Technology:** 
-**Reason:** 
+
+**Technology:** Python
+
+**Reason:** Most popular for telegram bots and simple language syntax
 
 ### Framework
-**Technology:** 
-**Reason:** 
+
+**Technology:** aioram
+
+**Reason:** most popular framevork for tg bot API
 
 ### Database
-**Technology:** 
-**Reason:** 
+
+**Technology:** SQLite
+
+**Reason:** Lightweight and simple. Docker friendly.
 
 ## Integration
 
 ### Telegram Bot API
-**Technology:** 
-**Reason:** 
+
+**Technology:**
+**Reason:**
 
 ### Calendar Sync
-**Technology:** 
-**Reason:** 
+
+**Technology:**
+**Reason:**
 
 ## Deployment
 
 ### Containerization
-**Technology:** 
-**Reason:** 
 
-### Hosting
-**Technology:** 
-**Reason:** 
-
+**Technology:** Docker
+**Reason:** Most popular containerization tool
