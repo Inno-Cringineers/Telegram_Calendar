@@ -22,19 +22,16 @@
 
 ## Integration
 
-### Telegram Bot API
-
-**Technology:**
-**Reason:**
-
 ### Calendar Sync
 
-**Technology:**
-**Reason:**
+**Technology:** icalendar / ics
+
+**Reason:** RFC 5545 standard, widely used in calendar applications
 
 ## Deployment
 
 ### Containerization
 
 **Technology:** Docker
+
 **Reason:** Most popular containerization tool
