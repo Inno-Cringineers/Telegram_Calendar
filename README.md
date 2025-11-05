@@ -2,7 +2,7 @@
   <img src="./images/Banner.png"/>
 </p>
 
-# Personal Calendar Reminder &middot; ![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)
+# Personal Calendar Reminder &middot; ![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg) &middot; [![GitHub Pages Status](https://github.com/Inno-Cringineers/Telegram_Calendar/actions/workflows/pages.yml/badge.svg)](https://inno-cringineers.github.io/Telegram_Calendar/)
 
 A telegram bot as a frontend for the joint calendar and calendar synchronization plugins that can go and collect info from your calendars.
 
