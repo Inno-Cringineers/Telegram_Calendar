@@ -53,9 +53,9 @@ will be soon - user guides will be added when project will be created
 
 # How to build and run project
 
-1) clone repository
-2) make bot via @BotFather and copy bot token (if you dont know how - just google it)
-3) install docker and docker-compose (if you dont know how - just google it)
+1) clone github.com/Inno-Cringineers/Telegram_Calendar repository (if you dont know how - just google "How to clone repository from github")
+2) make bot via @BotFather and copy bot token (if you dont know how - just google "How to nake telegram bot via @BotFather and copy bot token")
+3) install docker and docker-compose (if you dont know how - just google "How to install docker and docker-compose")
 4) make .env file and add variable with token to it: 
 ``` 
 TELEGRAM_TOKEN=insert_your_token_here
