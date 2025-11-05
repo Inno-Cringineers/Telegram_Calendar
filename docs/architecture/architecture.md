@@ -62,10 +62,26 @@
 
 ### Sequence diagrams
 
-#### User Story
+#### US001
 
-- create event
+<div align="center">
+<img src="./assets/sequence_create_event.png">
+</div>
 
-#### Quality Requirement
+#### US009
 
--
+<div align="center">
+<img src="./assets/sequence_reminder.png">
+</div>
+
+#### QAS002
+
+<div align="center">
+<img src="./assets/sequence_qas002.png">
+</div>
+
+#### QAS007
+
+<div align="center">
+<img src="./assets/sequence_qas007.png">
+</div>

@@ -1,0 +1,38 @@
+@startuml
+!theme plain
+skinparam sequenceMessageAlign center
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+
+actor User as user
+participant "Reminder Scheduler" as remindersched
+participant "Telegram Bot API" as tgapi
+database "SQLite Database" as db
+
+== Deliver Reminder ==
+
+note over remindersched: Periodic check (every minute)
+
+activate remindersched
+
+remindersched -> db: Get pending reminders
+activate db
+db --> remindersched: Reminders list
+deactivate db
+
+remindersched -> remindersched: Check reminder time reached
+
+remindersched -> tgapi: Send reminder
+activate tgapi
+tgapi -> user: Reminder message
+deactivate tgapi
+
+remindersched -> db: Mark reminder as sent
+activate db
+deactivate db
+
+deactivate remindersched
+
+note over remindersched, user: Max delay: 1 minute\nZero loss or duplication
+
+@enduml
