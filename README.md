@@ -51,7 +51,21 @@ Key Features Identified:
 
 will be soon - user guides will be added when project will be created
 
+# How to build and run project
+
+1) clone repository
+2) make bot via @BotFather and copy bot token (if you dont know how - just google it)
+2) make .env file and add variable with token to it: 
+``` 
+TELEGRAM_TOKEN=insert_your_token_here
+```
+3) run this command (change path to docker-compose file (he is in ./app/src/) and path to your .env file):
+```
+docker compose -f path/to/docker-compose.yml --env-file path/to/.env up
+```
+4) write /start to boot and enjoy "hello world!"
+
 # Links
 
-- [Sprints](https://your-website.com/docs/sprints) - information about meetings with the customer and meeting reports
-- [AI usage](https://your-website.com/docs/ai-usage.md) - how we use AI in this project.
+- [Sprints](./docs/sprints) - information about meetings with the customer and meeting reports
+- [AI usage](./docs/ai-usage.md) - how we use AI in this project.
