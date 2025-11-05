@@ -1,0 +1,32 @@
+@startuml
+!theme plain
+skinparam component {
+  BackgroundColor LightBlue
+  BorderColor Black
+}
+
+' Центральная система
+(Personal Calendar\nReminder System) as System
+' Внешние акторы
+rectangle "User" as User
+rectangle "Telegram Bot API" as TelegramAPI
+rectangle "Calendar ICal\n(ICS Files)" as ICSFiles
+database "Software Components\n(Docker)" as Docker
+
+' Взаимодействия с User
+User --> TelegramAPI : "Interacts with bot\nCommands, Settings"
+TelegramAPI --> User : "Receives reminders\nDaily plans\nEvent notifications"
+User --> Docker : "Provides"
+
+' Взаимодействия с Telegram Bot API
+System --> TelegramAPI : "Send messages\nNotifications"
+TelegramAPI --> System : "Receive commands\nUser messages"
+
+' Взаимодействия с Calendar ICal
+System --> ICSFiles : "Fetch ICS files\nSync calendars"
+ICSFiles --> System : "Provide calendar data\n.ics format"
+
+' Взаимодействия с Docker
+Docker --> System : "Hosts system\nProvides runtime environment"
+
+@enduml

@@ -1,0 +1,125 @@
+@startuml
+!theme plain
+skinparam sequenceMessageAlign center
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+
+actor User as user
+participant "Telegram Bot API" as tgapi
+participant "Bot Handler" as bothandler
+participant "Command Processor" as cmdproc
+participant "Event Manager" as eventmgr
+database "SQLite Database" as db
+participant "Message Formatter" as msgfmt
+
+note over user, db: Quality Requirement:\nSystem must respond to user\ncommands/button clicks within 5 seconds
+
+== User Command/Button Click Processing ==
+
+user -> tgapi: Send command or click button\n(e.g., /create, /list, inline button)
+activate tgapi
+note right of user: T0: User action
+
+tgapi -> bothandler: Forward message/callback
+activate bothandler
+note right of tgapi: T0 + 100ms: API received\n(Must be < 200ms)
+
+bothandler -> cmdproc: Process command/callback
+activate cmdproc
+note right of bothandler: T0 + 200ms: Handler processes\n(Must be < 300ms)
+
+alt Command: Create Event
+    cmdproc -> eventmgr: Create event(data)
+    activate eventmgr
+    note right of cmdproc: T0 + 300ms: Processing started
+    
+    eventmgr -> db: INSERT INTO events (...)
+    activate db
+    note right of db: Database write\nmust complete < 500ms
+    db --> eventmgr: Event ID (T0 + 800ms)
+    deactivate db
+    
+    eventmgr --> cmdproc: Success (T0 + 900ms)
+    deactivate eventmgr
+    
+    cmdproc -> msgfmt: Format response
+    activate msgfmt
+    note right of msgfmt: Formatting < 100ms
+    msgfmt --> cmdproc: Formatted (T0 + 1000ms)
+    deactivate msgfmt
+    
+else Command: List Events
+    cmdproc -> eventmgr: Get events(user_id)
+    activate eventmgr
+    note right of cmdproc: T0 + 300ms: Processing started
+    
+    eventmgr -> db: SELECT * FROM events WHERE user_id = ?\nORDER BY date
+    activate db
+    note right of db: Database query\nmust complete < 1000ms
+    db --> eventmgr: Events list (T0 + 1300ms)
+    deactivate db
+    
+    eventmgr --> cmdproc: Events list (T0 + 1400ms)
+    deactivate eventmgr
+    
+    cmdproc -> msgfmt: Format events list
+    activate msgfmt
+    note right of msgfmt: Formatting < 200ms
+    msgfmt --> cmdproc: Formatted (T0 + 1600ms)
+    deactivate msgfmt
+    
+else Command: Edit Event (Button Click)
+    cmdproc -> eventmgr: Update event(event_id, data)
+    activate eventmgr
+    note right of cmdproc: T0 + 300ms: Processing started
+    
+    eventmgr -> db: UPDATE events SET ... WHERE id = ?
+    activate db
+    note right of db: Database update\nmust complete < 500ms
+    db --> eventmgr: Updated (T0 + 800ms)
+    deactivate db
+    
+    eventmgr --> cmdproc: Success (T0 + 900ms)
+    deactivate eventmgr
+    
+    cmdproc -> msgfmt: Format success message
+    activate msgfmt
+    msgfmt --> cmdproc: Formatted (T0 + 1000ms)
+    deactivate msgfmt
+    
+else Command: Delete Event (Button Click)
+    cmdproc -> eventmgr: Delete event(event_id)
+    activate eventmgr
+    note right of cmdproc: T0 + 300ms: Processing started
+    
+    eventmgr -> db: DELETE FROM events WHERE id = ?
+    activate db
+    note right of db: Database delete\nmust complete < 300ms
+    db --> eventmgr: Deleted (T0 + 600ms)
+    deactivate db
+    
+    eventmgr --> cmdproc: Success (T0 + 700ms)
+    deactivate eventmgr
+    
+    cmdproc -> msgfmt: Format success message
+    activate msgfmt
+    msgfmt --> cmdproc: Formatted (T0 + 800ms)
+    deactivate msgfmt
+end
+
+cmdproc -> bothandler: Return response
+deactivate cmdproc
+note right of cmdproc: T0 + 1000-1600ms: Command processed\n(Must be < 4500ms)
+
+bothandler -> tgapi: Send response message
+deactivate bothandler
+note right of bothandler: T0 + 1100-1700ms: Response ready\n(Must be < 4800ms)
+
+tgapi -> user: Display response
+deactivate tgapi
+note right of user: T0 + 1200-1800ms: User receives response\nRequirement: < 5 seconds ✓
+
+note over user, db: Performance Targets:\n- Simple commands (create, delete, edit): < 2 seconds\n- List commands: < 2 seconds\n- Button clicks: < 2 seconds\n- Database operations: < 1000ms\n- Message formatting: < 200ms\n- Total response time: < 5 seconds ✓\n- User experience: Responsive and fast
+
+@enduml
+

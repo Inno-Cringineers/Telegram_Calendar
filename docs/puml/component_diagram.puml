@@ -1,0 +1,65 @@
+@startuml
+!theme plain
+skinparam packageStyle rectangle
+skinparam component {
+  BackgroundColor LightBlue
+  BorderColor Black
+}
+
+package "Telegram Bot Layer" {
+  [Bot Handler] as BotHandler
+  [Command Processor] as CommandProcessor
+  [Message Formatter] as MessageFormatter
+}
+
+package "Calendar Service Layer" {
+  [Event Manager] as EventManager
+  [Reminder Scheduler] as ReminderScheduler
+  [Daily Plan Manager] as DailyPlanManager
+}
+
+package "Integration Layer" {
+  [Calendar Sync] as CalendarSync
+  [ICS Parser] as ICSParser
+}
+
+package "Data Layer" {
+  [Settings] as Settings
+  database "SQLite Database" as SQL
+}
+
+cloud "External APIs" {
+  [Telegram Bot API] as TelegramAPI
+  [ICS Calendar Files] as ICSFiles
+}
+
+' Telegram Bot Layer connections
+BotHandler -up-( TelegramAPI
+BotHandler -down-( CommandProcessor
+BotHandler -down-( MessageFormatter
+
+CommandProcessor -down-( EventManager
+CommandProcessor -down-( CalendarSync
+CommandProcessor -down-( DailyPlanManager
+CommandProcessor -down-( Settings
+
+' Calendar Service Layer connections
+EventManager -down-( SQL
+EventManager -down-( ReminderScheduler
+EventManager -down-( DailyPlanManager
+
+ReminderScheduler -down-( SQL
+ReminderScheduler -down-( MessageFormatter
+
+DailyPlanManager -down-( SQL
+DailyPlanManager -down-( Settings
+DailyPlanManager -down-( MessageFormatter
+
+ReminderScheduler -down-( Settings
+
+' Integration Layer connections
+CalendarSync -down-( ICSParser
+CalendarSync -down-( EventManager
+ICSParser -up-( ICSFiles
+
+@enduml

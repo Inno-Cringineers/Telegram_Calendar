@@ -1,0 +1,73 @@
+@startuml
+!theme plain
+skinparam sequenceMessageAlign center
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+
+actor User as user
+participant "Telegram Bot API" as tgapi
+participant "Bot Handler" as bothandler
+participant "Command Processor" as cmdproc
+participant "Event Manager" as eventmgr
+participant "Message Formatter" as msgfmt
+database "SQLite Database" as db
+
+user -> tgapi: Send /create
+activate tgapi
+
+tgapi -> bothandler: Forward message
+activate bothandler
+
+bothandler -> cmdproc: Process create event command
+activate cmdproc
+
+cmdproc -> user: Request event details (title, date, time)
+deactivate cmdproc
+deactivate bothandler
+deactivate tgapi
+
+user -> tgapi: Provide event details
+activate tgapi
+
+tgapi -> bothandler: Forward event details
+activate bothandler
+
+bothandler -> cmdproc: Process event data
+activate cmdproc
+
+cmdproc -> eventmgr: Create event(event_data)
+activate eventmgr
+
+eventmgr -> db: INSERT INTO events (...)
+activate db
+db --> eventmgr: Event ID
+deactivate db
+
+eventmgr --> cmdproc: Event created successfully
+deactivate eventmgr
+
+cmdproc -> msgfmt: Format success message
+activate msgfmt
+msgfmt --> cmdproc: Formatted message
+deactivate msgfmt
+
+cmdproc -> bothandler: Return success message
+deactivate cmdproc
+
+bothandler -> tgapi: Send confirmation message
+deactivate bothandler
+
+tgapi -> user: Forward confirmation message
+deactivate tgapi
+
+alt Error: Invalid data
+    eventmgr --> cmdproc: Validation error
+    cmdproc -> msgfmt: Format error message
+    msgfmt --> cmdproc: Formatted error
+    cmdproc -> bothandler: Return error message
+    bothandler -> tgapi: Send error message
+    tgapi -> user: Forward error message
+end
+
+@enduml
+

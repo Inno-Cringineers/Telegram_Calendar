@@ -34,54 +34,38 @@
 
 Чтобы не переусложнять диаграмму мы не добавили на нее TG API и Calendar API и нашу систему, т.к. нас интересует только то, как пользователь взаимдодействует с системой.
 
-**Actors:**
-
-- User
+| Actor  | Description                                                                |
+| ------ | -------------------------------------------------------------------------- |
+| User   | Person who interacts with system via TG bot interface                      |
+| System | Our personal calendar that store and manage events and throw notifications |
 
 ## Component diagram
 
-```plantuml
-@startuml
-package "Telegram Bot" {
-  [Bot Handler]
-  [Command Processor]
-}
+<div align="center">
+<img src="./assets/component_diagram.png">
+</div>
 
-package "Calendar Service" {
-  [Event Manager]
-  [Reminder Scheduler]
-}
-
-package "Integration" {
-  [Calendar Sync]
-  [ICS Parser]
-}
-
-database "Database" {
-  [Events]
-  [Users]
-}
-
-[Bot Handler] --> [Command Processor]
-[Command Processor] --> [Event Manager]
-[Event Manager] --> [Reminder Scheduler]
-[Event Manager] --> [Database]
-[Calendar Sync] --> [ICS Parser]
-[Calendar Sync] --> [Event Manager]
-@enduml
-```
-
-**Components:**
-
-- Bot Handler - receives and routes Telegram messages
-- Command Processor - processes user commands
-- Event Manager - CRUD operations for events
-- Reminder Scheduler - manages notification timing
-- Calendar Sync - synchronizes external calendars
-- ICS Parser - parses iCal format files
+| Component          | Layer                  | Responsibilities                                                                                                        |
+| ------------------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Bot Handler        | Telegram Bot Layer     | Receives messages from Telegram API, routes commands to Command Processor, coordinates with Message Formatter           |
+| Command Processor  | Telegram Bot Layer     | Processes user commands, coordinates with Event Manager, Calendar Sync, Daily Plan Manager, and Settings                |
+| Message Formatter  | Telegram Bot Layer     | Formats messages for Telegram API output, prepares reminders and notifications                                          |
+| Event Manager      | Calendar Service Layer | Manages CRUD operations for events, stores data in database, coordinates with Reminder Scheduler and Daily Plan Manager |
+| Reminder Scheduler | Calendar Service Layer | Schedules and sends event reminders, respects quiet hours, formats reminder messages                                    |
+| Daily Plan Manager | Calendar Service Layer | Generates and sends daily event summaries, uses user settings for timing and format                                     |
+| Calendar Sync      | Integration Layer      | Synchronizes external calendar data, coordinates with ICS Parser and Event Manager                                      |
+| ICS Parser         | Integration Layer      | Parses ICS calendar files from external sources, extracts event data                                                    |
+| Settings           | Data Layer             | Manages user settings and preferences (timezone, quiet hours, notification frequency)                                   |
+| SQLite Database    | Data Layer             | Stores persistent data including events and settings                                                                    |
+| Telegram Bot API   | External APIs          | External API for receiving commands and sending messages to users                                                       |
+| ICS Calendar Files | External APIs          | External source for calendar data in ICS format                                                                         |
 
 ### Sequence diagrams
 
-#### User Story: Create Event
+#### User Story
 
-#### Quality Requirement: Reminder Response Time
+- create event
+
+#### Quality Requirement
+
+-
