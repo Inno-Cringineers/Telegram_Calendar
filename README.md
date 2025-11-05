@@ -55,15 +55,16 @@ will be soon - user guides will be added when project will be created
 
 1) clone repository
 2) make bot via @BotFather and copy bot token (if you dont know how - just google it)
-2) make .env file and add variable with token to it: 
+3) install docker and docker-compose (if you dont know how - just google it)
+4) make .env file and add variable with token to it: 
 ``` 
 TELEGRAM_TOKEN=insert_your_token_here
 ```
-3) run this command (change path to docker-compose file (he is in ./app/src/) and path to your .env file):
+5) run this command (change path to docker-compose file (he is in ./app/src/) and path to your .env file):
 ```
 docker compose -f path/to/docker-compose.yml --env-file path/to/.env up
 ```
-4) write /start to boot and enjoy "hello world!"
+6) write /start to boot and enjoy "hello world!"
 
 # Links
 
