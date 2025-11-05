@@ -13,7 +13,7 @@ The project is a self-hosted solution that allows the user to run it on their se
 ## Reminder Context Diagram
 
 <div align="center">
-    <img src="./images/context_diagram.png" alt="Context Diagram">
+    <img src="./docs/architecture/assets/context_diagram.png" alt="Context Diagram">
 </div>
 
 # Documentation
