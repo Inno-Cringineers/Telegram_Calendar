@@ -64,7 +64,7 @@ TELEGRAM_TOKEN=insert_your_token_here
 ```
 docker compose -f path/to/docker-compose.yml --env-file path/to/.env up
 ```
-6) write /start to boot and enjoy "hello world!"
+6) write /start to bot and enjoy "hello world!"
 
 # Links
 
