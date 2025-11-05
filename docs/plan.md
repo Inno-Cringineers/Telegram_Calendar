@@ -17,19 +17,17 @@ MVP features have to be done before ITPD Course finish (19.12.2025)
 
 Key Features Identified:
 
-- [ ] Reminders with configurable number of time before an event.
-- [ ] Time zones support (manual user setting).
-- [ ] A "Daily Plan" feature - a summary of the day's events sent at a user-defined time.
-- [ ] Integration with calendars via standardized iCal (ICS) format files.
-- [ ] Integration with calendars via OAuth methods (if integratuin via ICS failed)
-  - [ ] Outlook
-  - [ ] Google
-- [ ] Ability to add, edit, and delete events directly within the bot (these events will be stored internally in the bot's database, not synced to external calendars).
-- [ ] Users must be able to export their internally-created events, likely in JSON or ICS format, for backup or transfer.
-- [ ] Event Viewing: Users will primarily view all events by clicking a provided link that opens their calendar.
-- [ ] Notifications are for private chats only. Support for group chats was deferred for future consideration.
-- [ ] Quiet Hours: A "Do Not Disturb" feature to mute notifications during specific hours was agreed upon as a useful addition.
-- [ ] Write user guides
+- F1 Reminders with configurable number of time before an event.
+- F2 Time zones support (manual user setting).
+- F3 A "Daily Plan" feature - a summary of the day's events sent at a user-defined time.
+- F4 Integration with calendars via standardized iCal (ICS) format files / links.
+- F5 Ability to add, edit, and delete events directly within the bot (these events will be stored internally in the bot, not synced to external calendars).
+- F6 Users must be able to import/export their internally-created events in ICS format, for backup or transfer.
+- F7 Event Viewing: Users will be able to view all events by selected days.
+- F8 Quiet Hours: A "Do Not Disturb" feature to mute notifications during specific hours was agreed upon as a useful addition.
+- F9 Russian and English languagues support.
+- F10 Selfhosting app with easly deployment by docker
+- F11 Personal user access to bot (one instance for one user)
 
 ## Progress monitoring
 
