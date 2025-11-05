@@ -1,0 +1,66 @@
+@startuml
+!theme plain
+skinparam sequenceMessageAlign center
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+
+actor User as user
+participant "Reminder Scheduler" as remindersched
+participant "Event Manager" as eventmgr
+participant "Settings" as settings
+participant "Message Formatter" as msgfmt
+participant "Telegram Bot API" as tgapi
+database "SQLite Database" as db
+
+== Periodic Check (Not in quiet hours) ==
+
+activate remindersched
+
+remindersched -> eventmgr: Get upcoming events
+activate eventmgr
+
+eventmgr -> db: SELECT events
+activate db
+db --> eventmgr: List of upcoming events
+deactivate db
+
+eventmgr --> remindersched: Return events list
+deactivate eventmgr
+
+remindersched -> settings: Get user timezone
+activate settings
+settings --> remindersched: Return user timezone
+deactivate settings
+
+== Process Each Event ==
+
+loop For each event
+    remindersched -> remindersched: Calculate reminder time
+    remindersched -> remindersched: Check if reminder time reached
+    
+    alt Reminder time reached
+        remindersched -> msgfmt: Format reminder message(event_data)
+        activate msgfmt
+        
+        msgfmt -> settings: Get language preference
+        activate settings
+        settings --> msgfmt: Language setting
+        deactivate settings
+        
+        msgfmt --> remindersched: Formatted reminder message
+        deactivate msgfmt
+        
+        remindersched -> tgapi: Send reminder message
+        activate tgapi
+        
+        tgapi -> user: Forward reminder message
+        deactivate tgapi
+    else Reminder time not reached
+        remindersched -> remindersched: Skip event (too early)
+    end
+end
+
+deactivate remindersched
+
+@enduml
+
