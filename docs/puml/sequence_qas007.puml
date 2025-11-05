@@ -1,0 +1,82 @@
+@startuml
+skinparam sequenceMessageAlign center
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+
+participant "System" as system
+participant "Bot Handler" as bothandler
+participant "Event Manager" as eventmgr
+participant "Reminder Scheduler" as remindersched
+participant "Settings" as settings
+database "SQLite Database" as db
+
+== System Restart ==
+
+/'activate system'/
+
+system -> bothandler: Initialize restart
+activate bothandler
+
+bothandler -> db: Connect to database
+activate db
+db --> bothandler: Connection established
+deactivate db
+
+== Restore Data ==
+
+bothandler -> eventmgr: Initialize
+activate eventmgr
+
+eventmgr -> db: Load all events
+activate db
+db --> eventmgr: Events restored
+deactivate db
+
+eventmgr -> db: Load pending reminders
+activate db
+db --> eventmgr: Reminders restored
+deactivate db
+
+eventmgr --> bothandler: Events and reminders loaded
+deactivate eventmgr
+
+bothandler -> settings: Initialize
+activate settings
+
+settings -> db: Load user preferences
+activate db
+db --> settings: Preferences restored
+deactivate db
+
+settings -> db: Load authorization state
+activate db
+db --> settings: Authorization state restored
+deactivate db
+
+settings --> bothandler: Settings and authorization loaded
+deactivate settings
+
+== Restore Reminders ==
+
+bothandler -> remindersched: Initialize
+activate remindersched
+
+remindersched -> eventmgr: Get all pending reminders
+activate eventmgr
+eventmgr --> remindersched: Pending reminders list
+deactivate eventmgr
+
+remindersched -> remindersched: Reschedule all reminders
+deactivate remindersched
+
+remindersched --> bothandler: Reminders rescheduled
+deactivate remindersched
+
+bothandler --> system: System ready
+deactivate bothandler
+
+note over system, db: Zero data loss\nRecovery within 5 minutes
+
+deactivate system
+
+@enduml
