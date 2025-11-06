@@ -28,6 +28,7 @@ Key Features Identified:
 - F9 Russian and English languagues support.
 - F10 Selfhosting app with easly deployment by docker
 - F11 Personal user access to bot (one instance for one user)
+- F12 Repeated events support
 
 ## Progress monitoring
 
