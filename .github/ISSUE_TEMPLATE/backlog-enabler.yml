@@ -1,0 +1,72 @@
+name: "Backlog: Enabler"
+description: "Describe foundational work to enable future features or improvements."
+title: "[Enabler]: "
+labels: ["Backlog: Enabler", "Meta: Unknown Priority"]
+projects: ["inno-swp-2025/1"]
+type: "Backlog"
+body:
+  - type: textarea
+    id: justification
+    attributes:
+      label: '<h2> Justification / Business Value <a id="justification-business-value" href="#justification-business-value">📎</a> </h2>'
+      description: |
+        Explain why this foundational work is necessary.
+        What future user stories, features, or non-functional requirements (e.g., performance, scalability) does this work enable?
+        Link to the relevant issues if they exist.
+
+        Example:
+
+        This work will enable real-time collaborative video editing.
+        Currently, our architecture only supports single-user editing sessions.
+        By implementing a new WebSocket-based service for state synchronization, we will unblock the following planned user stories: 
+        - #24 
+        - #42
+    validations:
+      required: true
+
+  - type: textarea
+    id: implementation-details
+    attributes:
+      label: '<h2> Proposed Technical Implementation <a id="proposed-technical-implementation" href="#proposed-technical-implementation">📎</a> </h2>'
+      description: |
+        Describe the proposed technical approach at a high level.
+        What systems will be changed? What new components will be created?
+        Mention any new technologies, libraries, or architectural patterns.
+
+        Example:
+
+        1. Set up a new Node.js service using the `ws` library for WebSocket communication.
+        2. Define a JSON-based protocol for synchronizing video editing actions (e.g., trim, add_filter, adjust_volume).
+        3. Deploy the service to our Kubernetes staging environment with a dedicated ingress.
+        4. Refactor the mobile client's `VideoEditorViewModel` to connect to this new WebSocket endpoint.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: '<h2> Acceptance Criteria (AC) <a id="acceptance-criteria-ac" href="#acceptance-criteria-ac">📎</a> </h2>'
+      description: |
+        Define specific, technical, and testable conditions that must be met for this enabler to be considered complete.
+        These are typically not user-facing scenarios.
+
+        Example:
+
+        - [ ] A new WebSocket service is deployed and reachable in the staging environment.
+        - [ ] The mobile client can successfully establish a persistent connection to the service.
+        - [ ] Sending a 'trim' action from one connected client is reflected in a second connected client's UI within 200ms.
+        - [ ] The existing single-user editing functionality is not regressed by these changes.
+        - [ ] Automated integration tests for the new service achieve 85% code coverage.
+    validations:
+      required: true
+
+  - type: textarea
+    id: sub-issues
+    attributes:
+      label: '<h2> Sub-issues <a id="sub-issues" href="#sub-issues">📎</a> </h2>'
+      description: |
+        Don't modify the default text in this input field.
+      value: |
+        Sub-issues are type `Task` issues that must be resolved to resolve this issue.
+    validations:
+      required: false

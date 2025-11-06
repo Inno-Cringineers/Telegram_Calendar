@@ -1,0 +1,79 @@
+name: "Backlog: Tech Debt"
+description: "Address a technical shortcut or an area of the codebase that needs refactoring."
+title: "[Tech Debt]: "
+labels: ["Backlog: Tech Debt", "Meta: Unknown Priority"]
+projects: ["inno-swp-2025/1"]
+type: "Backlog"
+body:
+  - type: textarea
+    id: the-debt
+    attributes:
+      label: '<h2> What is the technical debt? <a id="what-is-the-technical-debt?" href="#what-is-the-technical-debt?">📎</a> </h2>'
+      description: |
+        Describe the technical shortcut, design flaw, or outdated component.
+        Be specific and include links to the relevant code, files, or services.
+
+        Example:
+
+        The user's notification preferences (e.g., "likes", "comments", "new followers") are currently hardcoded as a JSON string within the mobile client's settings screen.
+        See: `/mobile/src/screens/SettingsScreen.tsx:54`
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: '<h2> Why was this shortcut taken? <a id="why-was-this-shortcut-taken?" href="#why-was-this-shortcut-taken?">📎</a> </h2>'
+      description: |
+        (Optional) If known, explain the original reason for this implementation.
+        This helps with understanding the context and avoiding similar issues in the future.
+
+        Example:
+
+        This was a temporary measure to meet the deadline for the v1.1 release. The backend API to fetch these settings dynamically was not ready at the time.
+    validations:
+      required: false
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: '<h2> What is the impact of this debt? <a id="what-is-the-impact-of-this-debt?" href="#what-is-the-impact-of-this-debt?">📎</a> </h2>'
+      description: |
+        Explain how this debt is slowing down development, increasing risk, or causing other problems.
+        This is the most important section for prioritization.
+
+        Example:
+
+        Every time we want to add a new notification type (e.g., "mentions"), we have to release a new version of the mobile app.
+        This prevents us from rolling out new features on the backend and makes the feature flag system for notifications useless.
+        It slows down our development cycle by at least a week for any new notification feature.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: '<h2> What is the proposed solution? <a id="what-is-the-proposed-solution?" href="#what-is-the-proposed-solution?">📎</a> </h2>'
+      description: |
+        Outline the technical plan to fix the debt.
+        Describe the desired end state.
+
+        Example:
+
+        1. Create a new backend endpoint `GET /api/v1/notification-preferences` that returns a list of available preference objects.
+        2. Modify the `SettingsScreen.tsx` to fetch this list from the new endpoint on component mount.
+        3. Dynamically render the list of preferences on the settings screen instead of using the hardcoded list.
+        4. Ensure the client-side state management correctly handles the asynchronously loaded data.
+    validations:
+      required: true
+
+  - type: textarea
+    id: sub-issues
+    attributes:
+      label: '<h2> Sub-issues <a id="sub-issues" href="#sub-issues">📎</a> </h2>'
+      description: |
+        Don't modify the default text in this input field.
+      value: |
+        Sub-issues are type `Task` issues that resolve this technical debt.
+    validations:
+      required: false
