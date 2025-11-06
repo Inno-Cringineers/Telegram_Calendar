@@ -35,6 +35,7 @@ Self-hosted calendar bot that enables event CRUD operations via Telegram, sends 
 - [meeting](./sprints/sprint-0/meeting-1.md)
 - [report](./sprints/sprint-0/report.md)
 - [script](./sprints/sprint-0/script.md)
+
 #### Sprint 1
 - [meeting](./sprints/sprint-1/meeting-1.md)
 - [report](./sprints/sprint-1/report.md)
