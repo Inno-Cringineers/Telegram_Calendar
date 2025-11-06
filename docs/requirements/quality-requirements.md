@@ -10,13 +10,13 @@
 Business Importance →
 Technical risk ↓ | L | M | H
 ---|---|---|---
-L | | |
-M | | |
-H | | |
+L |004 | 001|006
+M | |005 |002
+H |003 | |007
 
 L - low, M - medium, H - high
 
-## <Quality attribute> Scenarios
+## Quality attribute Scenarios
 
 
 ### **QAS001: Command Response Time**
@@ -61,7 +61,7 @@ L - low, M - medium, H - high
 - Reminder is delivered no more than 1 minute after their scheduled time
 
 **Success Criteria:** 
-- Reminder delay does not exceed 1 minute.
+- 5/5 test reminders delivered within 1 minute of scheduled time
 
 ### **QAST002-2: No Loss or Duplication**
 
@@ -79,37 +79,26 @@ L - low, M - medium, H - high
 
 ### **QAS003: User Data Confidentiality**
 **Source of Stimulus:** User
-**Stimulus:** Attempt to access the calendar bot from a Telegram account other than the one initially registered
+**Stimulus:** Attempt to access the calendar bot from a Telegram account other than the primary
 **Environment:** Normal system operation
 **Response:** The bot allows full calendar access and interaction only to the Telegram account of the first user who ever contacted it. Any further access attempts from other Telegram accounts will be ignored.
 **Response Measure:**
-- 100% of attempts by any Telegram account other than the registered user will be ignored.
-- The ID of the authorized user is persistently stored
+- 100% of attempts by any Telegram account other than the primary user will be ignored.
+- The ID of the primary user is persistently stored
 
 ### **QAST003-1: Only First User Access**
+**Preconditions**
+- User already interact with bot
 
 **Steps:**  
-1. First-time user interaction with bot 
-2. Attempt to send a command from a different Telegram account.
+1. Send a command to the bot from 5 different Telegram accounts.
 
 **Expected Result:** 
-- The second user does not receive any response or access to data.
+- Users does not receive any response or access to data.
 
 **Success Criteria:** 
-- 100% of unauthorized access attempts are ignored.
+- 100% of commands from non-primary users are ignored
 
-### **QAST003-2: Persistent Authorized ID**
-
-**Steps:**  
-1. First-time user interaction with bot 
-2. Restart the bot.
-3. Attempt access from another account.
-
-**Expected Result:** 
-- Only the first user can access the bot.
-
-**Success Criteria:** 
-- Authorized user ID is retained after a restart.
 
 ---
 
@@ -149,49 +138,51 @@ L - low, M - medium, H - high
 ### **QAST005-1: Preference Affects Reminders**
 
 **Steps:**  
-1. Change quiet hours.
-2. Create a reminder.
+1. Set quiet hours to 22:00-08:00
+2. Create an event at 23:00 with a 10-minute reminder.
 
 **Expected Result:** 
-- The new reminder respects the updated quiet hours.
+- The reminder is not sent.
 
 **Success Criteria:** 
-- All new reminders match the new preferences.
+- All reminders match the new preferences.
 
 ---
 
 ### **QAS006: Event Update Consistency**
  **Source of Stimulus:** User
- **Stimulus:** Updating an event that has active reminders
+ **Stimulus:** Updating an event that has reminders
  **Environment:** Normal system operation
- **Response:** All related reminders are updated or removed consistently with event changes
+ **Response:** All related reminders are rescheduled or removed consistently with event changes
  **Response Measure:**
-- When an event is modified, all related reminders are updated
-- No notifications for non-existent events
+- All related reminders are rescheduled according to event changes
 
 ### **QAST006-1: Reminders Updated After Event Change**
 
 **Steps:**  
-1. Create an event with a reminder.
-2. Change the event time.
-3. Verify the updated reminder time.
+1. Create an event at 14:00 with a 15-minute reminder
+2. Change event time to 16:30
+3. Monitor reminder delivery
 
 **Expected Result:** 
-- Reminder delivery time corresponds to the updated event time
-- No reminders are sent based on the previous event timing
+- Reminder is delivered at 16:15 (15 minutes before new event time)
+- No reminder is delivered at 13:45 (original reminder time)
 
+**Success Criteria:** 
+- Zero reminders delivered based on previous event timing
 
 ### **QAST006-2: No Lost Notifications After Deletion**
 
 **Steps:**  
-1. Delete an event with an active reminder.
-2. Wait for the original reminder time.
+1. Create 5 events with reminders
+2. Delete 3 random events
 
 **Expected Result:** 
-- No reminder is sent for the deleted event.
+- 0/3 reminders delivered for deleted events
+- 2/2 reminders delivered for remaining events
 
 **Success Criteria:** 
-- No notifications for non-existent events.
+- 0% false positives in reminder cancellation
 
 ---
 
@@ -210,7 +201,6 @@ L - low, M - medium, H - high
 1. Create an event and schedule a reminder.
 2. Simulate a crash (kill the bot process).
 3. Restart the bot.
-4. Check that events, reminders, and settings are not changed.
 
 **Expected Result:** 
 - All data and reminders are restored; reminders are delivered as scheduled.
