@@ -12,7 +12,31 @@ https://drive.google.com/drive/folders/1lFrmgIr-B6MBpstlfxNTnKZliYNLUD5s?usp=dri
 
 # Action points
 
+## UI/UX Design
 
+1. **WHAT:** Design format-based event creation interface with example formats and validation rules
+   **WHO:** [rikire](https://github.com/rikire)
+   **WHEN:** 13.11.2025
+
+2. **WHAT:** Design simpler event creation interface with minimum required fields (title, start time, end time)
+   **WHO:** [rikire](https://github.com/rikire)
+   **WHEN:** 13.11.2025
+
+3. **WHAT:** Design simpler timezone input method
+   **WHO:** [Ten-Do](https://github.com/Ten-Do)
+   **WHEN:** 13.11.2025
+
+## Testing & Quality
+
+4. **WHAT:** Refine QASTs to be more concrete with specific test steps
+   **WHO:** [03sano30](https://github.com/03sano30)
+   **WHEN:** 13.11.2025
+
+## Documentation
+
+5. **WHAT:** Document edge cases: Organize brainshtorming with all team members.
+   **WHO:** [rikire](https://github.com/rikire)
+   **WHEN:** 13.11.2025
 
 # Summary of the meeting.
 
@@ -21,20 +45,24 @@ Customer approved key features, user stories, prioritization.
 Customer approved high-level Architecture.
 
 We discussed MVP Scope, identified the list of features that must to be done (the rest of the features will be done if we have enough time):
+
 - Event creation and viewing
 - Event reminders
 - Self-hosting and single-usage
 - calendar synchronization
 
 We discussed User Interface (UI) & Experience (UX):
+
 - potential format-based event cration for simplicity
 - potential simpler event creation interface (with minimum fields)
 - needs to find a way to make simpler timezone input
 
 Discussed Testing & Quality Attributes:
+
 - make more concrete QASTs
 
 Edge Cases & Future Considerations:
+
 - Events during Quiet Hours
 - Duplicate events
 - Time zone conflicts
@@ -42,7 +70,6 @@ Edge Cases & Future Considerations:
 - document and address more edge cases in future iterations
 
 Customer approved simplified deployment via Docker Compose
-
 
 # List of speakers. (Github usernames).
 

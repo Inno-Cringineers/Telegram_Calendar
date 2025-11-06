@@ -7,7 +7,7 @@
 | US003 | Update event | F5 | Medium |
 | US004 | View event | F7 | Medium |
 | US005 | View events | F7 | Medium |
-| US006 | Sync external calendar | F4 | Medium |
+| US006 | Sync external calendar | F4 | High |
 | US007 | Export calendar | F6 | low |
 | US008 | Import calendar | F6 | Medium |
 | US009 | Receive reminders | F1 | High |
