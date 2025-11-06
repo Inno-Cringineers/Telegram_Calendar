@@ -10,6 +10,10 @@ playable recording with sound (meeting_2_at_20251106_170549.m4a) available via t
 
 https://drive.google.com/drive/folders/1lFrmgIr-B6MBpstlfxNTnKZliYNLUD5s?usp=drive_link
 
+# Action points
+
+
+
 # Summary of the meeting.
 
 Customer approved key features, user stories, prioritization.

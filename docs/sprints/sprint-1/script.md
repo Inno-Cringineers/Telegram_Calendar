@@ -1,27 +1,27 @@
 # Sprint 1 Meeting Script
 
-1. **Interactive prototype**
+1. **[Interactive prototype](https://www.figma.com/design/LqJOtos5K1Q8AW5yhVRDQR/Untitled?node-id=0-1&p=f&t=tqUJJL7qTA6588Wm-0)**
    - Show Figma prototype
    - Discuss UI/UX flow
 
-2. **Strategic plan**
+2. **[Strategic plan](../../plan.md)**
    - Present project goals
    - Review threshold of success
    - Discuss feature roadmap
 
 3. **Assumptions**
-   - Clarify assumptions
+   - Single user usage of system
 
 4. **Requirements**
-   - Discuss quality requirements
-   - Discuss functional requirements
+   - Discuss [quality requirements](../../requirements/quality-requirements.md)
+   - Discuss [functional requirements](../../requirements/user-stories.md)
 
 5. **Constraints**
    - Discuss technical constraints
    - Discuss time constraints
-   - Discuss MVP scope
+   - Clarify MVP scope
 
-6. **Initial high-level architecture**
+6. **[Initial high-level architecture](../../architecture/architecture.md)**
    - Present architecture diagrams
    - Discuss component responsibilities
 
