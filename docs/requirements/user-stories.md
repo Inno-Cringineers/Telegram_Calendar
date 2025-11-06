@@ -17,6 +17,7 @@
 | US013 | Configure language | F9 | low |
 | US014 | Self-host | F10 | High |
 | US015 | Single-user restriction | F11 | High |
+| US016 | Repeating events | F12 | low |
 
 # User stories
 
@@ -121,3 +122,10 @@ US-015: Single-user restriction
  	- Other users receive a polite message explaining the single-user restriction.
  	- Clear instructions for resetting the registered user if needed.
  	- User ID persistence survives bot restarts.
+
+US-016: Repeating events
+- As a user, I want to make created events repeated so i dont need to make many events that is regulary occures.
+- Acceptance criteria:
+	- Support basic recurrence types (daily, weekly, monthly) and custom.
+	- Allow editing/deleting entire series (single-editing is considered to implement after MVP).
+	- Schedule reminders for each occurrence respecting user settings.
