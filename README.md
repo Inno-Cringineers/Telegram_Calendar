@@ -39,3 +39,4 @@ docker compose -f path/to/docker-compose.yml --env-file path/to/.env up
 
 - [Sprints](./docs/sprints) - information about meetings with the customer and meeting reports
 - [AI usage](./docs/ai-usage.md) - how we use AI in this project.
+- [The guide](./guide/README.md) - Readme from guide
