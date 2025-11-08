@@ -33,41 +33,60 @@ Key Features Identified:
 - F11 Personal user access to bot (one instance for one user)
 - F12 Repeated events support
 
+## MVP Scope
+
+MVP is a self-hosted system for a single user that allows synchronizing external calendars via URL, adding and deleting events, and receiving notifications.
+
+The MVP includes the following high-priority features:
+
+- **F1\* Reminders** (US-009): Receiving reminders for upcoming events with configurable time before the event starts.
+- **F4\* Integration with calendars via iCal** (US-006): Synchronizing external calendars through standardized iCal (ICS) format via URL only.
+- **F5\* Ability to add and delete events** (US-001, US-002): Ability to create and delete events directly through the bot (events are stored internally in the bot, not synced to external calendars).
+- **F10 Selfhosting** (US-014): Ability to self-host the application with easy deployment via Docker.
+- **F11 Personal user access** (US-015): Personal user access to the bot (one instance for one user).
+
+> F\* - a feature with reduced functionality
+
 ## Progress monitoring
 
 - Sprints & Meetings
-	- Weekly sprint (1-week sprint) with a Sprint Planning, Meeting with customer, Review.
-	- Four short async status updates per week in the project Telegram group: (1) in progress, (2) pending, (3) blockers, (4) done.
-	- Ad-hoc technical syncs when a critical blocker appears.
+
+  - Weekly sprint (1-week sprint) with a Sprint Planning, Meeting with customer, Review.
+  - Four short async status updates per week in the project Telegram group: (1) in progress, (2) pending, (3) blockers, (4) done.
+  - Ad-hoc technical syncs when a critical blocker appears.
 
 - Artifacts & tooling
-	- Work tracked via GitHub Issues and GitHub Projects (Board + Roadmap). Every feature or bug must have an issue with acceptance criteria.
-	- Pull requests must reference the issue they implement.
+
+  - Work tracked via GitHub Issues and GitHub Projects (Board + Roadmap). Every feature or bug must have an issue with acceptance criteria.
+  - Pull requests must reference the issue they implement.
 
 - Metrics to watch (minimum viable set)
-	- Sprint progress: story points (or task count) completed vs. planned per sprint.
-	- Open defects: number of open bugs.
+  - Sprint progress: story points (or task count) completed vs. planned per sprint.
+  - Open defects: number of open bugs.
 
 ## Contingency plans
 
-1) Schedule slip (we're behind plan)
-	 - Trigger: sprint whas completed story points < 70% of planned.
-	 - Immediate actions:
-		 - Perform re-prioritization: move lower-value or non-core features to a post-MVP backlog.
-		 - Freeze UI/UX polish and non-essential tasks; focus on core features.
+1. Schedule slip (we're behind plan)
 
-2) Technical blocker
-	 - Trigger: core feature fails and blocks the MVP flow.
-	 - Immediate actions:
-		 - Implement a fallback: accept raw implementation of feature / fallback feature.
+   - Trigger: sprint whas completed story points < 70% of planned.
+   - Immediate actions:
+     - Perform re-prioritization: move lower-value or non-core features to a post-MVP backlog.
+     - Freeze UI/UX polish and non-essential tasks; focus on core features.
 
-3) Quality regression (too many bugs)
-	 - Trigger: more than 5 open high/medium bugs affecting core flows.
-	 - Immediate actions:
-		 - Halt new feature merges; create a stabilization sprint focused on fixing bugs and raising test coverage for core flows.
+2. Technical blocker
 
-4) Requirements change
-	 - Trigger: new requirements request that affects core scope or timeline.
-	 - Immediate actions:
-		 - Evaluate the request's business value and technical risk quickly.
-		 - Set customer expectations to realistic resources.
+   - Trigger: core feature fails and blocks the MVP flow.
+   - Immediate actions:
+     - Implement a fallback: accept raw implementation of feature / fallback feature.
+
+3. Quality regression (too many bugs)
+
+   - Trigger: more than 5 open high/medium bugs affecting core flows.
+   - Immediate actions:
+     - Halt new feature merges; create a stabilization sprint focused on fixing bugs and raising test coverage for core flows.
+
+4. Requirements change
+   - Trigger: new requirements request that affects core scope or timeline.
+   - Immediate actions:
+     - Evaluate the request's business value and technical risk quickly.
+     - Set customer expectations to realistic resources.
