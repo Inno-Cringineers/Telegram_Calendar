@@ -6,12 +6,15 @@ Provide to users a tool to create their own planning service (self hosted). Whic
 
 MVP features have to be done before ITPD Course finish (19.12.2025)
 
-## Threshold of success
+## Threshold of Success
 
-- **Time:** Project have to be done before ITPD Course finish (19.12.2025)
-- **Budget:** Opensource project (0 rubles)
-- **Scope:** The app matches the critical features listed in the Feature Roadmap
-- **Quality:** The application meets non-functional requirements and quality attributes
+1. **MVP Delivery**: By the end of the course, deliver a working Telegram Calendar bot with all critical MVP features passing acceptance tests with no critical bugs.
+
+2. **Self-hosting**: By the end of the course, at least one test user successfully self-host the application using our Docker setup within 40 minutes, with no assistance beyond the provided documentation.
+
+3. **Quality & Performance**: All implemented core MVP features meet QAS and tested by the end of the course.
+
+4. **Passing a course**: All team members passed a course by the end.
 
 ## Feature roadmap
 
