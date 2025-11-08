@@ -10,7 +10,7 @@
 
 ## Interactive prototype
 
-[Link to Figma prototype]
+[Link to Figma prototype](https://www.figma.com/design/LqJOtos5K1Q8AW5yhVRDQR/Untitled?node-id=0-1&t=4I1YahX6Z5dIGkPU-1)
 
 ## Context diagram
 
