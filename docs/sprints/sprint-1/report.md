@@ -13,4 +13,5 @@
 - Finalize MVP vision
 - Refine UI/UX
 - Address edge cases and expand test coverage
+- Write tasks
 - Start developing
