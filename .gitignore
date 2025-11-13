@@ -140,3 +140,7 @@ vite.config.ts.timestamp-*
 
 # python cache
 __pycache__/
+
+.vscode
+
+*.db
