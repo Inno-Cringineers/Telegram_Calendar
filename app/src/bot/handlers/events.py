@@ -1,0 +1,5 @@
+- `menu_events` callback - Opens events menu
+- `events_import` - Show import feature (mocked)
+- `events_export` - Show export feature (mocked)
+- `events_add` - Initiates event creation
+- `events_search` - Show search feature (mocked)
