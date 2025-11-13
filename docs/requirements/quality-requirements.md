@@ -10,11 +10,44 @@
 Business Importance →
 Technical risk ↓ | L | M | H
 ---|---|---|---
-L |004 | 001|006
+L | 003 | 001|006
 M | |005 |002
-H |003 | |007
+H | | |007, 004
 
 L - low, M - medium, H - high
+
+
+## Quality Attribute Scenario Priority Rationale
+
+### High Business Priority Scenarios
+- Core product value (QAS002, QAS004)
+- Critical for self-hosted reliability (QAS007)
+- Foundation of user trust(QAS6)
+
+### High Technical Priority Scenarios
+
+- External calendar API integration(QAS004)
+- Complex system health recovery
+
+
+### Medium Business Priority Scenarios
+
+- Additional customization features (QAS005)
+- Enhanced user satisfaction through faster responses
+
+### Medium Technical Priority Scenarios
+
+- Performance optimization(QAS001)
+- Typical preference storage mechanisms (QAS005)
+
+### Low Business Priority Scenarios
+
+- Minimal impact on core functionality (QAS003)
+
+### Low Technical Priority Scenarios
+
+- Minimal technical complexity(QAS001, QAS003, QAS006)
+
 
 ## Quality attribute Scenarios
 
@@ -102,21 +135,20 @@ L - low, M - medium, H - high
 
 ---
 
-### **QAS004: Import of Large Number of Events**
+### **QAS004: Import calendar**
 **Source of Stimulus:** User
-**Stimulus:** Importing a calendar with 50 events
+**Stimulus:** Importing a calendar events via ics link
 **Environment:** Normal system operation
 **Response:** The system parses, saves events and generates reminders
 **Response Measure:**
-- Import time does not exceed 3 minutes per 50 events
+- Import time does not exceed 3 minutes.
 
-### **QAST004-1: Import 50 Events Within Limit**
+### **QAST004-1: Import calendar with 50 Events **
 **Precondition:**
-- Prepare a .ics link with 50 events.
+- Prepare a ics links with 50 events.
 
 **Steps:**  
-1. Import it through the bot.
-2. Measure total import time.
+1. Send ics links to the bot.
 
 **Expected Result:** 
 - Import completes within 3 minutes.
@@ -138,14 +170,40 @@ L - low, M - medium, H - high
 ### **QAST005-1: Preference Affects Reminders**
 
 **Steps:**  
-1. Set quiet hours to 22:00-08:00
-2. Create an event at 23:00 with a 10-minute reminder.
+1. Set quiet hours to start in 3 minutes, duration = 5 minutes.
+2. Create an event in 5 minutes with 1-minute reminder
 
 **Expected Result:** 
 - The reminder is not sent.
 
 **Success Criteria:** 
 - All reminders match the new preferences.
+
+### QAST005-2: Event During Quiet Hours - Reminder Before
+
+**Steps:**  
+1. Set quiet hours: NOW+3 minutes to NOW + 25 minutes
+2. Create event at NOW+10 minutes (during quiet hours) with 5-minutes reminder
+
+**Expected Result:** 
+- No reminder is sent after 5 minutes (original reminder time during quiet hours)
+- Reminder is sent at 3 minutes (immediately before quiet hours start)
+
+**Success Criteria:** 
+- Zero notifications sent during active quiet hours period
+
+### QAST005-3: Event After Quiet Hours - Reminder During
+
+**Steps:**  
+1. Set quiet hours: NOW + 2 minutes to NOW + 20 minutes
+2. Create event at NOW + 25 minutes (after quiet hours) with 10-minute reminder
+
+**Expected Result:** 
+- Reminder is sent at NOW + 20 minutes (after quiet hours)
+- No reminder at NOW + 15 minutes (original reminder time during quiet hours) 
+
+**Success Criteria:** 
+- 100% of reminders that fall during quiet hours are rescheduled to end quiet hours
 
 ---
 
@@ -160,16 +218,16 @@ L - low, M - medium, H - high
 ### **QAST006-1: Reminders Updated After Event Change**
 
 **Steps:**  
-1. Create an event at 14:00 with a 15-minute reminder
-2. Change event time to 16:30
-3. Monitor reminder delivery
+1. Create an event in 5 minutes with 3-minute reminder
+2. Сhange the time of the event in 7 minutes
 
 **Expected Result:** 
-- Reminder is delivered at 16:15 (15 minutes before new event time)
-- No reminder is delivered at 13:45 (original reminder time)
+- Reminder is delivered in 4 minutes (3 minutes before new event time)
+- No reminder is delivered in 2 minutes (original reminder time)
 
 **Success Criteria:** 
-- Zero reminders delivered based on previous event timing
+- 0/5 reminders are delivered depending on the previous time of the event.
+- 5/5 reminders are delivered depending on the new time of the event.
 
 ### **QAST006-2: No Lost Notifications After Deletion**
 
