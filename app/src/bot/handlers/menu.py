@@ -3,7 +3,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from bot.states.event import MainMenuStates
+from bot.states.states import MainMenuStates
 from bot.keyboards.inline import get_main_menu_inline
 from bot.logger import logger
 

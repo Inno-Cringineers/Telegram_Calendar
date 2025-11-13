@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
-from bot.states.event import SettingsStates
+from bot.states.states import SettingsStates
 from bot.keyboards.inline import *
 from bot.logger import logger
 

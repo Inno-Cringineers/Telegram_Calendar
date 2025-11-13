@@ -1,12 +1,20 @@
 from aiogram.fsm.state import State, StatesGroup
 
+class EventsMenuStates(StatesGroup):
+    """States for events menu."""
+    in_events_menu = State()
+    in_events_import = State()
+    in_events_export = State()
+    in_events_create = State()
+    in_events_view = State()
+
 
 class CreateEventStates(StatesGroup):
     """States for creating a new event."""
     waiting_for_title = State()
     waiting_for_description = State()
-    waiting_for_date = State()
-    waiting_for_time = State()
+    waiting_for_start_date = State()
+    waiting_for_start_time = State()
     waiting_for_confirmation = State()
 
 
@@ -30,12 +38,6 @@ class SettingsStates(StatesGroup):
     editing_language = State()
     editing_quiet_hours = State()
     editing_daily_plans_time = State()
-
-
-class EventsMenuStates(StatesGroup):
-    """States for events menu."""
-    in_events_menu = State()
-
 
 class CalendarLinkingStates(StatesGroup):
     """States for calendar linking."""
