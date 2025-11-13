@@ -1,28 +1,55 @@
 import asyncio
-import logging
-from bot.bot import setup_bot
-from bot.config import load_config
+from aiogram import Bot, Dispatcher
+from aiogram.fsm.storage.memory import MemoryStorage
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+from bot.database import get_engine, get_session_maker, init_db
+from bot.middlewares.database_middlware import DatabaseMiddleware
+from bot.middlewares.logging_middleware import MessageLoggingMiddleware, CallbackQueryLoggingMiddleware
+from bot.router import router
+from bot.config import load_config
+from bot.logger import setup_logger, logger
+
+
+async def setup_database(dp: Dispatcher, db_url: str):
+    """Setup database and inject session middleware."""
+    engine = get_engine(db_url)
+    await init_db(engine)
+    session_maker = get_session_maker(engine)
+
+    # Middleware to inject database session in handlers
+    dp.message.middleware(DatabaseMiddleware(session_maker))
+    dp.callback_query.middleware(DatabaseMiddleware(session_maker))
+
+
+def setup_middlewares(dp: Dispatcher):
+    """Setup all middlewares for dispatcher."""
+    # Logging middlewares
+    dp.message.outer_middleware(MessageLoggingMiddleware())
+    dp.callback_query.outer_middleware(CallbackQueryLoggingMiddleware())
+    
+    logger.debug("Middlewares setup completed")
+
+
 
 async def main():
-
-    config = load_config()
+    cfg = load_config()
     
-    bot = await setup_bot(config)
+    # Setup logger with config
+    setup_logger(cfg.logger)
     
-    try:
-        logger.info("Starting Telegram Calendar bot")
-        await bot.start_polling()
-    except Exception as e:
-        logger.error(f"Error running bot: {e}")
-    finally:
-        logger.info("Stopping bot")
-        await bot.close()
+    logger.info("Starting Telegram Calendar Bot...")
+    logger.info(f"Logger level: {cfg.logger.level}")
+    
+    bot = Bot(cfg.telegram_token)
+    dp = Dispatcher(storage=MemoryStorage())
 
-if __name__ == '__main__':
+    await setup_database(dp, cfg.db_url)
+    setup_middlewares(dp)
+    
+    dp.include_router(router)
+
+    logger.info("Bot is running...")
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
     asyncio.run(main())
