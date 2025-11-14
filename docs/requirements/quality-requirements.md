@@ -27,13 +27,13 @@ L - low, M - medium, H - high
 ### High Technical Priority Scenarios
 
 - External calendar API integration(QAS004)
-- Complex system health recovery
+- Complex system health recovery(QAS007)
 
 
 ### Medium Business Priority Scenarios
 
 - Additional customization features (QAS005)
-- Enhanced user satisfaction through faster responses
+- Enhanced user satisfaction through faster responses(QAS001)
 
 ### Medium Technical Priority Scenarios
 
