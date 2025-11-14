@@ -6,3 +6,7 @@
 2. [QAS and QAST](../../requirements/quality-requirements.md)
     - Show updated QAS and QAST, priority matrix and rationale.
 
+
+## Questions for customer
+
+1. What functionality are you expecting in the next sprint?
