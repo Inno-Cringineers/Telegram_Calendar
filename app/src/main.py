@@ -36,7 +36,7 @@ async def main():
     
     # Setup logger with config
     setup_logger(cfg.logger)
-    
+
     logger.info("Starting Telegram Calendar Bot...")
     logger.info(f"Logger level: {cfg.logger.level}")
     
