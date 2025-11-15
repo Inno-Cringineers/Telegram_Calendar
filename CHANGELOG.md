@@ -3,17 +3,21 @@
 
 
 
-## [1.0.0] - 2025-XX-XX
-## Added
+## [1.0.0] - 2025-11-15
+### Added
 
-### **Telegram bot prototype:**
-  - Interactive buttons for navigation
-  - Basic UI according to design mockups
+#### **Telegram bot prototype:**
+  - Interactive buttons for navigation.
+  - Basic UI according to design mockups.
+  - Mock responses for user interactions.
 
-## Changed
+#### **Infrastructure**
+  - Dockerized product.
+
+### Changed
 
 
-## Fixed
+### Fixed
 
 
-## Security
+### Security
