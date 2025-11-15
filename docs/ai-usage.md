@@ -6,3 +6,4 @@
 4. ChatGPT used to generate logo
 5. AI used to polish text of user stories, QAS and QAST
 6. AI used to help with plantUML diagrams (mostly they made by hands)
+7. Used GitHub Copilot to generate code.
