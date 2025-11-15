@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Priority matrix](#priority-matrix)
+- [QAS priority rationale](#quality-attribute-scenario-priority-rationale)
 - [Quality attribute scenarios](#quality-attribute-scenarios)
 
 ## Priority matrix
