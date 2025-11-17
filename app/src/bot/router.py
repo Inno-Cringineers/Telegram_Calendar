@@ -16,5 +16,3 @@ router.include_router(events_router)
 router.include_router(calendar_router)
 router.include_router(create_event_router)
 router.include_router(daily_plan_router)
-
-

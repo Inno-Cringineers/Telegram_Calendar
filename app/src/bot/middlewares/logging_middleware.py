@@ -20,32 +20,29 @@ class MessageLoggingMiddleware(BaseMiddleware):
         """
         if not isinstance(event, Message):
             return await handler(event, data)
-        
+
         start_time = time.time()
         user_id = event.from_user.id if event.from_user else None
         user_name = event.from_user.full_name if event.from_user else None
         event_text = event.text or f"[{event.content_type}]"
 
         # Log incoming message
-        logger.info(
-            f"[message] User: {user_name} (ID: {user_id}) | Text: {event_text}"
-        )
+        logger.info(f"[message] User: {user_name} (ID: {user_id}) | Text: {event_text}")
 
         try:
             # Call the handler
             result = await handler(event, data)
-            
+
             # Log successful execution
             execution_time = time.time() - start_time
             logger.debug(f"Handler executed in {execution_time:.3f}s")
-            
+
             return result
         except Exception as e:
             # Log error
             execution_time = time.time() - start_time
             logger.error(
-                f"Error handling message from {user_name} (ID: {user_id}) "
-                f"after {execution_time:.3f}s: {str(e)}",
+                f"Error handling message from {user_name} (ID: {user_id}) after {execution_time:.3f}s: {str(e)}",
                 exc_info=True,
             )
             raise
@@ -65,33 +62,29 @@ class CallbackQueryLoggingMiddleware(BaseMiddleware):
         """
         if not isinstance(event, CallbackQuery):
             return await handler(event, data)
-        
+
         start_time = time.time()
         user_id = event.from_user.id
         user_name = event.from_user.full_name
         event_data = event.data or "no data"
 
         # Log incoming callback query
-        logger.info(
-            f"[callback_query] User: {user_name} (ID: {user_id}) | Data: {event_data}"
-        )
+        logger.info(f"[callback_query] User: {user_name} (ID: {user_id}) | Data: {event_data}")
 
         try:
             # Call the handler
             result = await handler(event, data)
-            
+
             # Log successful execution
             execution_time = time.time() - start_time
             logger.debug(f"Handler executed in {execution_time:.3f}s")
-            
+
             return result
         except Exception as e:
             # Log error
             execution_time = time.time() - start_time
             logger.error(
-                f"Error handling callback_query from {user_name} (ID: {user_id}) "
-                f"after {execution_time:.3f}s: {str(e)}",
+                f"Error handling callback_query from {user_name} (ID: {user_id}) after {execution_time:.3f}s: {str(e)}",
                 exc_info=True,
             )
             raise
-

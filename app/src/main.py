@@ -26,30 +26,30 @@ def setup_middlewares(dp: Dispatcher):
     # Logging middlewares
     dp.message.outer_middleware(MessageLoggingMiddleware())
     dp.callback_query.outer_middleware(CallbackQueryLoggingMiddleware())
-    
-    logger.debug("Middlewares setup completed")
 
+    logger.debug("Middlewares setup completed")
 
 
 async def main():
     cfg = load_config()
-    
+
     # Setup logger with config
     setup_logger(cfg.logger)
 
     logger.info("Starting Telegram Calendar Bot...")
     logger.info(f"Logger level: {cfg.logger.level}")
-    
+
     bot = Bot(cfg.telegram_token)
     dp = Dispatcher(storage=MemoryStorage())
 
     await setup_database(dp, cfg.db_url)
     setup_middlewares(dp)
-    
+
     dp.include_router(router)
 
     logger.info("Bot is running...")
     await dp.start_polling(bot)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
