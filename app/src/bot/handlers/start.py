@@ -38,7 +38,7 @@ async def start_handler(message: Message):
     # This is /start handler
     """Handler for /start command. Welcomes the user and provides basic information."""
     user_name = message.from_user.first_name if message.from_user else "User"
-    user_id = message.from_user.id if message.from_user else None
+    user_id: int | None = message.from_user.id if message.from_user else None
 
     logger.info(f"User {user_name} (ID: {user_id}) started the bot")
 
