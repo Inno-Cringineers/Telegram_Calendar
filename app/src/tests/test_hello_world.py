@@ -5,7 +5,10 @@ from bot.keyboards.inline import get_main_menu_inline
 
 def test_hello_world():
     """Simple hello world test to verify pytest works."""
-    assert True, "Hello World test passed!"
+    assert True, "Hello World test passed!"  
+
+
+
 
 
 def test_main_menu_keyboard():
@@ -25,7 +28,7 @@ def test_main_menu_keyboard():
     expected_buttons = [
         ("⚙️ Settings", "menu_settings"),
         ("📅 Events", "menu_events"),
-        ("📋 Get Daily Plan", "menu_daily_plan"),
+        ("📋 Get Daily Plans", "menu_daily_plan"),
         ("🔗 External calendars", "menu_link_calendar"),
     ]
 
