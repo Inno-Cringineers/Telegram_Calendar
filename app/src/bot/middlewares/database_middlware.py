@@ -1,20 +1,23 @@
+from collections.abc import Awaitable, Callable
+from typing import Any
+
 from aiogram import BaseMiddleware
-from typing import Callable, Dict, Any, Awaitable
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from bot.database import get_session
+
 
 # middleware to inject database session in handlers
 class DatabaseMiddleware(BaseMiddleware):
     def __init__(self, session_maker):
-        super().__init__() # required
-        self.session_maker = session_maker # database session maker
+        super().__init__()  # required
+        self.session_maker = session_maker  # database session maker
 
     # inject session in handler
     async def __call__(
         self,
-        handler: Callable[[Any, Dict[str, Any]], Awaitable[Any]],
+        handler: Callable[[Any, dict[str, Any]], Awaitable[Any]],
         event: Any,
-        data: Dict[str, Any],
+        data: dict[str, Any],
     ) -> Any:
         async for session in get_session(self.session_maker):
             data["session"] = session

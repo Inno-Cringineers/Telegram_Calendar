@@ -1,3 +1,6 @@
+import calendar
+from datetime import datetime
+
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
@@ -35,6 +38,7 @@ def get_events_menu_inline():
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
+
 def get_events_create_inline():
     """Daily plan time menu with 2 options."""
     buttons = [
@@ -42,6 +46,7 @@ def get_events_create_inline():
         [InlineKeyboardButton(text="« Back", callback_data="menu_events")],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
+
 
 def get_calendar_menu_inline():
     """Calendar linking menu with 3 options."""
@@ -60,6 +65,7 @@ def get_back_button(callback_data: str = "back_to_main"):
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
+
 def get_language_menu_inline():
     """Language menu with 3 options."""
     buttons = [
@@ -69,6 +75,7 @@ def get_language_menu_inline():
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
+
 def get_quiet_hours_menu_inline():
     """Quiet hours menu with 2 options."""
     buttons = [
@@ -76,6 +83,7 @@ def get_quiet_hours_menu_inline():
         [InlineKeyboardButton(text="« Back", callback_data="menu_settings")],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
+
 
 def get_daily_plan_time_menu_inline():
     """Daily plan time menu with 2 options."""
@@ -85,18 +93,20 @@ def get_daily_plan_time_menu_inline():
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
-def get_skip_keyboard(skip_callback:str, cancel_callback:str):
+
+def get_skip_keyboard(skip_callback: str, cancel_callback: str):
     """Keyboard with skip option."""
     buttons = [
-            [InlineKeyboardButton(text="❌ Cancel", callback_data=cancel_callback)],
-            [InlineKeyboardButton(text="⏭ Skip", callback_data=skip_callback)],
+        [InlineKeyboardButton(text="❌ Cancel", callback_data=cancel_callback)],
+        [InlineKeyboardButton(text="⏭ Skip", callback_data=skip_callback)],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
-def get_cancel_keyboard(cancel_callback:str):
+
+def get_cancel_keyboard(cancel_callback: str):
     """Keyboard with cancel option."""
     buttons = [
-            [InlineKeyboardButton(text="❌ Cancel", callback_data=cancel_callback)],
+        [InlineKeyboardButton(text="❌ Cancel", callback_data=cancel_callback)],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -111,27 +121,24 @@ def get_event_confirmation_inline():
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
-from datetime import datetime
-import calendar
 
-def create_calendar(year: int = None, month: int = None) -> InlineKeyboardMarkup:
+def create_calendar(year: int | None = None, month: int | None = None) -> InlineKeyboardMarkup:
     now = datetime.now()
     year = year or now.year
     month = month or now.month
     month_name = calendar.month_name[month]
-    
+
     calendar_rows = []
-    
+
     # Month and Year header
     header = [
-        InlineKeyboardButton(text=f"<<", callback_data="prev_month"),
+        InlineKeyboardButton(text="<<", callback_data="prev_month"),
         InlineKeyboardButton(text=f"📅  {month_name} {year}", callback_data="ignore"),
-        InlineKeyboardButton(text=f">>", callback_data="next_month"),
-        ]
+        InlineKeyboardButton(text=">>", callback_data="next_month"),
+    ]
     calendar_rows.append(header)
-    
 
-    days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     week_header = [InlineKeyboardButton(text=day, callback_data="ignore") for day in days]
     calendar_rows.append(week_header)
 
@@ -142,7 +149,7 @@ def create_calendar(year: int = None, month: int = None) -> InlineKeyboardMarkup
             if day == 0:
                 row.append(InlineKeyboardButton(text=" ", callback_data="ignore"))
             else:
-                day_str = str(day).rjust(2, '0')
+                day_str = str(day).rjust(2, "0")
                 row.append(InlineKeyboardButton(text=day_str, callback_data=f"day_{day}"))
         calendar_rows.append(row)
     cancel_row = [InlineKeyboardButton(text="❌", callback_data="menu_events")]
@@ -150,9 +157,12 @@ def create_calendar(year: int = None, month: int = None) -> InlineKeyboardMarkup
     keyboard = InlineKeyboardMarkup(inline_keyboard=calendar_rows)
     return keyboard
 
+
 def get_notification_inline():
     buttons = [
-        [InlineKeyboardButton(text="❌ delete", callback_data="delete_notification"),
-        InlineKeyboardButton(text="✎ edit", callback_data="edit_notification")],
+        [
+            InlineKeyboardButton(text="❌ delete", callback_data="delete_notification"),
+            InlineKeyboardButton(text="✎ edit", callback_data="edit_notification"),
+        ],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)

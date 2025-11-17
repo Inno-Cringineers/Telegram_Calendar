@@ -1,0 +1,75 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: "Enable tmate debugging"
+        default: false
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: "app/src/requirements.txt"
+      - working-directory: app/src
+        run: |
+          pip install -r requirements.txt -r requirements-dev.txt
+      - name: Run ruff check
+        working-directory: app/src
+        run: ruff check .
+      - name: Run ruff format check
+        working-directory: app/src
+        run: ruff format --check .
+      - name: Run mypy
+        working-directory: app/src
+        run: mypy . --ignore-missing-imports
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: "app/src/requirements.txt"
+      - name: Run tests
+        working-directory: app/src
+        env:
+          TELEGRAM_TOKEN: dummy_token_for_ci
+          DB_URL: "sqlite:///:memory:"
+        run: |
+          pip install -r requirements.txt -r requirements-dev.txt
+          pytest . -v --cov=. --cov-report=xml
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - working-directory: app
+        run: docker build -t telegram-calendar-bot:test .
+      - run: |
+          docker run --rm \
+            -e TELEGRAM_TOKEN=dummy_token_for_ci \
+            -e DB_URL=sqlite:////app/data/storage.db \
+            telegram-calendar-bot:test python -c "import sys; sys.exit(0)"
+
+  debug:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mxschmitt/action-tmate@v3
+        with:
+          detached: true

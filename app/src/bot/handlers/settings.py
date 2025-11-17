@@ -1,10 +1,16 @@
-from aiogram import Router, F
+from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
-from bot.states.states import SettingsStates
-from bot.keyboards.inline import *
+from bot.keyboards.inline import (
+    get_back_button,
+    get_daily_plan_time_menu_inline,
+    get_language_menu_inline,
+    get_quiet_hours_menu_inline,
+    get_settings_menu_inline,
+)
 from bot.logger import logger
+from bot.states.states import SettingsStates
 
 router = Router()
 
@@ -14,13 +20,12 @@ async def open_settings_menu(query: CallbackQuery, state: FSMContext):
     """Open settings menu."""
     user_id = query.from_user.id
     logger.info(f"User {user_id} opened settings menu")
-    
+
     await state.set_state(SettingsStates.in_settings)
-    
-    if query.message and hasattr(query.message, 'edit_text'):
+
+    if query.message and hasattr(query.message, "edit_text"):
         await query.message.edit_text(
-            "⚙️ <b>Settings</b>\n\n"
-            "Choose a setting to modify:",
+            "⚙️ <b>Settings</b>\n\nChoose a setting to modify:",
             parse_mode="HTML",
             reply_markup=get_settings_menu_inline(),
         )
@@ -31,11 +36,11 @@ async def settings_timezone(query: CallbackQuery, state: FSMContext):
     """Handle timezone setting."""
     user_id = query.from_user.id
     logger.info(f"User {user_id} is editing timezone")
-    
+
     await state.set_state(SettingsStates.editing_timezone)
     await query.answer("✅ Timezone setting selected")
-    
-    if query.message and hasattr(query.message, 'edit_text'):
+
+    if query.message and hasattr(query.message, "edit_text"):
         await query.message.edit_text(
             "🌍 Timezone\n\n"
             "Current timezone: UTC+2 (Mocked)\n\n"
@@ -79,11 +84,11 @@ async def settings_language(query: CallbackQuery, state: FSMContext):
     """Handle language setting."""
     user_id = query.from_user.id
     logger.info(f"User {user_id} is editing language")
-    
+
     await state.set_state(SettingsStates.editing_language)
     await query.answer("✅ Language setting selected")
-    
-    if query.message and hasattr(query.message, 'edit_text'):
+
+    if query.message and hasattr(query.message, "edit_text"):
         await query.message.edit_text(
             "🇬🇧 <b>Language</b>\n\n"
             "Current language: English (Mocked)\n\n"
@@ -98,11 +103,11 @@ async def settings_quiet_hours(query: CallbackQuery, state: FSMContext):
     """Handle quiet hours setting."""
     user_id = query.from_user.id
     logger.info(f"User {user_id} is editing quiet hours")
-    
+
     await state.set_state(SettingsStates.editing_quiet_hours)
     await query.answer("✅ Quiet hours setting selected")
-    
-    if query.message and hasattr(query.message, 'edit_text'):
+
+    if query.message and hasattr(query.message, "edit_text"):
         await query.message.edit_text(
             "🔇 <b>Quiet Hours</b>\n\n"
             "Current quiet hours: 22:00 - 08:00 (Mocked)\n\n"
@@ -117,11 +122,11 @@ async def settings_daily_plans_time(query: CallbackQuery, state: FSMContext):
     """Handle daily plans time setting."""
     user_id = query.from_user.id
     logger.info(f"User {user_id} is editing daily plans time")
-    
+
     await state.set_state(SettingsStates.editing_daily_plans_time)
     await query.answer("✅ Daily plans time setting selected")
-    
-    if query.message and hasattr(query.message, 'edit_text'):
+
+    if query.message and hasattr(query.message, "edit_text"):
         await query.message.edit_text(
             "⏰ <b>Daily Plans Time</b>\n\n"
             "Current time: 09:00 (Mocked)\n\n"
