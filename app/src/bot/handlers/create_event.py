@@ -3,7 +3,7 @@ from datetime import datetime
 from aiogram import F, Router
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, InaccessibleMessage, Message
+from aiogram.types import CallbackQuery, Message
 
 from bot.keyboards.inline import (
     get_back_button,
