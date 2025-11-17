@@ -24,8 +24,15 @@ jobs:
       - working-directory: app/src
         run: |
           pip install -r requirements.txt -r requirements-dev.txt
-          ruff check . && ruff format --check .
-          mypy . --ignore-missing-imports
+      - name: Run ruff check
+        working-directory: app/src
+        run: ruff check .
+      - name: Run ruff format check
+        working-directory: app/src
+        run: ruff format --check .
+      - name: Run mypy
+        working-directory: app/src
+        run: mypy . --ignore-missing-imports
 
   test:
     runs-on: ubuntu-latest
