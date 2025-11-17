@@ -23,8 +23,8 @@ async def start_handler(message: Message):
         # process payload
         if message.from_user is None:
             return
-        user_id = message.from_user.id
-        logger.info(f"User {user_id} clicked deep-link: {payload}")
+        deep_link_user_id = message.from_user.id
+        logger.info(f"User {deep_link_user_id} clicked deep-link: {payload}")
 
         # delete message /start
         await message.delete()

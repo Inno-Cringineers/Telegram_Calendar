@@ -29,8 +29,8 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 warn_no_return = true
 ignore_missing_imports = true
-explicit_package_bases = true
-namespace_packages = true
+explicit_package_bases = false
+namespace_packages = false
 
 [[tool.mypy.overrides]]
 module = [
@@ -38,6 +38,7 @@ module = [
     "aiosqlite.*",
     "sqlalchemy.*",
     "yaml.*",
+    "bot.*",
 ]
 ignore_missing_imports = true
 

@@ -1,4 +1,5 @@
 from collections.abc import AsyncGenerator
+from typing import cast
 
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -14,7 +15,7 @@ class Base(DeclarativeBase):
     # Auto-generate __tablename__ from class name
     @declared_attr.directive
     def __tablename__(cls) -> str:
-        return cls.__name__.lower()
+        return cast(str, cls.__name__).lower()
 
 
 # engine factory
