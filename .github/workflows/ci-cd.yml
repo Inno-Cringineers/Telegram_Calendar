@@ -43,7 +43,7 @@ jobs:
           DB_URL: "sqlite:///:memory:"
         run: |
           pip install -r requirements.txt pytest pytest-asyncio pytest-cov
-          pytest . -v --cov=. --cov-report=xml
+          pytest . -v --cov=. --cov-report=xml --rootdir=.
 
   docker-build:
     runs-on: ubuntu-latest
