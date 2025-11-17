@@ -32,5 +32,6 @@ def test_main_menu_keyboard():
     for i, (expected_text, expected_callback) in enumerate(expected_buttons):
         button = keyboard.inline_keyboard[i][0]
         assert button.text == expected_text, f"Button {i} text mismatch"
-        assert button.callback_data == expected_callback, f"Button {i} callback_data mismatch"
-
+        assert (
+            button.callback_data == expected_callback
+        ), f"Button {i} callback_data mismatch"
