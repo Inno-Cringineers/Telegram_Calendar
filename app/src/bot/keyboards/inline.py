@@ -1,5 +1,6 @@
 import calendar
 from datetime import datetime
+from typing import Optional
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -122,7 +123,7 @@ def get_event_confirmation_inline():
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-def create_calendar(year: int = None, month: int = None) -> InlineKeyboardMarkup:
+def create_calendar(year: Optional[int] = None, month: Optional[int] = None) -> InlineKeyboardMarkup:
     now = datetime.now()
     year = year or now.year
     month = month or now.month

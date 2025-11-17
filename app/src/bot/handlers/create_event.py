@@ -3,7 +3,7 @@ from datetime import datetime
 from aiogram import F, Router
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, InaccessibleMessage, Message
 
 from bot.keyboards.inline import (
     get_back_button,
@@ -47,14 +47,16 @@ async def process_create_new_event_callback(query: CallbackQuery, state: FSMCont
 
     await state.set_state(CreateEventStates.waiting_for_title)
 
-    await query.message.edit_text("📝 Enter event title:\n\n", reply_markup=get_cancel_keyboard("events_cancel"))
+    if isinstance(query.message, Message):
+        await query.message.edit_text("📝 Enter event title:\n\n", reply_markup=get_cancel_keyboard("events_cancel"))
 
 
 @router.callback_query(F.data == "events_cancel", StateFilter(CreateEventStates))
 async def cancel_event_creation(query: CallbackQuery, state: FSMContext):
     """Cancel event creation."""
     await state.clear()
-    await query.message.edit_text("❌ Event creation cancelled", reply_markup=get_back_button("menu_events"))
+    if isinstance(query.message, Message):
+        await query.message.edit_text("❌ Event creation cancelled", reply_markup=get_back_button("menu_events"))
 
 
 @router.message(CreateEventStates.waiting_for_title)
@@ -98,15 +100,23 @@ async def skip_event_description(query: CallbackQuery, state: FSMContext):
     await state.update_data(description=None)
     await state.set_state(CreateEventStates.waiting_for_start_date)
 
-    await query.message.edit_text(
-        "📅 Enter start date:\n\nFormat: DD.MM.YYYY (example: 25.12.2025)",
-        reply_markup=get_cancel_keyboard("events_cancel"),
-    )
+    if isinstance(query.message, Message):
+        await query.message.edit_text(
+            "📅 Enter start date:\n\nFormat: DD.MM.YYYY (example: 25.12.2025)",
+            reply_markup=get_cancel_keyboard("events_cancel"),
+        )
 
 
 @router.message(CreateEventStates.waiting_for_start_date)
 async def process_event_date(message: Message, state: FSMContext):
     """Process event date with validation."""
+    if message.text is None:
+        await message.answer(
+            "❌ Incorrect date format\n\nFormat: DD.MM.YYYY (example: 25.12.2025)",
+            reply_markup=get_cancel_keyboard("events_cancel"),
+        )
+        return
+    
     date_str = message.text.strip()
 
     if not is_valid_date(date_str):
@@ -126,6 +136,10 @@ async def process_event_date(message: Message, state: FSMContext):
 @router.message(CreateEventStates.waiting_for_start_time)
 async def process_event_time(message: Message, state: FSMContext):
     """Process event time with validation."""
+    if message.text is None:
+        await message.answer("❌ Incorrect time format\n\nUse format: HH:MM (example: 14:30)")
+        return
+    
     time_str = message.text.strip()
 
     if not is_valid_time(time_str):
@@ -170,9 +184,10 @@ async def confirm_event(query: CallbackQuery, state: FSMContext):
     # await save_event(user_id, data)
 
     await query.answer("✅ Event created!")
-    await query.message.edit_text(
-        "✅ <b>Event successfully created</b>",
-        parse_mode="HTML",
-        reply_markup=get_back_button("menu_events"),
-    )
+    if isinstance(query.message, Message):
+        await query.message.edit_text(
+            "✅ <b>Event successfully created</b>",
+            parse_mode="HTML",
+            reply_markup=get_back_button("menu_events"),
+        )
     await state.clear()
