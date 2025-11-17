@@ -15,7 +15,7 @@ async def start_handler(message: Message):
     # checking 'tz_utc3' из ?start=tz_utc3
     if message.text is None:
         return
-    
+
     parts = message.text.split(maxsplit=1)
     payload = parts[1] if len(parts) > 1 else None
 

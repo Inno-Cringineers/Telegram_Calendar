@@ -116,7 +116,7 @@ async def process_event_date(message: Message, state: FSMContext):
             reply_markup=get_cancel_keyboard("events_cancel"),
         )
         return
-    
+
     date_str = message.text.strip()
 
     if not is_valid_date(date_str):
@@ -139,7 +139,7 @@ async def process_event_time(message: Message, state: FSMContext):
     if message.text is None:
         await message.answer("❌ Incorrect time format\n\nUse format: HH:MM (example: 14:30)")
         return
-    
+
     time_str = message.text.strip()
 
     if not is_valid_time(time_str):
