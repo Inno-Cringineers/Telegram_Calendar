@@ -1,4 +1,5 @@
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
+
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -50,7 +51,7 @@ def get_session_maker(engine):
 # database initializer (creates tables)
 async def init_db(engine):
     # needs to import models to register them
-    from bot.models.event import Event
+    from bot.models.event import Event  # noqa: F401
 
     # create tables
     async with engine.begin() as conn:

@@ -1,6 +1,8 @@
+from collections.abc import Awaitable, Callable
+from typing import Any
+
 from aiogram import BaseMiddleware
-from typing import Callable, Dict, Any, Awaitable
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from bot.database import get_session
 
 
@@ -13,9 +15,9 @@ class DatabaseMiddleware(BaseMiddleware):
     # inject session in handler
     async def __call__(
         self,
-        handler: Callable[[Any, Dict[str, Any]], Awaitable[Any]],
+        handler: Callable[[Any, dict[str, Any]], Awaitable[Any]],
         event: Any,
-        data: Dict[str, Any],
+        data: dict[str, Any],
     ) -> Any:
         async for session in get_session(self.session_maker):
             data["session"] = session

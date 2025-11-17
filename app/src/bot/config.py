@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+
 import yaml
 
 
@@ -35,7 +35,7 @@ class Config:
     bot: BotConfig
 
 
-def load_yaml_config(config_path: Optional[str] = None) -> dict:
+def load_yaml_config(config_path: str | None = None) -> dict:
     """Load configuration from YAML file."""
     if config_path is None:
         # Default config path relative to this file
@@ -46,7 +46,7 @@ def load_yaml_config(config_path: Optional[str] = None) -> dict:
     if not config_path_obj.exists():
         raise FileNotFoundError(f"Config file not found: {config_path_obj}")
 
-    with open(config_path_obj, "r", encoding="utf-8") as f:
+    with open(config_path_obj, encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
 

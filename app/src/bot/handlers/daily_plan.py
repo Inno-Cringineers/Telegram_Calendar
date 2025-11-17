@@ -1,9 +1,8 @@
-from aiogram import Router, F
+from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
-from bot.states.states import MainMenuStates, EventsMenuStates
-from bot.keyboards.inline import *
+from bot.keyboards.inline import get_back_button, get_notification_inline
 from bot.logger import logger
 
 router = Router()
@@ -29,7 +28,7 @@ Don’t repeat
 source: Outlook (Link to calendar)
 """
     event_2 = """
-Lunch with colleagues  
+Lunch with colleagues
 12:00-13:00
 Repeat every 1 day
 15 min before remind

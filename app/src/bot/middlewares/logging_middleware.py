@@ -1,7 +1,8 @@
-from typing import Any, Callable, Dict, Awaitable, Union
-from aiogram import BaseMiddleware
-from aiogram.types import Message, CallbackQuery, TelegramObject
 import time
+from collections.abc import Awaitable, Callable
+
+from aiogram import BaseMiddleware
+from aiogram.types import CallbackQuery, Message, TelegramObject
 
 from bot.logger import logger
 
@@ -11,9 +12,9 @@ class MessageLoggingMiddleware(BaseMiddleware):
 
     async def __call__(
         self,
-        handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
+        handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
         event: TelegramObject,
-        data: Dict[str, Any],
+        data: dict[str, Any],
     ) -> Any:
         """
         Log the message event and measure execution time.
@@ -53,9 +54,9 @@ class CallbackQueryLoggingMiddleware(BaseMiddleware):
 
     async def __call__(
         self,
-        handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
+        handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
         event: TelegramObject,
-        data: Dict[str, Any],
+        data: dict[str, Any],
     ) -> Any:
         """
         Log the callback query event and measure execution time.

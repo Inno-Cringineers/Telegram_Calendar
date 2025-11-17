@@ -1,3 +1,6 @@
+import calendar
+from datetime import datetime
+
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
@@ -119,10 +122,6 @@ def get_event_confirmation_inline():
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-from datetime import datetime
-import calendar
-
-
 def create_calendar(year: int = None, month: int = None) -> InlineKeyboardMarkup:
     now = datetime.now()
     year = year or now.year
@@ -133,9 +132,9 @@ def create_calendar(year: int = None, month: int = None) -> InlineKeyboardMarkup
 
     # Month and Year header
     header = [
-        InlineKeyboardButton(text=f"<<", callback_data="prev_month"),
+        InlineKeyboardButton(text="<<", callback_data="prev_month"),
         InlineKeyboardButton(text=f"📅  {month_name} {year}", callback_data="ignore"),
-        InlineKeyboardButton(text=f">>", callback_data="next_month"),
+        InlineKeyboardButton(text=">>", callback_data="next_month"),
     ]
     calendar_rows.append(header)
 

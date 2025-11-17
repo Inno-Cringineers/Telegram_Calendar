@@ -1,14 +1,18 @@
-from aiogram import Router, F
-from aiogram.filters import Command, StateFilter
-from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
 from datetime import datetime
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from bot.states.states import EventsMenuStates
-from bot.states.states import CreateEventStates
-from bot.keyboards.inline import *
+from aiogram import F, Router
+from aiogram.filters import StateFilter
+from aiogram.fsm.context import FSMContext
+from aiogram.types import CallbackQuery, Message
+
+from bot.keyboards.inline import (
+    get_back_button,
+    get_cancel_keyboard,
+    get_event_confirmation_inline,
+    get_skip_keyboard,
+)
 from bot.logger import logger
+from bot.states.states import CreateEventStates, EventsMenuStates
 
 router = Router()
 

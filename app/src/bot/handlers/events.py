@@ -1,10 +1,15 @@
-from aiogram import Router, F
+from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
-from bot.states.states import EventsMenuStates
-from bot.keyboards.inline import *
+from bot.keyboards.inline import (
+    create_calendar,
+    get_back_button,
+    get_events_create_inline,
+    get_events_menu_inline,
+)
 from bot.logger import logger
+from bot.states.states import EventsMenuStates
 
 router = Router()
 
