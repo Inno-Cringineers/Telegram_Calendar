@@ -23,7 +23,7 @@ jobs:
           cache-dependency-path: "app/src/requirements.txt"
       - working-directory: app/src
         run: |
-          pip install -r requirements.txt ruff mypy
+          pip install -r requirements.txt -r requirements-dev.txt
           ruff check . && ruff format --check .
           mypy . --ignore-missing-imports
 
@@ -42,7 +42,7 @@ jobs:
           TELEGRAM_TOKEN: dummy_token_for_ci
           DB_URL: "sqlite:///:memory:"
         run: |
-          pip install -r requirements.txt pytest pytest-asyncio pytest-cov
+          pip install -r requirements.txt -r requirements-dev.txt
           pytest . -v --cov=. --cov-report=xml
 
   docker-build:
