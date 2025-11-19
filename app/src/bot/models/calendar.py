@@ -5,10 +5,9 @@ This module defines the `Calendar` class, which represents user-linked calendars
 from datetime import datetime
 from typing import Literal
 
+from database.database import Base
 from sqlalchemy import Boolean, DateTime, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, validates
-
-from src.bot.database import Base
 
 
 class Calendar(Base):

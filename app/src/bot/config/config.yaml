@@ -1,5 +1,7 @@
 # Telegram Calendar Bot Configuration
 
+# TODO: REFINE CONFIG
+
 # Logger settings
 logger:
   # Console output level

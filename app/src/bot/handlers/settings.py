@@ -1,16 +1,15 @@
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
-
-from bot.keyboards.inline import (
+from keyboards.inline import (
     get_back_button,
     get_daily_plan_time_menu_inline,
     get_language_menu_inline,
     get_quiet_hours_menu_inline,
     get_settings_menu_inline,
 )
-from bot.logger import logger
-from bot.states.states import SettingsStates
+from logger.logger import logger
+from states.states import SettingsStates
 
 router = Router()
 

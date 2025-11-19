@@ -2,16 +2,15 @@ import asyncio
 
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
-
-from bot.config import load_config
-from bot.database import get_engine, get_session_maker, init_db
-from bot.logger import logger, setup_logger
-from bot.middlewares.database_middlware import DatabaseMiddleware
-from bot.middlewares.logging_middleware import (
+from config.config import load_config
+from database.database import get_engine, get_session_maker, init_db
+from logger.logger import logger, setup_logger
+from middlewares.database_middlware import DatabaseMiddleware
+from middlewares.logging_middleware import (
     CallbackQueryLoggingMiddleware,
     MessageLoggingMiddleware,
 )
-from bot.router import router
+from router.router import router
 
 
 async def setup_database(dp: Dispatcher, db_url: str):

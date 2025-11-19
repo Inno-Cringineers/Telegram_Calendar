@@ -15,8 +15,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
-from src.bot.database import Base
-from src.bot.models.settings import Settings
+from bot.database.database import Base
+from bot.models.settings import Settings
 
 
 # TODO: default_reminder_offset should be in seconds

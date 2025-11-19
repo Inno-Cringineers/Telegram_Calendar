@@ -4,8 +4,7 @@ from typing import Any
 
 from aiogram import BaseMiddleware
 from aiogram.types import CallbackQuery, Message, TelegramObject
-
-from bot.logger import logger
+from logger.logger import logger
 
 
 class MessageLoggingMiddleware(BaseMiddleware):

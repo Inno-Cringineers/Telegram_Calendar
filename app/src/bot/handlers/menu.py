@@ -2,10 +2,9 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
-
-from bot.keyboards.inline import get_main_menu_inline
-from bot.logger import logger
-from bot.states.states import MainMenuStates
+from keyboards.inline import get_main_menu_inline
+from logger.logger import logger
+from states.states import MainMenuStates
 
 router = Router()
 

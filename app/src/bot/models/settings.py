@@ -5,10 +5,9 @@ This module defines the `Settings` class, which represents user settings in the 
 from datetime import time
 from typing import Literal
 
+from database.database import Base
 from sqlalchemy import CheckConstraint, Integer, String, Time
 from sqlalchemy.orm import Mapped, mapped_column, validates
-
-from src.bot.database import Base
 
 # TODO: Think about how timezones should be presented in system
 # TODO: Specify all possible timezones (may be in enum)

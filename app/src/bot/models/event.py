@@ -6,12 +6,11 @@ import re
 from datetime import UTC, datetime, timedelta
 from typing import Literal
 
+from database.database import Base
+from models.calendar import Calendar
+from models.settings import Settings
 from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship, validates
-
-from src.bot.database import Base
-from src.bot.models.calendar import Calendar
-from src.bot.models.settings import Settings
 
 # Simple regex for RRULE validation (supports basic FREQ, UNTIL, COUNT, INTERVAL)
 RRULE_REGEX = re.compile(r"^(FREQ=(DAILY|WEEKLY|MONTHLY|YEARLY))(;INTERVAL=\d+)?(;COUNT=\d+)?(;UNTIL=\d{8}T\d{6}Z)?$")
