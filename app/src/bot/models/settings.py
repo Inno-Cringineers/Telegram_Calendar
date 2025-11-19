@@ -8,7 +8,7 @@ from typing import Literal
 from sqlalchemy import CheckConstraint, Integer, String, Time
 from sqlalchemy.orm import Mapped, mapped_column, validates
 
-from bot.database import Base
+from src.bot.database import Base
 
 # TODO: Think about how timezones should be presented in system
 # TODO: Specify all possible timezones (may be in enum)
