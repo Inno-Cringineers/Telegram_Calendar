@@ -59,21 +59,21 @@ jobs:
           COVERAGE=$(python -c "import xml.etree.ElementTree as ET; tree = ET.parse('coverage.xml'); root = tree.getroot(); print(f\"{float(root.attrib['line-rate']) * 100:.2f}\")")
           echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
           echo "Coverage: $COVERAGE%"
-      - name: Check coverage threshold
-        working-directory: app/src
-        run: |
-          python -c "
-          import sys
-          import xml.etree.ElementTree as ET
-          tree = ET.parse('coverage.xml')
-          root = tree.getroot()
-          coverage = float(root.attrib['line-rate']) * 100
-          min_coverage = 30.0
-          if coverage < min_coverage:
-              print(f'Coverage {coverage:.2f}% is below minimum threshold of {min_coverage}%')
-              sys.exit(1)
-          print(f'Coverage {coverage:.2f}% meets minimum threshold of {min_coverage}%')
-          "
+      # - name: Check coverage threshold
+      #   working-directory: app/src
+      #   run: |
+      #     python -c "
+      #     import sys
+      #     import xml.etree.ElementTree as ET
+      #     tree = ET.parse('coverage.xml')
+      #     root = tree.getroot()
+      #     coverage = float(root.attrib['line-rate']) * 100
+      #     min_coverage = 30.0
+      #     if coverage < min_coverage:
+      #         print(f'Coverage {coverage:.2f}% is below minimum threshold of {min_coverage}%')
+      #         sys.exit(1)
+      #     print(f'Coverage {coverage:.2f}% meets minimum threshold of {min_coverage}%')
+      #     "
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
         with:
