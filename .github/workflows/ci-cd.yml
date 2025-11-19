@@ -51,7 +51,7 @@ jobs:
           TELEGRAM_TOKEN: dummy_token_for_ci
           DB_URL: "sqlite:///:memory:"
         run: |
-          pytest --cov=. --cov-report=xml --cov-report=html
+          pytest --cov=. --cov-report=xml --cov-report=html --cov-fail-under=30
       - name: Upload coverage artifacts
         uses: actions/upload-artifact@v4
         with:
