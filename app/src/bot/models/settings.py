@@ -5,8 +5,8 @@ This module defines the `Settings` class, which represents user settings in the 
 from datetime import time
 from typing import Literal
 
-from sqlalchemy import CheckConstraint, Column, Integer, String, Time
-from sqlalchemy.orm import validates
+from sqlalchemy import CheckConstraint, Integer, String, Time
+from sqlalchemy.orm import Mapped, mapped_column, validates
 
 from bot.database import Base
 
@@ -32,19 +32,21 @@ class Settings(Base):
             default_reminder_time: time - The default time when notification will be sent before an event. By default - 15 minutes.
     """  # noqa: E501
 
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    timezone = Column(String, default="UTC+2", nullable=False)
-    language = Column(String, default="en", nullable=False)
+    timezone: Mapped[str] = mapped_column(String, default="UTC+2", nullable=False)
+    language: Mapped[str] = mapped_column(String, default="en", nullable=False)
 
-    quiet_hours_start = Column(Time, nullable=True)
-    quiet_hours_end = Column(Time, nullable=True)
 
-    daily_plans_time = Column(Time, nullable=True)
+    quiet_hours_start: Mapped[time | None] = mapped_column(Time, nullable=True)
+    quiet_hours_end: Mapped[time | None] = mapped_column(Time, nullable=True)
 
-    # Default reminder time is 15 minutes
-    default_reminder_time = Column(Time, nullable=False, default=time(0, 15))
+    daily_plans_time: Mapped[time | None] = mapped_column(Time, nullable=True)
+
+    default_reminder_time: Mapped[time] = mapped_column(
+        Time, nullable=False, default=time(0, 15) # Default reminder time is 15 minutes
+    )
 
     # --- SQL-level constraints ---
     __table_args__ = (
