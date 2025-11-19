@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    paths: ["app/**"]
+    paths: ["app/**", ".github/workflows/**"]
   workflow_dispatch:
     inputs:
       debug_enabled:
