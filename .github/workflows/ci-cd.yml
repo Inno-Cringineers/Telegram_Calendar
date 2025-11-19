@@ -59,8 +59,8 @@ jobs:
           path: |
             coverage.xml
             htmlcov/
-
       - name: Add coverage summary
+        working-directory: app/src
         run: |
           coverage report > coverage_summary.txt
           echo "## Coverage Summary" >> $GITHUB_STEP_SUMMARY
