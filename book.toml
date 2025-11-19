@@ -8,6 +8,8 @@ src = "docs"
 [output.html]
 default-theme = "navy"
 preferred-dark-theme = "navy"
+# Set base URL for GitHub Pages
+site-url = "https://inno-cringineers.github.io/Telegram_Calendar/"
 
 [output.linkcheck]
 follow-web-links = false
