@@ -28,7 +28,7 @@ class Settings(Base):
         quiet_hours_start: time - The start time of the quiet hours for the user. If null - quiet hours are disabled.
         quiet_hours_end: time - The end time of the quiet hours for the user. Not null if quiet hours are enabled.
         daily_plans_time: time - The time for daily plans for the user. If null - daily plans are disabled.
-        default_reminder_time: time - The default time when notification will be sent before an event. By default - 15 minutes.
+        default_reminder_offset: int - The default seconds before start to send reminder. By default - 15 minutes.
     """  # noqa: E501
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -42,10 +42,10 @@ class Settings(Base):
 
     daily_plans_time: Mapped[time | None] = mapped_column(Time, nullable=True)
 
-    default_reminder_time: Mapped[time] = mapped_column(
-        Time,
+    default_reminder_offset: Mapped[int] = mapped_column(
+        Integer,
         nullable=False,
-        default=time(0, 15),  # Default reminder time is 15 minutes
+        default=15 * 60,  # 15 minutes in seconds
     )
 
     # --- SQL-level constraints ---
@@ -75,4 +75,17 @@ class Settings(Base):
                     raise ValueError("quiet_hours_end cannot be earlier than quiet_hours_start.")
             elif self.quiet_hours_start is not None and value is None:
                 raise ValueError("quiet_hours_end must be set if quiet_hours_start is not NULL.")
+        return value
+
+    @validates("default_reminder_offset")
+    def validate_default_reminder_offset(self, key: Literal["default_reminder_offset"], value: int) -> int:
+        if value is None:
+            raise ValueError("default_reminder_offset cannot be NULL.")
+
+        if not isinstance(value, int):
+            raise ValueError("default_reminder_offset must be an integer (seconds).")
+
+        if value < 0:
+            raise ValueError("default_reminder_offset must be non-negative.")
+
         return value

@@ -18,6 +18,7 @@ from src.bot.database import Base
 from src.bot.models.settings import Settings
 
 
+# TODO: default_reminder_offset should be in seconds
 @pytest.fixture
 def session():
     """
@@ -110,16 +111,16 @@ def test_sql_end_must_be_after_or_equal_start(session):
 # ---------------------------------------------------------------------------
 
 
-def test_default_reminder_time_value(session):
+def test_default_reminder_offset_value(session):
     """
-    default_reminder_time must default to 15 minutes if not provided explicitly.
+    default_reminder_offset must default to 15 minutes if not provided explicitly.
     """
     settings = Settings(user_id=1)
 
     session.add(settings)
     session.flush()
 
-    assert settings.default_reminder_time == time(0, 15)
+    assert settings.default_reminder_offset == time(0, 15)
 
 
 def test_default_timezone_value(session):
