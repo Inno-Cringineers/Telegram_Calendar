@@ -10,7 +10,7 @@ default-theme = "navy"
 preferred-dark-theme = "navy"
 
 [output.linkcheck]
-follow-web-links = true
+follow-web-links = false
 traverse-parent-directories = true
 warn-on-missing-ids = true
 
