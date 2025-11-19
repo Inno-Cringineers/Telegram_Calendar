@@ -14,7 +14,6 @@ from src.bot.database import Base
 # TODO: Specify all possible timezones (may be in enum)
 # TODO: Specify all possible languages (may be in enum)
 # TODO: Default values for all settings should be in config
-# TODO: Unit tests, check types, constrains
 
 
 class Settings(Base):
