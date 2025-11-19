@@ -51,46 +51,22 @@ jobs:
           TELEGRAM_TOKEN: dummy_token_for_ci
           DB_URL: "sqlite:///:memory:"
         run: |
-          pytest . -v --cov=. --cov-report=xml --cov-report=html --cov-report=term
-      - name: Extract coverage percentage
-        id: coverage
-        working-directory: app/src
-        run: |
-          COVERAGE=$(python -c "import xml.etree.ElementTree as ET; tree = ET.parse('coverage.xml'); root = tree.getroot(); print(f\"{float(root.attrib['line-rate']) * 100:.2f}\")")
-          echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
-          echo "Coverage: $COVERAGE%"
-      # - name: Check coverage threshold
-      #   working-directory: app/src
-      #   run: |
-      #     python -c "
-      #     import sys
-      #     import xml.etree.ElementTree as ET
-      #     tree = ET.parse('coverage.xml')
-      #     root = tree.getroot()
-      #     coverage = float(root.attrib['line-rate']) * 100
-      #     min_coverage = 30.0
-      #     if coverage < min_coverage:
-      #         print(f'Coverage {coverage:.2f}% is below minimum threshold of {min_coverage}%')
-      #         sys.exit(1)
-      #     print(f'Coverage {coverage:.2f}% meets minimum threshold of {min_coverage}%')
-      #     "
-      - name: Upload coverage reports
+          pytest --cov=. --cov-report=xml --cov-report=html
+      - name: Upload coverage artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-reports
+          name: coverage-report
           path: |
-            app/src/coverage.xml
-            app/src/htmlcov/
-          retention-days: 30
-      - name: Add coverage to job summary
-        working-directory: app/src
+            coverage.xml
+            htmlcov/
+
+      - name: Add coverage summary
         run: |
-          COVERAGE=$(python -c "import xml.etree.ElementTree as ET; tree = ET.parse('coverage.xml'); root = tree.getroot(); print(f\"{float(root.attrib['line-rate']) * 100:.2f}\")")
-          echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Coverage: $COVERAGE%**" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Coverage reports are available as artifacts." >> $GITHUB_STEP_SUMMARY
+          coverage report > coverage_summary.txt
+          echo "## Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          cat coverage_summary.txt >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
   docker-build:
     runs-on: ubuntu-latest
