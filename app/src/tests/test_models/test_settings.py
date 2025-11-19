@@ -39,13 +39,14 @@ def test_quiet_hours_end_required_if_start(session):
     If quiet_hours_start is set, quiet_hours_end must NOT be None.
     ORM validator should raise ValueError BEFORE sending query to DB.
     """
-    settings = Settings(
-        user_id=1,
-        quiet_hours_start=time(10, 0),
-        quiet_hours_end=None,  # Invalid
-    )
 
     with pytest.raises(ValueError):
+        settings = Settings(
+            user_id=1,
+            quiet_hours_start=time(10, 0),
+            quiet_hours_end=None,  # Invalid
+        )
+
         session.add(settings)
         session.flush()  # flush triggers ORM validation
 
@@ -55,13 +56,14 @@ def test_quiet_hours_end_cannot_be_before_start(session):
     quiet_hours_end must be >= quiet_hours_start.
     ORM validator should raise ValueError.
     """
-    settings = Settings(
-        user_id=1,
-        quiet_hours_start=time(10, 0),
-        quiet_hours_end=time(9, 0),  # Invalid
-    )
-
     with pytest.raises(ValueError):
+
+        settings = Settings(
+            user_id=1,
+            quiet_hours_start=time(10, 0),
+            quiet_hours_end=time(9, 0),  # Invalid
+        )
+
         session.add(settings)
         session.flush()
 
@@ -79,7 +81,7 @@ def test_sql_constraint_end_required_if_start(session):
     settings = Settings(
         user_id=1,
         quiet_hours_start=time(10, 0),
-        quiet_hours_end=time(10, 0),  # Valid
+        quiet_hours_end=time(12, 0),  # Valid
     )
 
     session.add(settings)
@@ -90,16 +92,16 @@ def test_sql_end_must_be_after_or_equal_start(session):
     """
     Ensure SQL CheckConstraint enforces quiet_hours_end >= quiet_hours_start.
     """
-    settings = Settings(
-        user_id=1,
-        quiet_hours_start=time(10, 0),
-        quiet_hours_end=time(8, 0),  # Violates SQL constraint
-    )
+    with pytest.raises(ValueError):
+        settings = Settings(
+            user_id=1,
+            quiet_hours_start=time(10, 0),
+            quiet_hours_end=time(8, 0),  # Violates SQL constraint
+        )
+        session.add(settings)
 
-    session.add(settings)
-
-    with pytest.raises(IntegrityError):
-        session.commit()  # SQL constraint triggers only on commit
+        with pytest.raises(IntegrityError):
+            session.commit()  # SQL constraint triggers only on commit
 
 
 # ---------------------------------------------------------------------------

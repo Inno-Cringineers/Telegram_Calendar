@@ -69,18 +69,15 @@ class Settings(Base):
         key: Literal["quiet_hours_start", "quiet_hours_end"],
         value: time | None
     ) -> time | None:
-
-        # Temporary dict with current values
-        start: time | None = value if key == "quiet_hours_start" else self.quiet_hours_start # type: ignore (pylance does not understand that ORM fields have type)
-        end: time | None = value if key == "quiet_hours_end" else self.quiet_hours_end # type: ignore (so just ignore pylance warnings)
-
-        # If start is set — end must NOT be None
-        if start is not None and end is None:
-            raise ValueError("quiet_hours_end must be set if quiet_hours_start is not NULL.")
-
-        # If both set — end must be greater than start
-        if start is not None and end is not None and end < start:
-            raise ValueError("quiet_hours_end cannot be earlier than quiet_hours_start.")
-
+        if key == "quiet_hours_start":
+            if value is not None and self.quiet_hours_end is not None:
+                if self.quiet_hours_end <= value:
+                    raise ValueError("quiet_hours_end cannot be earlier than quiet_hours_start.")
+        elif key == "quiet_hours_end":
+            if self.quiet_hours_start is not None and value is not None:
+                if value <= self.quiet_hours_start:
+                    raise ValueError("quiet_hours_end cannot be earlier than quiet_hours_start.")
+            elif self.quiet_hours_start is not None and value is None:
+                raise ValueError("quiet_hours_end must be set if quiet_hours_start is not NULL.")
         return value
 
