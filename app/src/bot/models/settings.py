@@ -1,0 +1,84 @@
+"""
+This module defines the `Settings` class, which represents user settings in the application.
+"""
+
+from datetime import time
+from typing import Literal
+
+from sqlalchemy import CheckConstraint, Column, Integer, String, Time
+from sqlalchemy.orm import validates
+
+from bot.database import Base
+
+# TODO: Think about how timezones should be presented in system
+# TODO: Specify all possible timezones (may be in enum)
+# TODO: Specify all possible languages (may be in enum)
+# TODO: Default values for all settings should be in config
+# TODO: Unit tests, check types, constrains
+
+
+class Settings(Base):
+    """
+        Represents user settings in the application.
+
+        Attributes:
+            id: int - The primary key of the settings record.
+            user_id: int - The telegram ID of the user for whom the settings are stored.
+            timezone: string - The timezone of the user (e.g., "UTC+2", "UTC-3", etc.).
+            language: string - The language of the user (e.g., "en", "ru", etc.).
+            quiet_hours_start: time - The start time of the quiet hours for the user. If null - quiet hours are disabled.
+            quiet_hours_end: time - The end time of the quiet hours for the user. Not null if quiet hours are enabled.
+            daily_plans_time: time - The time for daily plans for the user. If null - daily plans are disabled.
+            default_reminder_time: time - The default time when notification will be sent before an event. By default - 15 minutes.
+    """  # noqa: E501
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, nullable=False)
+
+    timezone = Column(String, default="UTC+2", nullable=False)
+    language = Column(String, default="en", nullable=False)
+
+    quiet_hours_start = Column(Time, nullable=True)
+    quiet_hours_end = Column(Time, nullable=True)
+
+    daily_plans_time = Column(Time, nullable=True)
+
+    # Default reminder time is 15 minutes
+    default_reminder_time = Column(Time, nullable=False, default=time(0, 15))
+
+    # --- SQL-level constraints ---
+    __table_args__ = (
+        # quiet_hours_end is required to be not null if quiet_hours_start is set (quiet hours are enabled)
+        CheckConstraint(
+            "(quiet_hours_start IS NULL OR quiet_hours_end IS NOT NULL)",
+            name="quiet_end_required_if_start_set"
+        ),
+        # quiet_hours_end must be greater than quiet_hours_start
+        CheckConstraint(
+            "(quiet_hours_start IS NULL OR quiet_hours_end > quiet_hours_start)",
+            name="quiet_end_after_start"
+        ),
+    )
+
+    # --- ORM-level validation ---
+    @validates("quiet_hours_start", "quiet_hours_end")
+    def validate_quiet_hours(
+        self,
+        key: Literal["quiet_hours_start", "quiet_hours_end"],
+        value: time | None
+    ) -> time | None:
+
+        # Temporary dict with current values
+        start: time | None = value if key == "quiet_hours_start" else self.quiet_hours_start # type: ignore (pylance does not understand that ORM fields have type)
+        end: time | None = value if key == "quiet_hours_end" else self.quiet_hours_end # type: ignore (so just ignore pylance warnings)
+
+        # If start is set — end must NOT be None
+        if start is not None and end is None:
+            raise ValueError("quiet_hours_end must be set if quiet_hours_start is not NULL.")
+
+        # If both set — end must be greater than start
+        if start is not None and end is not None and end < start:
+            raise ValueError("quiet_hours_end cannot be earlier than quiet_hours_start.")
+
+        return value
+

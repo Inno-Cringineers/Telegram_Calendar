@@ -64,7 +64,7 @@ I can help to manage your events and reminders, even from external calendars.
     """.strip()
 
     await message.answer(
-        welcome_text,
+        text=welcome_text,
         parse_mode="HTML",
         reply_markup=get_main_menu_inline(),
     )
