@@ -57,8 +57,8 @@ jobs:
         with:
           name: coverage-report
           path: |
-            coverage.xml
-            htmlcov/
+            app/src/coverage.xml
+            app/src/htmlcov/
       - name: Add coverage summary
         working-directory: app/src
         run: |
