@@ -14,6 +14,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
+
 from src.bot.database import Base
 from src.bot.models.settings import Settings
 
@@ -120,7 +121,7 @@ def test_default_reminder_offset_value(session):
     session.add(settings)
     session.flush()
 
-    assert settings.default_reminder_offset == time(0, 15)
+    assert settings.default_reminder_offset == 15 * 60
 
 
 def test_default_timezone_value(session):

@@ -11,6 +11,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
+
 from src.bot.database import Base
 from src.bot.models.calendar import Calendar
 
@@ -30,43 +31,38 @@ def session():
 
 def test_name_cannot_be_empty(session):
     with pytest.raises(ValueError):
-        cal = Calendar(user_id=1, name="   ", url="http://example.com/calendar.ics")
-        session.add(cal)
+        session.add(Calendar(user_id=1, name="   ", url="http://example.com/calendar.ics"))
         session.flush()
 
 
 def test_name_max_length(session):
     with pytest.raises(ValueError):
-        cal = Calendar(user_id=1, name="a" * 256, url="http://example.com/calendar.ics")
-        session.add(cal)
+        session.add(Calendar(user_id=1, name="a" * 256, url="http://example.com/calendar.ics"))
         session.flush()
 
 
 def test_url_must_start_with_http(session):
     with pytest.raises(ValueError):
-        cal = Calendar(user_id=1, name="Work", url="ftp://example.com/calendar.ics")
-        session.add(cal)
+        session.add(Calendar(user_id=1, name="Work", url="ftp://example.com/calendar.ics"))
         session.flush()
 
 
 def test_url_must_end_with_ics(session):
     with pytest.raises(ValueError):
-        cal = Calendar(user_id=1, name="Work", url="http://example.com/calendar.pdf")
-        session.add(cal)
+        session.add(Calendar(user_id=1, name="Work", url="http://example.com/calendar.pdf"))
         session.flush()
 
 
 def test_url_max_length(session):
+    url = "http://example.com/" + "a" * 240 + ".ics"
     with pytest.raises(ValueError):
-        cal = Calendar(user_id=1, name="Work", url="http://example.com/" + "a" * 240 + ".ics")
-        session.add(cal)
+        session.add(Calendar(user_id=1, name="Work", url=url))
         session.flush()
 
 
 def test_url_cannot_be_empty(session):
     with pytest.raises(ValueError):
-        cal = Calendar(user_id=1, name="Work", url="")
-        session.add(cal)
+        session.add(Calendar(user_id=1, name="Work", url=""))
         session.flush()
 
 
@@ -74,6 +70,7 @@ def test_with_good_data(session):
     cal = Calendar(user_id=1, name="Work", url="http://example.com/calendar.ics")
     session.add(cal)
     session.flush()
+    assert cal.id is not None
 
 
 # ---------------------------------------------------------------------------
@@ -83,12 +80,15 @@ def test_with_good_data(session):
 
 def test_unique_name_constraint(session):
     cal1 = Calendar(user_id=1, name="Work", url="http://example.com/calendar1.ics")
-    cal2 = Calendar(user_id=2, name="Work", url="http://example.com/calendar2.ics")  # Duplicate name
-    session.add(cal1)
-    session.add(cal2)
+    cal2 = Calendar(user_id=2, name="Work", url="http://example.com/calendar2.ics")
+
+    session.add_all([cal1, cal2])
+
     with pytest.raises(IntegrityError):
         session.flush()
         session.commit()
+
+    session.rollback()
 
 
 # ---------------------------------------------------------------------------
@@ -104,7 +104,7 @@ def test_sync_enabled_default(session):
 
 
 # ---------------------------------------------------------------------------
-# OPTIONAL FIELD TESTS
+# OPTIONAL FIELDS TESTS
 # ---------------------------------------------------------------------------
 
 
