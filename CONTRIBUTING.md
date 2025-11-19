@@ -59,14 +59,12 @@ gitGraph
 
 3. Push your branch and create a Pull Request (PR) to `main`.
 
-4. After the PR is reviewed and approved, it is merged into `main`.
-
-5. Direct commits to `main` are only allowed after PR review and approval.
+4. After all CI checks pass, the PR can be merged into `main`.
 
 ### Branch Protection Rules
 
-- **Require pull request reviews**: At least one approval is required before merging.
 - **Require branches to be up to date**: Feature branches must be up to date with `main` before merging.
+- **Require CI checks to pass**: All CI checks must pass before merging.
 
 ### Commit Message Format
 
@@ -120,11 +118,11 @@ We have two pull request templates:
 
 2. **Last-Minute Changes Template** (`last-minute-changes.md`): For urgent changes that don't have a related issue.
    - Used sparingly for critical fixes or urgent updates
-   - Still requires code review
+   - Still requires all CI checks to pass
 
 Pull request templates are located in the [.github/PULL_REQUEST_TEMPLATE/](https://github.com/Inno-Cringineers/.github/tree/main/.github/PULL_REQUEST_TEMPLATE) directory.
 
-### Pull Request Review Process
+### Pull Request Merge Requirements
 
 Before a pull request can be merged, it must meet the following requirements:
 
@@ -132,7 +130,7 @@ Before a pull request can be merged, it must meet the following requirements:
 
 2. **Acceptance Criteria Verification**: All acceptance criteria from the related issue must be met and verified.
 
-3. **Code Review**: At least one team member must review and approve the PR.
+3. **CI Checks**: All CI checks must pass successfully.
 
 ## Deployment
 
