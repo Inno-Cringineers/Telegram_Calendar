@@ -34,6 +34,7 @@ def session():
 # ORM VALIDATION TESTS
 # ---------------------------------------------------------------------------
 
+
 def test_quiet_hours_end_required_if_start(session):
     """
     If quiet_hours_start is set, quiet_hours_end must NOT be None.
@@ -57,7 +58,6 @@ def test_quiet_hours_end_cannot_be_before_start(session):
     ORM validator should raise ValueError.
     """
     with pytest.raises(ValueError):
-
         settings = Settings(
             user_id=1,
             quiet_hours_start=time(10, 0),
@@ -71,6 +71,7 @@ def test_quiet_hours_end_cannot_be_before_start(session):
 # ---------------------------------------------------------------------------
 # SQL CONSTRAINT TESTS
 # ---------------------------------------------------------------------------
+
 
 def test_sql_constraint_end_required_if_start(session):
     """
@@ -108,6 +109,7 @@ def test_sql_end_must_be_after_or_equal_start(session):
 # DEFAULT FIELD TESTS
 # ---------------------------------------------------------------------------
 
+
 def test_default_reminder_time_value(session):
     """
     default_reminder_time must default to 15 minutes if not provided explicitly.
@@ -118,6 +120,7 @@ def test_default_reminder_time_value(session):
     session.flush()
 
     assert settings.default_reminder_time == time(0, 15)
+
 
 def test_default_timezone_value(session):
     """
@@ -130,6 +133,7 @@ def test_default_timezone_value(session):
 
     assert settings.timezone == "UTC+2"
 
+
 def test_default_language_value(session):
     """
     language must default to en if not provided explicitly.
@@ -141,9 +145,11 @@ def test_default_language_value(session):
 
     assert settings.language == "en"
 
+
 # ---------------------------------------------------------------------------
 # OPTIONAL FIELD BEHAVIOR
 # ---------------------------------------------------------------------------
+
 
 def test_quiet_hours_can_be_null(session):
     """
@@ -161,6 +167,7 @@ def test_quiet_hours_can_be_null(session):
 
     assert settings.quiet_hours_start is None
     assert settings.quiet_hours_end is None
+
 
 def test_daily_plans_time_can_be_null(session):
     """
