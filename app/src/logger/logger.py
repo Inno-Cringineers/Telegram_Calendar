@@ -2,11 +2,13 @@ import logging
 import logging.handlers
 from pathlib import Path
 
+from config.config import LoggerConfig
+
 # Будет инициализирован в setup_logger()
 logger = logging.getLogger("telegram_calendar_bot")
 
 
-def setup_logger(logger_config):
+def setup_logger(logger_config: LoggerConfig) -> logging.Logger:
     """
     Configure logger based on config settings.
 

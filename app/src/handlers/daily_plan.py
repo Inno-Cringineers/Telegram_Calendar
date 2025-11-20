@@ -2,6 +2,7 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
+from i18n.strings import t
 from keyboards.inline import get_back_button, get_notification_inline
 from logger.logger import logger
 
@@ -9,12 +10,15 @@ router = Router()
 
 
 @router.callback_query(F.data == "menu_daily_plan")
-async def get_daily_plan(query: CallbackQuery, state: FSMContext):
+async def get_daily_plan(query: CallbackQuery, state: FSMContext) -> None:
     """Send daily plan to user."""
     user_id = query.from_user.id
     logger.info(f"User {user_id} requested daily plan")
 
-    await query.answer("📋 Generating daily plan...")
+    # TODO: Get user language from settings when session is available
+    lang = "ru"
+
+    await query.answer(t("daily_plan.generating", lang=lang))
 
     daily_plan = """
 📋 <b>Your Plan for the day - November 15, 2025</b>
@@ -65,7 +69,7 @@ source: Personal calendar
         await query.message.answer(
             event_2,
             parse_mode="HTML",
-            reply_markup=get_notification_inline(),
+            reply_markup=get_notification_inline(lang=lang),
         )
 
     if query.message and hasattr(query.message, "answer"):
@@ -78,11 +82,11 @@ source: Personal calendar
         await query.message.answer(
             event_4,
             parse_mode="HTML",
-            reply_markup=get_notification_inline(),
+            reply_markup=get_notification_inline(lang=lang),
         )
 
     if query.message and hasattr(query.message, "answer"):
         await query.message.answer(
-            "End of daily plan",
-            reply_markup=get_back_button("back_to_main"),
+            t("daily_plan.end", lang=lang),
+            reply_markup=get_back_button("back_to_main", lang=lang),
         )

@@ -14,7 +14,7 @@ from middlewares.logging_middleware import (
 from router.router import router
 
 
-async def setup_database(dp: Dispatcher, db_url: str):
+async def setup_database(dp: Dispatcher, db_url: str) -> None:
     """Setup database and inject session middleware."""
     engine = get_engine(db_url)
     await init_db(engine)
@@ -25,7 +25,7 @@ async def setup_database(dp: Dispatcher, db_url: str):
     dp.callback_query.middleware(DatabaseMiddleware(session_maker))
 
 
-def setup_middlewares(dp: Dispatcher):
+def setup_middlewares(dp: Dispatcher) -> None:
     """Setup all middlewares for dispatcher."""
     # Logging middlewares
     dp.message.outer_middleware(MessageLoggingMiddleware())
@@ -34,7 +34,7 @@ def setup_middlewares(dp: Dispatcher):
     logger.debug("Middlewares setup completed")
 
 
-async def main():
+async def main() -> None:
     cfg = load_config()
 
     # Setup logger with config

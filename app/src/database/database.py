@@ -10,9 +10,10 @@ Provides:
 - UnitOfWork: async context manager for transactional sessions
 """
 
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
@@ -34,8 +35,8 @@ class Base(DeclarativeBase):
 
     __allow_unmapped__: ClassVar[bool] = True
 
-    @declared_attr  # type: ignore[misc]
-    def __tablename__(cls) -> str:  # type: ignore[override]
+    @declared_attr.directive
+    def __tablename__(cls) -> str:
         """Generate table name from class name (lowercased)."""
         return cls.__name__.lower()
 
@@ -57,7 +58,7 @@ def normalize_db_url(db_url: str) -> str:
     return db_url
 
 
-def get_engine(db_url: str):
+def get_engine(db_url: str) -> AsyncEngine:
     """Create an async SQLAlchemy engine.
 
     Uses a StaticPool only for in-memory SQLite databases to ensure the same
@@ -86,7 +87,7 @@ def get_engine(db_url: str):
     )
 
 
-def get_session_maker(engine) -> async_sessionmaker[AsyncSession]:
+def get_session_maker(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
     """Create an async session factory (async_sessionmaker).
 
     Args:
@@ -98,7 +99,7 @@ def get_session_maker(engine) -> async_sessionmaker[AsyncSession]:
     return async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 
-async def init_db(engine) -> None:
+async def init_db(engine: AsyncEngine) -> None:
     """Import models and create database tables.
 
     Args:
@@ -159,7 +160,12 @@ class UnitOfWork:
         await self.session.begin()
         return self.session
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: Any,
+    ) -> None:
         """Exit context: commit or rollback, then close the session."""
         if self.session is None:
             raise RuntimeError("UnitOfWork session was not created")
