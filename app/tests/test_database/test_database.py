@@ -5,7 +5,7 @@ import pytest_asyncio
 from sqlalchemy import Integer, select
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.database.database import Base, UnitOfWork, get_engine, get_session_maker, normalize_db_url
+from database.database import Base, UnitOfWork, get_engine, get_session_maker, normalize_db_url
 
 
 class DBTestModel(Base):

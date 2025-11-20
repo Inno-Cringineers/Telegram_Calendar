@@ -145,3 +145,4 @@ __pycache__/
 
 *.db
 .cache
+.cursor
