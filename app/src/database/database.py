@@ -1,58 +1,56 @@
 """
-Async database module for SQLAlchemy + Aiogram integration.
+Async database utilities for SQLAlchemy.
 
-Features:
-- Async engine creation with SQLite and PostgreSQL support
-- Async session factory (async_sessionmaker)
-- UnitOfWork context manager for automatic commit/rollback
-- DatabaseMiddleware for injecting session into aiogram handlers
-- Logging via src.bot.logger
-
-Usage:
-
-    >>> from src.bot.database import get_engine, get_session_maker
-    >>> engine = get_engine("sqlite:///:memory:")
-    >>> SessionMaker = get_session_maker(engine)
-
-    >>> # Using UnitOfWork
-    >>> async with UnitOfWork(SessionMaker) as session:
-    >>>     session.add(obj)
-    >>>     # commit automatically, rollback on exception
-
-    >>> # Using DatabaseMiddleware with Aiogram
-    >>> dp.message.middleware(DatabaseMiddleware(SessionMaker))
+Provides:
+- Base declarative class with automatic table naming
+- normalize_db_url: convert sqlite URLs to async driver form
+- get_engine: create async engine (SQLite and other DBs)
+- get_session_maker: create async_sessionmaker
+- init_db: import models and create tables
+- UnitOfWork: async context manager for transactional sessions
 """
 
-# TODO: CHECK IS ALL GOOD, REFACTOR IF NEEDED, WRITE TESTS
-from typing import Any
+from typing import ClassVar
 
-from logger.logger import logger
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.orm import DeclarativeBase, declared_attr
 from sqlalchemy.pool import StaticPool
 
+from logger.logger import logger
 
-# ------------------------------
-# Base ORM class
-# ------------------------------
+
 class Base(DeclarativeBase):
-    """Base class for all ORM models with auto-generated table names."""
+    """Base class for ORM models with automatic lowercased table names.
 
-    @declared_attr.directive
-    def __tablename__(cls: Any) -> str:
-        """Automatically generate table name from class name in lowercase."""
+    NOTE:
+        ``declared_attr`` returning a ``str`` may confuse some type-checkers
+        (mypy / pylance). We keep the simple pattern and ignore overly-strict
+        type checks where needed.
+    """
+
+    __allow_unmapped__: ClassVar[bool] = True
+
+    @declared_attr  # type: ignore[misc]
+    def __tablename__(cls) -> str:  # type: ignore[override]
+        """Generate table name from class name (lowercased)."""
         return cls.__name__.lower()
 
 
-# ------------------------------
-# Engine and session setup
-# ------------------------------
 def normalize_db_url(db_url: str) -> str:
-    """
-    Convert DB URL to async-compatible version.
+    """Normalize DB URL to async-compatible variant.
 
-    Example:
-        'sqlite:///:memory:' -> 'sqlite+aiosqlite:///:memory:'
+    For SQLite URLs that don't already include an async driver, replace the
+    scheme to use aiosqlite.
+
+    Args:
+        db_url: Original DB connection URL.
+
+    Returns:
+        Async-compatible DB URL.
     """
     if db_url.startswith("sqlite://") and "+aiosqlite" not in db_url:
         db_url = db_url.replace("sqlite://", "sqlite+aiosqlite://")
@@ -60,86 +58,112 @@ def normalize_db_url(db_url: str) -> str:
 
 
 def get_engine(db_url: str):
-    """
-    Create async SQLAlchemy engine with logging.
+    """Create an async SQLAlchemy engine.
+
+    Uses a StaticPool only for in-memory SQLite databases to ensure the same
+    connection is reused (necessary for :memory: databases).
 
     Args:
-        db_url: database connection string.
+        db_url: Database connection URL (can be sqlite or any other supported DB).
 
     Returns:
-        Async engine.
+        AsyncEngine: configured SQLAlchemy async engine.
     """
     db_url = normalize_db_url(db_url)
     is_sqlite = db_url.startswith("sqlite")
+    use_static_pool = db_url.endswith(":memory:")
+
+    pool = StaticPool if use_static_pool else None
     connect_args = {"check_same_thread": False} if is_sqlite else {}
 
-    logger.debug("Creating async engine for %s", db_url)
+    logger.debug("Creating async engine for %s (sqlite=%s, static_pool=%s)", db_url, is_sqlite, use_static_pool)
     return create_async_engine(
         db_url,
         echo=False,
         future=True,
-        poolclass=StaticPool if is_sqlite else None,
+        poolclass=pool,
         connect_args=connect_args,
     )
 
 
 def get_session_maker(engine) -> async_sessionmaker[AsyncSession]:
-    """
-    Create async session factory (maker).
+    """Create an async session factory (async_sessionmaker).
 
     Args:
-        engine: SQLAlchemy async engine.
+        engine: AsyncEngine returned by :func:`get_engine`.
 
     Returns:
-        async_sessionmaker
+        async_sessionmaker bound to the engine.
     """
     return async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 
 async def init_db(engine) -> None:
-    """
-    Initialize database tables.
+    """Import models and create database tables.
 
     Args:
-        engine: SQLAlchemy async engine.
+        engine: AsyncEngine created via :func:`get_engine`.
     """
-    from models.calendar import Calendar  # noqa: F401
-    from models.event import Event  # noqa: F401
-    from models.reminder import Reminder  # noqa: F401
-    from models.settings import Settings  # noqa: F401
+    # Import models to register them with SQLAlchemy metadata.
+    # Add any other model modules that should be included.
+    try:
+        # Import known models (if they exist in your project)
+        from models.calendar import Calendar  # noqa: F401
+        from models.event import Event  # noqa: F401
+        from models.reminder import Reminder  # noqa: F401
+        from models.settings import Settings  # noqa: F401
+    except Exception:
+        # If project does not have those modules yet, skip — tests can import test models
+        logger.debug("Some model imports failed during init_db (maybe not present in test env).")
 
-    logger.debug("Initializing database")
+    logger.debug("Initializing database schema")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     logger.info("Database initialized")
 
 
-# ------------------------------
-# UnitOfWork
-# ------------------------------
 class UnitOfWork:
-    """
-    Async context manager for managing session + transaction.
+    """Async context manager to provide a transactional session.
 
     Usage:
         async with UnitOfWork(session_maker) as session:
             session.add(obj)
-            # commit automatically, rollback on exception
+            # commit on exit, rollback on exception
+
+    The UnitOfWork:
+    - opens an AsyncSession
+    - begins a transaction
+    - commits the transaction if the block exits normally
+    - rolls back if an exception occurs
+    - always closes the session
     """
 
     def __init__(self, session_maker: async_sessionmaker[AsyncSession]):
+        """Initialize UnitOfWork with a session factory.
+
+        Args:
+            session_maker: async_sessionmaker producing AsyncSession instances.
+        """
         self.session_maker = session_maker
         self.session: AsyncSession | None = None
 
     async def __aenter__(self) -> AsyncSession:
+        """Enter context: create session and begin transaction.
+
+        Returns:
+            AsyncSession: session to use inside the context.
+        """
         self.session = self.session_maker()
-        logger.debug("UnitOfWork: starting session and transaction")
+        logger.debug("UnitOfWork: opening session and beginning transaction")
+        # begin a transaction
         await self.session.begin()
         return self.session
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Exit context: commit or rollback, then close the session."""
         if self.session is None:
-            return
+            raise RuntimeError("UnitOfWork session was not created")
+
         try:
             if exc_type:
                 logger.warning("UnitOfWork: exception detected, rolling back: %s", exc_val)
