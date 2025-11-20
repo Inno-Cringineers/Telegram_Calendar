@@ -6,14 +6,11 @@ consistent interface across all repositories.
 """
 
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-T = TypeVar("T")  # Entity type
 
-
-class BaseRepository(ABC, Generic[T]):
+class BaseRepository[T](ABC):
     """Abstract base class for all repositories.
 
     Provides common interface and can be easily mocked in tests.
@@ -41,10 +38,11 @@ class BaseRepository(ABC, Generic[T]):
         pass
 
     @abstractmethod
-    async def create(self, **kwargs) -> T:
+    async def create(self, *args, **kwargs) -> T:
         """Create a new entity.
 
         Args:
+            *args: Positional arguments (can be schema objects).
             **kwargs: Entity attributes.
 
         Returns:
@@ -53,11 +51,12 @@ class BaseRepository(ABC, Generic[T]):
         pass
 
     @abstractmethod
-    async def update(self, entity_id: int, **kwargs) -> T:
+    async def update(self, entity_id: int, *args, **kwargs) -> T:
         """Update an existing entity.
 
         Args:
             entity_id: The ID of the entity to update.
+            *args: Positional arguments (can be schema objects).
             **kwargs: Attributes to update.
 
         Returns:
@@ -69,11 +68,13 @@ class BaseRepository(ABC, Generic[T]):
         pass
 
     @abstractmethod
-    async def delete(self, entity_id: int) -> None:
+    async def delete(self, entity_id: int, *args, **kwargs) -> None:
         """Delete an entity by ID.
 
         Args:
             entity_id: The ID of the entity to delete.
+            *args: Additional positional arguments (e.g., user_id for ownership check).
+            **kwargs: Additional keyword arguments.
 
         Raises:
             NotFoundError: If the entity is not found.

@@ -6,11 +6,23 @@ These schemas provide type-safe input validation for repository methods.
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class EventCreateSchema(BaseModel):
-    """Schema for creating a new event."""
+    """Schema for creating a new event.
+
+    Attributes:
+        user_id: Telegram user ID. Required.
+        title: Event title (SUMMARY in RFC 5545). Required, 1-255 characters.
+        date_start: Event start date and time (DTSTART in RFC 5545). Required, timezone-aware.
+        date_end: Event end date and time (DTEND in RFC 5545). Required, must be >= date_start, timezone-aware.
+        reminder_offset: Reminder offset in seconds before event start. Optional, defaults to user's settings value.
+        need_to_remind: Whether to send reminder notification. Optional, defaults to True.
+        description: Event description (DESCRIPTION in RFC 5545). Optional, max 1024 characters.
+        rrule: Recurrence rule (RRULE in RFC 5545). Optional, max 255 characters, must comply with RFC 5545 format.
+        calendar_id: Associated calendar ID (foreign key). Optional.
+    """
 
     user_id: int = Field(..., description="Telegram user ID")
     title: str = Field(..., min_length=1, max_length=255, description="Event title")
@@ -30,10 +42,8 @@ class EventCreateSchema(BaseModel):
             raise ValueError("date_end must be after or equal to date_start")
         return v
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "user_id": 123456789,
                 "title": "Meeting",
@@ -44,12 +54,24 @@ class EventCreateSchema(BaseModel):
                 "description": "Team meeting",
             }
         }
+    )
 
 
 class EventUpdateSchema(BaseModel):
     """Schema for updating an existing event.
 
     All fields are optional - only provided fields will be updated.
+    Unprovided fields remain unchanged.
+
+    Attributes:
+        title: Event title (SUMMARY in RFC 5545). Optional, 1-255 characters.
+        date_start: Event start date and time (DTSTART in RFC 5545). Optional, timezone-aware.
+        date_end: Event end date and time (DTEND in RFC 5545). Optional, must be >= date_start, timezone-aware.
+        reminder_offset: Reminder offset in seconds before event start. Optional, must be >= 0.
+        need_to_remind: Whether to send reminder notification. Optional.
+        description: Event description (DESCRIPTION in RFC 5545). Optional, max 1024 characters.
+        rrule: Recurrence rule (RRULE in RFC 5545). Optional, max 255 characters, must comply with RFC 5545 format.
+        calendar_id: Associated calendar ID (foreign key). Optional.
     """
 
     title: str | None = Field(None, min_length=1, max_length=255, description="Event title")
@@ -75,21 +97,30 @@ class EventUpdateSchema(BaseModel):
                 raise ValueError("date_end must be after or equal to date_start")
         return v
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "title": "Updated Meeting",
                 "description": "Updated description",
             }
         }
+    )
 
 
 class EventFilter(BaseModel):
     """Schema for filtering events in repository queries.
 
-    All fields are optional - multiple filters can be combined.
+    All fields are optional - multiple filters can be combined using AND logic.
+    Filters are applied inclusively (boundaries included).
+
+    Attributes:
+        user_id: Filter by Telegram user ID. Optional.
+        calendar_id: Filter by associated calendar ID. Optional.
+        start_date_from: Filter events with date_start >= this value (inclusive). Optional, timezone-aware.
+        start_date_to: Filter events with date_start <= this value (inclusive). Optional, must be >= start_date_from.
+        need_to_remind: Filter by reminder requirement (True/False). Optional.
+        limit: Maximum number of results to return. Optional, defaults to 100, range 1-1000.
+        offset: Number of results to skip (for pagination). Optional, defaults to 0, must be >= 0.
     """
 
     user_id: int | None = Field(None, description="Filter by user ID")
@@ -114,10 +145,8 @@ class EventFilter(BaseModel):
             raise ValueError("start_date_to must be after or equal to start_date_from")
         return v
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "user_id": 123456789,
                 "start_date_from": "2024-01-15T00:00:00Z",
@@ -126,4 +155,4 @@ class EventFilter(BaseModel):
                 "limit": 50,
             }
         }
-
+    )
