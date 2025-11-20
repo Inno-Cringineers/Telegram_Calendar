@@ -13,9 +13,9 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from bot.database.database import Base
-from bot.models.event import Event
-from bot.models.reminder import Reminder, compute_remind_at
+from database.database import Base
+from models.event import Event
+from models.reminder import Reminder, compute_remind_at
 
 
 @pytest.fixture

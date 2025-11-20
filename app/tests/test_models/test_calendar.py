@@ -12,8 +12,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
-from bot.database.database import Base
-from bot.models.calendar import Calendar
+from database.database import Base
+from models.calendar import Calendar
 
 
 @pytest.fixture

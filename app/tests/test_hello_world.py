@@ -1,6 +1,6 @@
 """Basic hello world test to verify CI/CD pipeline."""
 
-from bot.keyboards.inline import get_main_menu_inline
+from keyboards.inline import get_main_menu_inline
 
 
 def test_hello_world():
