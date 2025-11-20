@@ -37,7 +37,7 @@ def compute_remind_at(event: Event) -> datetime:
     if event.date_start.tzinfo is None:
         raise ValueError("Event date_start must be timezone-aware.")
 
-    remind_at = event.date_start - timedelta(seconds=event.reminder_offset)
+    remind_at: datetime = event.date_start - timedelta(seconds=event.reminder_offset)
 
     if remind_at >= event.date_start:
         raise ValueError("remind_at must be strictly before event start.")

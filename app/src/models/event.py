@@ -25,7 +25,7 @@ def get_default_reminder_offset(session: Session, user_id: int) -> int:
     Gets the default reminder time in seconds with respect to the user settings.
     Taken from Settings.default_reminder_offset.
     """
-    settings = session.query(Settings).filter_by(user_id=user_id).first()
+    settings: Settings | None = session.query(Settings).filter_by(user_id=user_id).first()
     if settings and settings.default_reminder_offset:
         return settings.default_reminder_offset
     return 15 * 60  # fallback: 15 minutes

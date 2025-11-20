@@ -144,3 +144,4 @@ __pycache__/
 .vscode
 
 *.db
+.cache
