@@ -1,7 +1,7 @@
 """Utility functions for i18n."""
 
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.settings import Settings
 

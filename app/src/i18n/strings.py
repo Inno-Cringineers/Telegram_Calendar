@@ -6,7 +6,7 @@ All user-facing strings are stored here with English and Russian translations.
 STRINGS: dict[str, dict[str, str]] = {
     "en": {
         # Start handler
-        "start.welcome": "👋 <b>Welcome to the Telegram Calendar reminder, {user_name}!</b>\n\nI can help to manage your events and reminders, even from external calendars.\n\n📋 <b>Commands:</b>\n/start - Show this dialog\n/help - Get help\n/menu - Open main menu\n\n🎯 <b>Main functions:</b>\n• 📅 Events viewing\n• ➕ Creating events\n• ✏️ Editing events\n• 🗑️ Deleting events\n• 🔗 Exporting external calendars (google, outlook, etc.)\n• ⏰ Events reminders\n• 📋 Daily planss",
+        "start.welcome": "👋 <b>Welcome to the Telegram Calendar reminder, {user_name}!</b>\n\nI can help to manage your events and reminders, even from external calendars.\n\n📋 <b>Commands:</b>\n/start - Show this dialog\n/help - Get help\n/menu - Open main menu\n\n🎯 <b>Main functions:</b>\n• 📅 Events viewing\n• ➕ Creating events\n• ✏️ Editing events\n• 🗑️ Deleting events\n• 🔗 Exporting external calendars (google, outlook, etc.)\n• ⏰ Events reminders\n• 📋 Daily planss",  # noqa: E501
         # Menu
         "menu.main.title": "🏠 <b>Main Menu</b>\n\nChoose an option:",
         "menu.updated": "Menu updated",
@@ -24,11 +24,11 @@ STRINGS: dict[str, dict[str, str]] = {
         "settings.quiet_hours.selected": "✅ Quiet hours setting selected",
         "settings.quiet_hours.title": "🔇 <b>Quiet Hours</b>",
         "settings.quiet_hours.current": "Current quiet hours: 22:00 - 08:00 (Mocked)",
-        "settings.quiet_hours.description": "Feature is under development. No notifications will be sent during quiet hours.",
+        "settings.quiet_hours.description": "Feature is under development. No notifications will be sent during quiet hours.",  # noqa: E501
         "settings.daily_plans_time.selected": "✅ Daily plans time setting selected",
         "settings.daily_plans_time.title": "⏰ <b>Daily Plans Time</b>",
         "settings.daily_plans_time.current": "Current time: 09:00 (Mocked)",
-        "settings.daily_plans_time.description": "Feature is under development. Daily plan will be sent at this time every day.",
+        "settings.daily_plans_time.description": "Feature is under development. Daily plan will be sent at this time every day.",  # noqa: E501
         # Events
         "events.title": "📅 <b>Events</b>\n\nChoose an events option:",
         "events.import.selected": "📥 Event import selected",
@@ -114,7 +114,7 @@ STRINGS: dict[str, dict[str, str]] = {
     },
     "ru": {
         # Start handler
-        "start.welcome": "👋 <b>Добро пожаловать в Telegram Calendar reminder, {user_name}!</b>\n\nЯ могу помочь управлять вашими событиями и напоминаниями, даже из внешних календарей.\n\n📋 <b>Команды:</b>\n/start - Показать это диалоговое окно\n/help - Получить помощь\n/menu - Открыть главное меню\n\n🎯 <b>Основные функции:</b>\n• 📅 Просмотр событий\n• ➕ Создание событий\n• ✏️ Редактирование событий\n• 🗑️ Удаление событий\n• 🔗 Экспорт внешних календарей (google, outlook и т.д.)\n• ⏰ Напоминания о событиях\n• 📋 Ежедневные планы",
+        "start.welcome": "👋 <b>Добро пожаловать в Telegram Calendar reminder, {user_name}!</b>\n\nЯ могу помочь управлять вашими событиями и напоминаниями, даже из внешних календарей.\n\n📋 <b>Команды:</b>\n/start - Показать это диалоговое окно\n/help - Получить помощь\n/menu - Открыть главное меню\n\n🎯 <b>Основные функции:</b>\n• 📅 Просмотр событий\n• ➕ Создание событий\n• ✏️ Редактирование событий\n• 🗑️ Удаление событий\n• 🔗 Экспорт внешних календарей (google, outlook и т.д.)\n• ⏰ Напоминания о событиях\n• 📋 Ежедневные планы",  # noqa: E501
         # Menu
         "menu.main.title": "🏠 <b>Главное меню</b>\n\nВыберите опцию:",
         "menu.updated": "Меню обновлено",
@@ -132,11 +132,11 @@ STRINGS: dict[str, dict[str, str]] = {
         "settings.quiet_hours.selected": "✅ Настройка тихих часов выбрана",
         "settings.quiet_hours.title": "🔇 <b>Тихие часы</b>",
         "settings.quiet_hours.current": "Текущие тихие часы: 22:00 - 08:00 (Заглушка)",
-        "settings.quiet_hours.description": "Функция находится в разработке. Уведомления не будут отправляться в тихие часы.",
+        "settings.quiet_hours.description": "Функция находится в разработке. Уведомления не будут отправляться в тихие часы.",  # noqa: E501
         "settings.daily_plans_time.selected": "✅ Настройка времени ежедневных планов выбрана",
         "settings.daily_plans_time.title": "⏰ <b>Время ежедневных планов</b>",
         "settings.daily_plans_time.current": "Текущее время: 09:00 (Заглушка)",
-        "settings.daily_plans_time.description": "Функция находится в разработке. Ежедневный план будет отправляться в это время каждый день.",
+        "settings.daily_plans_time.description": "Функция находится в разработке. Ежедневный план будет отправляться в это время каждый день.",  # noqa: E501
         # Events
         "events.title": "📅 <b>События</b>\n\nВыберите опцию событий:",
         "events.import.selected": "📥 Импорт событий выбран",
@@ -243,4 +243,3 @@ def t(key: str, lang: str = "ru", **kwargs: str) -> str:
         except KeyError:
             return result
     return result
-
