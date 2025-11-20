@@ -179,7 +179,9 @@ async def process_event_time(message: Message, state: FSMContext) -> None:
     await state.update_data(start_time=time_str)
 
     # Show preview of the event
-    description_text = data["description"] if data["description"] else t("create_event.preview.description_none", lang=lang)
+    description_text = (
+        data["description"] if data["description"] else t("create_event.preview.description_none", lang=lang)
+    )
     preview_text = (
         f"{t('create_event.preview.title', lang=lang)}\n\n"
         f"{t('create_event.preview.title_label', lang=lang, title=data['title'])}\n"
@@ -208,7 +210,8 @@ async def confirm_event(query: CallbackQuery, state: FSMContext) -> None:
 
     logger.info(
         f"User {user_id} confirmed event creation: "
-        f"title={data['title']}, date={data['start_date']}, time={data['start_time']}"
+        f"title={data['title']}, date={data['start_date']}, "
+        f"time={data['start_time']}"
     )
 
     # TODO: Save event to database

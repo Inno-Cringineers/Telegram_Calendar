@@ -1,5 +1,7 @@
 """Tests for DatabaseMiddleware using mocks (no real Aiogram Dispatcher)."""
 
+from typing import Any
+
 import pytest
 import pytest_asyncio
 from sqlalchemy import select
@@ -37,7 +39,7 @@ async def test_middleware_injects_session_and_commits(session_maker):
         # do not explicitly commit - UnitOfWork should commit on exit
         return "ok"
 
-    data = {}
+    data: dict[str, Any] = {}
     result = await mw(handler, event=None, data=data)
     assert result == "ok"
     assert "session" in data and data["session"] is not None

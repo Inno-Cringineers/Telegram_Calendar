@@ -49,8 +49,8 @@ async def events_import(query: CallbackQuery, state: FSMContext) -> None:
     if query.message and hasattr(query.message, "edit_text"):
         text = (
             f"{t('events.import.title', lang=lang)}\n\n"
-            f"{t('events.import.description', lang=lang)}\n\n"
-            f"<i>{t('events.feature_dev', lang=lang)}</i>"
+            "{t('events.import.description', lang=lang)}\n\n"
+            "<i>{t('events.feature_dev', lang=lang)}</i>"
         )
         await query.message.edit_text(
             text,
@@ -74,8 +74,8 @@ async def events_export(query: CallbackQuery, state: FSMContext) -> None:
     if query.message and hasattr(query.message, "edit_text"):
         text = (
             f"{t('events.export.title', lang=lang)}\n\n"
-            f"{t('events.export.description', lang=lang)}\n\n"
-            f"<i>{t('events.feature_dev', lang=lang)}</i>"
+            "{t('events.export.description', lang=lang)}\n\n"
+            "<i>{t('events.feature_dev', lang=lang)}</i>"
         )
         await query.message.edit_text(
             text,

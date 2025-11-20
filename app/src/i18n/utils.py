@@ -21,4 +21,3 @@ async def get_user_language(session: AsyncSession, user_id: int) -> str:
     if settings and settings.language:
         return settings.language
     return "ru"
-
