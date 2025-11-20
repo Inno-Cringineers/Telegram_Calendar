@@ -1,6 +1,7 @@
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
+
 from keyboards.inline import get_main_menu_inline
 from logger.logger import logger
 

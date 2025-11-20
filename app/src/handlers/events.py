@@ -1,6 +1,7 @@
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
+
 from keyboards.inline import (
     create_calendar,
     get_back_button,

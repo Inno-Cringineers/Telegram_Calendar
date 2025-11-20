@@ -6,10 +6,11 @@ for events in the application.
 from datetime import datetime, timedelta
 from typing import Literal
 
-from database.database import Base
-from models.event import Event
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
+
+from database.database import Base
+from models.event import Event
 
 # TODO: rename offset in settings
 
