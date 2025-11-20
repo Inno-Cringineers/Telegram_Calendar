@@ -273,6 +273,10 @@ async def test_get_by_date_range(
         user_id=1,
         start_date_from=now - timedelta(days=1),
         start_date_to=now + timedelta(days=1),
+        calendar_id=None,
+        need_to_remind=None,
+        limit=100,
+        offset=0,
     )
     events = await repository.find(filter)
     assert len(events) == 1
@@ -339,7 +343,7 @@ async def test_update_event_success(
     await session.flush()
     event_id = event.id
 
-    update_data = EventUpdateSchema(title="Updated Title", description="New description")
+    update_data = EventUpdateSchema(title="Updated Title", description="New description")  # type: ignore[call-arg]
     updated = await repository.update(event_id, update_data)
     assert updated.title == "Updated Title"
     assert updated.description == "New description"
@@ -349,7 +353,7 @@ async def test_update_event_success(
 @pytest.mark.asyncio
 async def test_update_event_not_found(repository: "EventRepository") -> None:
     """Test updating non-existent event."""
-    update_data = EventUpdateSchema(title="New Title")
+    update_data = EventUpdateSchema(title="New Title")  # type: ignore[call-arg]
     with pytest.raises(EventNotFoundError):
         await repository.update(999, update_data)
 
@@ -371,7 +375,7 @@ async def test_update_event_partial(
     await session.flush()
     event_id = event.id
 
-    update_data = EventUpdateSchema(title="Updated Title")
+    update_data = EventUpdateSchema(title="Updated Title")  # type: ignore[call-arg]
     updated = await repository.update(event_id, update_data)
     assert updated.title == "Updated Title"
     assert updated.description == "Original Description"  # Unchanged
@@ -467,6 +471,10 @@ async def test_get_by_date_range_inclusive_boundaries(
         user_id=1,
         start_date_from=now,
         start_date_to=now + timedelta(days=1),
+        calendar_id=None,
+        need_to_remind=None,
+        limit=100,
+        offset=0,
     )
     events = await repository.find(filter)
     assert len(events) == 2
@@ -536,7 +544,15 @@ async def test_find_with_multiple_filters(
     session.add_all([event1, event2])
     await session.flush()
 
-    filter = EventFilter(user_id=1, calendar_id=calendar.id, need_to_remind=True)
+    filter = EventFilter(
+        user_id=1,
+        calendar_id=calendar.id,
+        need_to_remind=True,
+        start_date_from=None,
+        start_date_to=None,
+        limit=100,
+        offset=0,
+    )
     events = await repository.find(filter)
     assert len(events) == 1
     assert events[0].title == "Work Event"
@@ -560,11 +576,27 @@ async def test_find_with_pagination(
     session.add_all(events)
     await session.flush()
 
-    filter = EventFilter(user_id=1, limit=5, offset=0)
+    filter = EventFilter(
+        user_id=1,
+        limit=5,
+        offset=0,
+        calendar_id=None,
+        start_date_from=None,
+        start_date_to=None,
+        need_to_remind=None,
+    )
     first_page = await repository.find(filter)
     assert len(first_page) == 5
 
-    filter = EventFilter(user_id=1, limit=5, offset=5)
+    filter = EventFilter(
+        user_id=1,
+        limit=5,
+        offset=5,
+        calendar_id=None,
+        start_date_from=None,
+        start_date_to=None,
+        need_to_remind=None,
+    )
     second_page = await repository.find(filter)
     assert len(second_page) == 5
     assert first_page[0].id != second_page[0].id
@@ -573,7 +605,15 @@ async def test_find_with_pagination(
 @pytest.mark.asyncio
 async def test_find_empty_result(repository: "EventRepository") -> None:
     """Test find() method with filters that match no events."""
-    filter = EventFilter(user_id=999)
+    filter = EventFilter(
+        user_id=999,
+        calendar_id=None,
+        start_date_from=None,
+        start_date_to=None,
+        need_to_remind=None,
+        limit=100,
+        offset=0,
+    )
     events = await repository.find(filter)
     assert events == []
 
@@ -742,7 +782,7 @@ async def test_update_with_none_values(
 
     # Update with no fields set (empty schema) - should not change anything
     # Pydantic's exclude_unset=True means None values are excluded if not explicitly set
-    update_data = EventUpdateSchema()  # Empty update - no fields set
+    update_data = EventUpdateSchema()  # Empty update - no fields set  # type: ignore[call-arg]
     updated = await repository.update(event_id, update_data)
     assert updated.title == "Test Event"  # Unchanged
     assert updated.description == "Some Description"  # Unchanged
@@ -771,7 +811,15 @@ async def test_find_with_no_filters(
     session.add_all([event1, event2])
     await session.flush()
 
-    filter = EventFilter()  # No filters
+    filter = EventFilter(
+        user_id=None,
+        calendar_id=None,
+        start_date_from=None,
+        start_date_to=None,
+        need_to_remind=None,
+        limit=100,
+        offset=0,
+    )  # No filters
     events = await repository.find(filter)
     assert len(events) == 2
 
@@ -791,7 +839,15 @@ async def test_find_with_pagination_offset_exceeds_total(
     session.add(event)
     await session.flush()
 
-    filter = EventFilter(user_id=1, limit=10, offset=100)  # Offset exceeds total
+    filter = EventFilter(
+        user_id=1,
+        limit=10,
+        offset=100,  # Offset exceeds total
+        calendar_id=None,
+        start_date_from=None,
+        start_date_to=None,
+        need_to_remind=None,
+    )
     events = await repository.find(filter)
     assert events == []
 
@@ -813,7 +869,15 @@ async def test_find_with_zero_limit(
 
     # EventFilter has ge=1 validation, so limit=0 is not allowed
     # Test with minimum limit instead
-    filter = EventFilter(user_id=1, limit=1)
+    filter = EventFilter(
+        user_id=1,
+        limit=1,
+        calendar_id=None,
+        start_date_from=None,
+        start_date_to=None,
+        need_to_remind=None,
+        offset=0,
+    )
     events = await repository.find(filter)
     assert len(events) == 1
 
@@ -949,12 +1013,28 @@ async def test_find_with_need_to_remind_filter(
     session.add_all([event1, event2])
     await session.flush()
 
-    filter = EventFilter(user_id=1, need_to_remind=True)
+    filter = EventFilter(
+        user_id=1,
+        need_to_remind=True,
+        calendar_id=None,
+        start_date_from=None,
+        start_date_to=None,
+        limit=100,
+        offset=0,
+    )
     events = await repository.find(filter)
     assert len(events) == 1
     assert events[0].need_to_remind is True
 
-    filter = EventFilter(user_id=1, need_to_remind=False)
+    filter = EventFilter(
+        user_id=1,
+        need_to_remind=False,
+        calendar_id=None,
+        start_date_from=None,
+        start_date_to=None,
+        limit=100,
+        offset=0,
+    )
     events = await repository.find(filter)
     assert len(events) == 1
     assert events[0].need_to_remind is False
