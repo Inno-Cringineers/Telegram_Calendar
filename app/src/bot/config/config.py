@@ -31,7 +31,6 @@ class BotConfig:
 @dataclass
 class Config:
     telegram_token: str
-    db_url: str
     logger: LoggerConfig
     database: DatabaseConfig
     bot: BotConfig
@@ -41,7 +40,7 @@ def load_yaml_config(config_path: str | None = None) -> dict:
     """Load configuration from YAML file."""
     if config_path is None:
         # Default config path relative to this file
-        config_path_obj = Path(__file__).parent.parent / "config.yaml"
+        config_path_obj = Path(__file__).parent / "config.yaml"
     else:
         config_path_obj = Path(config_path)
 
@@ -62,11 +61,6 @@ def load_config() -> Config:
     if not telegram_token:
         raise ValueError("TELEGRAM_TOKEN environment variable is not set")
 
-    # DB_URL from environment - required
-    db_url = os.getenv("DB_URL")
-    if not db_url:
-        raise ValueError("DB_URL environment variable is not set")
-
     # Logger config
     logger_cfg = yaml_config.get("logger", {})
     logger_config = LoggerConfig(
@@ -79,7 +73,7 @@ def load_config() -> Config:
     )
 
     # Database config
-    database_config = DatabaseConfig(url=db_url)
+    database_config = DatabaseConfig(url=yaml_config.get("database", {}).get("url", "sqlite:///database.db"))
 
     # Bot config
     bot_cfg = yaml_config.get("bot", {})
@@ -90,7 +84,6 @@ def load_config() -> Config:
 
     return Config(
         telegram_token=telegram_token,
-        db_url=db_url,
         logger=logger_config,
         database=database_config,
         bot=bot_config,

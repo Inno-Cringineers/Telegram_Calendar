@@ -45,7 +45,7 @@ async def main():
     bot = Bot(cfg.telegram_token)
     dp = Dispatcher(storage=MemoryStorage())
 
-    await setup_database(dp, cfg.db_url)
+    await setup_database(dp, cfg.database.url)
     setup_middlewares(dp)
 
     dp.include_router(router)

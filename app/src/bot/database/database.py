@@ -103,10 +103,10 @@ async def init_db(engine) -> None:
     Args:
         engine: SQLAlchemy async engine.
     """
-    from src.bot.models.calendar import Calendar  # noqa: F401
-    from src.bot.models.event import Event  # noqa: F401
-    from src.bot.models.reminder import Reminder  # noqa: F401
-    from src.bot.models.settings import Settings  # noqa: F401
+    from models.calendar import Calendar  # noqa: F401
+    from models.event import Event  # noqa: F401
+    from models.reminder import Reminder  # noqa: F401
+    from models.settings import Settings  # noqa: F401
 
     logger.debug("Initializing database")
     async with engine.begin() as conn:
