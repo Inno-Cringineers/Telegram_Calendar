@@ -139,11 +139,7 @@ class EventRepository(BaseRepository[Event]):
         Returns:
             List of events for the user, ordered by date_start.
         """
-        stmt = (
-            select(Event)
-            .where(Event.user_id == user_id)
-            .order_by(Event.date_start)
-        )
+        stmt = select(Event).where(Event.user_id == user_id).order_by(Event.date_start)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
@@ -179,9 +175,7 @@ class EventRepository(BaseRepository[Event]):
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_upcoming_for_reminders(
-        self, user_id: int, limit: int = 10
-    ) -> list[Event]:
+    async def get_upcoming_for_reminders(self, user_id: int, limit: int = 10) -> list[Event]:
         """Get upcoming events that need reminders.
 
         Returns events that:

@@ -59,4 +59,3 @@ class EventValidationError(ValidationError):
     """Raised when Event validation fails."""
 
     pass
-

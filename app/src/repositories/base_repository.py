@@ -80,4 +80,3 @@ class BaseRepository[T](ABC):
             NotFoundError: If the entity is not found.
         """
         pass
-

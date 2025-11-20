@@ -6,7 +6,7 @@ simplifying initialization and configuration.
 
 Architecture:
     Handler → Store(session) → Repositories(session) + Services(store)
-    
+
 All components use the same session, ensuring transactional consistency.
 UnitOfWork manages the session lifecycle (create, commit, rollback, close).
 """
@@ -29,10 +29,10 @@ class Store:
     Usage:
         async def handler(message: Message, data: dict):
             store: Store = data["store"]  # From StoreMiddleware
-            
+
             # Use repositories directly
             event = await store.events.create(...)
-            
+
             # Or use services (which use repositories through Store)
             # event = await store.event_service.create_with_reminder(...)
     """
@@ -99,4 +99,3 @@ class Store:
     #         from services.event_service import EventService
     #         self._event_service = EventService(self)  # Pass Store, not session
     #     return self._event_service
-

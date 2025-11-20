@@ -51,10 +51,7 @@ class StoreMiddleware(BaseMiddleware):
                 "StoreMiddleware: 'session' not found in data. "
                 "Make sure DatabaseMiddleware is registered before StoreMiddleware."
             )
-            raise KeyError(
-                "'session' not found in data. "
-                "DatabaseMiddleware must be registered before StoreMiddleware."
-            )
+            raise KeyError("'session' not found in data. DatabaseMiddleware must be registered before StoreMiddleware.")
 
         logger.debug(
             "StoreMiddleware: creating Store for handler %s",
@@ -70,4 +67,3 @@ class StoreMiddleware(BaseMiddleware):
             getattr(handler, "__name__", repr(handler)),
         )
         return result
-
