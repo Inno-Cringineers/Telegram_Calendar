@@ -1,6 +1,6 @@
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message
 
 from i18n.strings import t
 from keyboards.inline import get_back_button, get_calendar_menu_inline
@@ -21,8 +21,9 @@ async def open_calendar_menu(query: CallbackQuery, state: FSMContext) -> None:
 
     await state.set_state(CalendarLinkingStates.in_calendar_menu)
 
-    if query.message and hasattr(query.message, "edit_text"):
-        await query.message.edit_text(
+    message = query.message
+    if message and isinstance(message, Message):
+        await message.edit_text(
             t("calendar.link.title", lang=lang),
             parse_mode="HTML",
             reply_markup=get_calendar_menu_inline(lang=lang),
@@ -41,7 +42,8 @@ async def calendar_list(query: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(CalendarLinkingStates.in_calendar_list)
     await query.answer(t("calendar.list.answer", lang=lang))
 
-    if query.message and hasattr(query.message, "edit_text"):
+    message = query.message
+    if message and isinstance(message, Message):
         text = (
             f"{t('calendar.list.title', lang=lang)}\n\n"
             f"{t('calendar.list.linked', lang=lang)}\n"
@@ -50,7 +52,7 @@ async def calendar_list(query: CallbackQuery, state: FSMContext) -> None:
             "3. 🎯 Projects (Yandex Calendar)\n\n"
             f"<i>{t('calendar.list.feature_dev', lang=lang)}</i>"
         )
-        await query.message.edit_text(
+        await message.edit_text(
             text,
             parse_mode="HTML",
             reply_markup=get_back_button(lang=lang),
@@ -69,7 +71,7 @@ async def calendar_new(query: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(CalendarLinkingStates.waiting_for_calendar_link)
     await query.answer(t("calendar.new.answer", lang=lang))
 
-    if query.message and hasattr(query.message, "edit_text"):
+    if query.message and isinstance(query.message, Message):
         text = (
             f"{t('calendar.new.title', lang=lang)}\n\n"
             f"{t('calendar.new.enter_link', lang=lang)}\n\n"

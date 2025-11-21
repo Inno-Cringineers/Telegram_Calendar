@@ -26,6 +26,22 @@ class NotFoundError(RepositoryError):
         super().__init__(f"{entity_name} with identifier '{identifier}' not found")
 
 
+class CalendarNotFoundError(NotFoundError):
+    """Raised when a Calendar is not found."""
+
+    def __init__(self, calendar_id: int | None = None, user_id: int | None = None) -> None:
+        """Initialize CalendarNotFoundError.
+
+        Args:
+            calendar_id: The calendar ID that was not found (if applicable).
+            user_id: The user ID that was used in search (if applicable).
+        """
+        self.calendar_id = calendar_id
+        self.user_id = user_id
+        identifier = f"id={calendar_id}" if calendar_id else f"user_id={user_id}"
+        super().__init__("Calendar", identifier)
+
+
 class EventNotFoundError(NotFoundError):
     """Raised when an Event is not found."""
 

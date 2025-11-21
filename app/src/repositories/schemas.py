@@ -8,6 +8,12 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+# TODO: refactor repetitive code
+
+# ----------------------------------------------------------------------------
+# Event schemas
+# ----------------------------------------------------------------------------
+
 
 class EventCreateSchema(BaseModel):
     """Schema for creating a new event.
@@ -156,3 +162,125 @@ class EventFilter(BaseModel):
             }
         }
     )
+
+
+# ----------------------------------------------------------------------------
+# Calendar schemas
+# ----------------------------------------------------------------------------
+
+
+class CalendarCreateSchema(BaseModel):
+    """Schema for creating a new calendar.
+
+    Attributes:
+        user_id: Telegram user ID. Required.
+        name: Calendar name. Required, 1-255 characters.
+        url: Calendar URL. Required, must be a valid ICal URL.
+    """
+
+    user_id: int = Field(..., description="Telegram user ID")
+    name: str = Field(..., min_length=1, max_length=255, description="Calendar name")
+    url: str = Field(..., description="Calendar URL")
+
+    @field_validator("url")
+    @classmethod
+    def validate_url(cls, v: str) -> str:
+        """Validate that url is a valid ICal URL."""
+        if not (v.startswith("http://") or v.startswith("https://")):
+            raise ValueError("Calendar URL must start with http or https.")
+        if not v.lower().endswith(".ics"):
+            raise ValueError("Calendar URL must link to the .ics file.")
+        if len(v) > 255:
+            raise ValueError("Calendar URL cannot exceed 255 characters.")
+        return v
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "user_id": 123456789,
+                "name": "Work",
+                "url": "http://example.com/calendar.ics",
+            }
+        }
+    )
+
+
+class CalendarUpdateSchema(BaseModel):
+    """Schema for updating an existing calendar.
+
+    All fields are optional - only provided fields will be updated.
+    Unprovided fields remain unchanged.
+
+    Attributes:
+        name: Calendar name. Optional, 1-255 characters.
+        url: Calendar URL. Optional, must be a valid ICal URL.
+    """
+
+    name: str | None = Field(None, min_length=1, max_length=255, description="Calendar name")
+    url: str | None = Field(None, description="Calendar URL")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "name": "Work",
+                "url": "http://example.com/calendar.ics",
+            }
+        }
+    )
+
+    @field_validator("url")
+    @classmethod
+    def validate_url(cls, v: str | None) -> str | None:
+        """Validate that url is a valid ICal URL."""
+        if v is not None:
+            if not (v.startswith("http://") or v.startswith("https://")):
+                raise ValueError("Calendar URL must start with http or https.")
+            if not v.lower().endswith(".ics"):
+                raise ValueError("Calendar URL must link to the .ics file.")
+            if len(v) > 255:
+                raise ValueError("Calendar URL cannot exceed 255 characters.")
+        return v
+
+
+class CalendarFilter(BaseModel):
+    """Schema for filtering calendars in repository queries.
+
+    All fields are optional - multiple filters can be combined using AND logic.
+    Filters are applied inclusively (boundaries included).
+
+    Attributes:
+        user_id: Filter by Telegram user ID. Optional.
+        name: Filter by calendar name. Optional, 1-255 characters.
+        url: Filter by calendar URL. Optional, must be a valid ICal URL.
+        limit: Maximum number of results to return. Optional, defaults to 100, range 1-1000.
+        offset: Number of results to skip (for pagination). Optional, defaults to 0, must be >= 0.
+    """
+
+    user_id: int | None = Field(None, description="Filter by user ID")
+    name: str | None = Field(None, min_length=1, max_length=255, description="Filter by calendar name")
+    url: str | None = Field(None, description="Filter by calendar URL")
+    limit: int = Field(100, ge=1, le=1000, description="Maximum number of results")
+    offset: int = Field(0, ge=0, description="Number of results to skip")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "user_id": 123456789,
+                "name": "Work",
+                "url": "http://example.com/calendar.ics",
+            }
+        }
+    )
+
+    @field_validator("url")
+    @classmethod
+    def validate_url(cls, v: str | None) -> str | None:
+        """Validate that url is a valid ICal URL."""
+        if v is not None:
+            if not (v.startswith("http://") or v.startswith("https://")):
+                raise ValueError("Calendar URL must start with http or https.")
+            if not v.lower().endswith(".ics"):
+                raise ValueError("Calendar URL must link to the .ics file.")
+            if len(v) > 255:
+                raise ValueError("Calendar URL cannot exceed 255 characters.")
+        return v

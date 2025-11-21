@@ -18,6 +18,7 @@ from repositories.schemas import EventCreateSchema, EventFilter, EventUpdateSche
 
 # TODO: add rrule management
 # TODO: delete reminder if sent is True
+# TODO: add comprehensive tests for all methods
 
 
 class EventRepository(BaseRepository[Event]):
