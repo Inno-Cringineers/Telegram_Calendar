@@ -17,11 +17,12 @@ from typing import TYPE_CHECKING
 
 import pytest
 import pytest_asyncio
-from sqlalchemy import text
+from sqlalchemy import select, text
 
 from database.database import Base, get_engine, get_session_maker
 from models.calendar import Calendar
 from models.event import Event
+from models.reminder import Reminder
 from repositories.exceptions import EventNotFoundError
 from repositories.schemas import EventCreateSchema, EventFilter, EventUpdateSchema
 
@@ -39,6 +40,7 @@ async def engine():
     # These imports are needed for side effects (SQLAlchemy table registration)
     from models.calendar import Calendar  # noqa: F401  # pyright: ignore[reportUnusedImport]
     from models.event import Event  # noqa: F401  # pyright: ignore[reportUnusedImport]
+    from models.reminder import Reminder  # noqa: F401  # pyright: ignore[reportUnusedImport]
     from models.settings import Settings  # noqa: F401  # pyright: ignore[reportUnusedImport]
 
     engine = get_engine("sqlite:///:memory:")
@@ -97,7 +99,7 @@ async def test_user_settings(session: "AsyncSession"):
 
 
 @pytest.mark.asyncio
-async def test_create_event_success(repository: "EventRepository", test_user_settings) -> None:
+async def test_create_event_success(repository: "EventRepository") -> None:
     """Test successful event creation."""
     event_data = EventCreateSchema(
         user_id=1,
@@ -114,6 +116,16 @@ async def test_create_event_success(repository: "EventRepository", test_user_set
     assert event.id is not None
     assert event.title == "Test Event"
     assert event.user_id == 1
+
+    # check if reminder created
+    stmt = select(Reminder).where(Reminder.event_id == event.id)
+    result = await repository.session.execute(stmt)
+    reminder = result.scalar_one_or_none()
+    assert reminder is not None
+    assert reminder.event_id == event.id
+    assert reminder.user_id == 1
+    assert reminder.remind_at == event.date_start - timedelta(seconds=event.reminder_offset)
+    assert reminder.sent is False
 
 
 @pytest.mark.asyncio
@@ -137,9 +149,7 @@ async def test_create_event_with_default_reminder_offset(
 
 
 @pytest.mark.asyncio
-async def test_create_event_with_calendar_id(
-    repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
-) -> None:
+async def test_create_event_with_calendar_id(repository: "EventRepository", session: "AsyncSession") -> None:
     """Test event creation with calendar_id."""
     # First create a calendar
     calendar = Calendar(user_id=1, name="Work", url="http://example.com/work.ics")
@@ -167,9 +177,7 @@ async def test_create_event_with_calendar_id(
 
 
 @pytest.mark.asyncio
-async def test_get_by_id_success(
-    repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
-) -> None:
+async def test_get_by_id_success(repository: "EventRepository", session: "AsyncSession") -> None:
     """Test retrieving event by ID."""
     # Create event directly first
     event = Event(
@@ -197,9 +205,7 @@ async def test_get_by_id_not_found(repository: "EventRepository") -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_by_user_id(
-    repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
-) -> None:
+async def test_get_by_user_id(repository: "EventRepository", session: "AsyncSession") -> None:
     """Test retrieving all events for a user."""
     # Create multiple events for user 1
     event1 = Event(
@@ -239,9 +245,7 @@ async def test_get_by_user_id_empty(repository: "EventRepository") -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_by_date_range(
-    repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
-) -> None:
+async def test_get_by_date_range(repository: "EventRepository", session: "AsyncSession") -> None:
     """Test retrieving events within a date range using EventFilter."""
     now = datetime.now(UTC)
     past_start = now - timedelta(days=2)
@@ -284,42 +288,52 @@ async def test_get_by_date_range(
 
 
 @pytest.mark.asyncio
-async def test_get_upcoming_events(
-    repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
-) -> None:
+async def test_get_upcoming_events(repository: "EventRepository", session: "AsyncSession") -> None:
     """Test retrieving upcoming events for reminders."""
     now = datetime.now(UTC)
-    past_event = Event(
+    past_event = EventCreateSchema(
         user_id=1,
         title="Past Event",
         date_start=now - timedelta(hours=1),
         date_end=now,
         reminder_offset=15 * 60,
         need_to_remind=True,
+        description=None,
+        rrule=None,
+        calendar_id=None,
     )
-    upcoming_event = Event(
+    upcoming_event = EventCreateSchema(
         user_id=1,
         title="Upcoming Event",
         date_start=now + timedelta(hours=1),
         date_end=now + timedelta(hours=2),
         reminder_offset=15 * 60,
         need_to_remind=True,
+        description=None,
+        rrule=None,
+        calendar_id=None,
     )
-    no_reminder_event = Event(
+    no_reminder_event = EventCreateSchema(
         user_id=1,
         title="No Reminder Event",
-        date_start=now + timedelta(hours=1),
-        date_end=now + timedelta(hours=2),
+        date_start=now + timedelta(hours=5),
+        date_end=now + timedelta(hours=6),
         reminder_offset=15 * 60,
         need_to_remind=False,
+        description=None,
+        rrule=None,
+        calendar_id=None,
     )
-    session.add_all([past_event, upcoming_event, no_reminder_event])
-    await session.flush()
 
-    events = await repository.get_upcoming_for_reminders(user_id=1, limit=10)
+    past_event = await repository.create(past_event)
+    await repository.create(upcoming_event)
+    await repository.create(no_reminder_event)
+    await repository.session.flush()
+    await repository.set_reminder_sent(past_event.id)
+
+    events = await repository.get_upcoming_for_reminders(user_id=1, from_time=now, to_time=now + timedelta(hours=3))
     assert len(events) == 1
     assert events[0].title == "Upcoming Event"
-    assert events[0].need_to_remind is True
 
 
 # ============================================================================
@@ -363,20 +377,21 @@ async def test_update_event_partial(
     repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
 ) -> None:
     """Test partial event update (only some fields)."""
-    event = Event(
+    event = EventCreateSchema(
         user_id=1,
         title="Original Title",
         description="Original Description",
         date_start=datetime.now(UTC),
         date_end=datetime.now(UTC) + timedelta(hours=1),
         reminder_offset=15 * 60,
+        need_to_remind=True,
+        rrule=None,
+        calendar_id=None,
     )
-    session.add(event)
-    await session.flush()
-    event_id = event.id
+    event = await repository.create(event)
 
     update_data = EventUpdateSchema(title="Updated Title")  # type: ignore[call-arg]
-    updated = await repository.update(event_id, update_data)
+    updated = await repository.update(event.id, update_data)
     assert updated.title == "Updated Title"
     assert updated.description == "Original Description"  # Unchanged
 
@@ -387,27 +402,25 @@ async def test_update_event_partial(
 
 
 @pytest.mark.asyncio
-async def test_delete_event_success(
-    repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
-) -> None:
+async def test_delete_event_success(repository: "EventRepository") -> None:
     """Test successful event deletion."""
-    from sqlalchemy import select
-
-    event = Event(
+    event = EventCreateSchema(
         user_id=1,
         title="Event to Delete",
         date_start=datetime.now(UTC),
         date_end=datetime.now(UTC) + timedelta(hours=1),
         reminder_offset=15 * 60,
+        need_to_remind=True,
+        description=None,
+        rrule=None,
+        calendar_id=None,
     )
-    session.add(event)
-    await session.flush()
-    event_id = event.id
+    event = await repository.create(event)
 
-    await repository.delete(event_id)
+    await repository.delete(event.id)
 
     # Verify deletion
-    result = await session.execute(select(Event).where(Event.id == event_id))
+    result = await repository.session.execute(select(Event).where(Event.id == event.id))
     assert result.scalar() is None
 
 
@@ -419,24 +432,24 @@ async def test_delete_event_not_found(repository: "EventRepository") -> None:
 
 
 @pytest.mark.asyncio
-async def test_delete_event_checks_user_ownership(
-    repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
-) -> None:
+async def test_delete_event_checks_user_ownership(repository: "EventRepository") -> None:
     """Test that deletion checks user ownership."""
-    event = Event(
+    event = EventCreateSchema(
         user_id=1,
         title="User 1 Event",
         date_start=datetime.now(UTC),
         date_end=datetime.now(UTC) + timedelta(hours=1),
         reminder_offset=15 * 60,
+        need_to_remind=True,
+        description=None,
+        rrule=None,
+        calendar_id=None,
     )
-    session.add(event)
-    await session.flush()
-    event_id = event.id
+    event = await repository.create(event)
 
     # Try to delete event belonging to different user
     with pytest.raises(EventNotFoundError):
-        await repository.delete(event_id, user_id=2)  # Different user
+        await repository.delete(event.id, user_id=2)  # Different user
 
 
 # ============================================================================
@@ -450,22 +463,30 @@ async def test_get_by_date_range_inclusive_boundaries(
 ) -> None:
     """Test that date range boundaries are inclusive using EventFilter."""
     now = datetime.now(UTC)
-    event_at_start = Event(
+    event_at_start = EventCreateSchema(
         user_id=1,
         title="Event at Start",
         date_start=now,
         date_end=now + timedelta(hours=1),
         reminder_offset=15 * 60,
+        need_to_remind=True,
+        description=None,
+        rrule=None,
+        calendar_id=None,
     )
-    event_at_end = Event(
+    event_at_end = EventCreateSchema(
         user_id=1,
         title="Event at End",
         date_start=now + timedelta(days=1),
         date_end=now + timedelta(days=1, hours=1),
         reminder_offset=15 * 60,
+        need_to_remind=True,
+        description=None,
+        rrule=None,
+        calendar_id=None,
     )
-    session.add_all([event_at_start, event_at_end])
-    await session.flush()
+    event_at_start = await repository.create(event_at_start)
+    event_at_end = await repository.create(event_at_end)
 
     filter = EventFilter(
         user_id=1,
@@ -481,33 +502,37 @@ async def test_get_by_date_range_inclusive_boundaries(
 
 
 @pytest.mark.asyncio
-async def test_get_upcoming_events_respects_need_to_remind(
-    repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
-) -> None:
+async def test_get_upcoming_events_respects_need_to_remind(repository: "EventRepository") -> None:
     """Test that get_upcoming_for_reminders only returns events with need_to_remind=True."""
     now = datetime.now(UTC)
-    event_with_reminder = Event(
+    event_with_reminder = EventCreateSchema(
         user_id=1,
         title="With Reminder",
         date_start=now + timedelta(hours=1),
         date_end=now + timedelta(hours=2),
         reminder_offset=15 * 60,
         need_to_remind=True,
+        description=None,
+        rrule=None,
+        calendar_id=None,
     )
-    event_without_reminder = Event(
+    event_without_reminder = EventCreateSchema(
         user_id=1,
         title="Without Reminder",
         date_start=now + timedelta(hours=1),
         date_end=now + timedelta(hours=2),
         reminder_offset=15 * 60,
         need_to_remind=False,
+        description=None,
+        rrule=None,
+        calendar_id=None,
     )
-    session.add_all([event_with_reminder, event_without_reminder])
-    await session.flush()
+    event_with_reminder = await repository.create(event_with_reminder)
+    event_without_reminder = await repository.create(event_without_reminder)
 
-    events = await repository.get_upcoming_for_reminders(user_id=1, limit=10)
+    events = await repository.get_upcoming_for_reminders(user_id=1, from_time=now, to_time=now + timedelta(hours=3))
     assert len(events) == 1
-    assert events[0].need_to_remind is True
+    assert events[0].title == "With Reminder"
 
 
 # ============================================================================
@@ -516,33 +541,37 @@ async def test_get_upcoming_events_respects_need_to_remind(
 
 
 @pytest.mark.asyncio
-async def test_find_with_multiple_filters(
-    repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
-) -> None:
+async def test_find_with_multiple_filters(repository: "EventRepository") -> None:
     """Test find() method with multiple filters combined."""
     calendar = Calendar(user_id=1, name="Work", url="http://example.com/work.ics")
-    session.add(calendar)
-    await session.flush()
+    repository.session.add(calendar)
+    await repository.session.flush()
+    calendar_id = await repository.session.scalar(select(Calendar.id).where(Calendar.user_id == 1))
 
-    event1 = Event(
+    event1 = EventCreateSchema(
         user_id=1,
         title="Work Event",
         date_start=datetime.now(UTC),
         date_end=datetime.now(UTC) + timedelta(hours=1),
         reminder_offset=15 * 60,
-        calendar_id=calendar.id,
         need_to_remind=True,
+        description=None,
+        rrule=None,
+        calendar_id=calendar_id,
     )
-    event2 = Event(
+    event2 = EventCreateSchema(
         user_id=1,
         title="Personal Event",
         date_start=datetime.now(UTC),
         date_end=datetime.now(UTC) + timedelta(hours=1),
         reminder_offset=15 * 60,
         need_to_remind=True,
+        description=None,
+        rrule=None,
+        calendar_id=None,
     )
-    session.add_all([event1, event2])
-    await session.flush()
+    event1 = await repository.create(event1)
+    event2 = await repository.create(event2)
 
     filter = EventFilter(
         user_id=1,
@@ -559,23 +588,24 @@ async def test_find_with_multiple_filters(
 
 
 @pytest.mark.asyncio
-async def test_find_with_pagination(
-    repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
-) -> None:
+async def test_find_with_pagination(repository: "EventRepository") -> None:
     """Test find() method with limit and offset."""
     events = [
-        Event(
+        EventCreateSchema(
             user_id=1,
             title=f"Event {i}",
             date_start=datetime.now(UTC) + timedelta(minutes=i),  # Different times for ordering
             date_end=datetime.now(UTC) + timedelta(hours=1, minutes=i),
             reminder_offset=15 * 60,
+            need_to_remind=True,
+            description=None,
+            rrule=None,
+            calendar_id=None,
         )
         for i in range(10)
     ]
-    session.add_all(events)
-    await session.flush()
-
+    for event in events:
+        await repository.create(event)
     filter = EventFilter(
         user_id=1,
         limit=5,
@@ -710,6 +740,97 @@ async def test_create_event_with_same_start_end_date(
     )
     event = await repository.create(event_data)
     assert event.date_start == event.date_end
+
+
+@pytest.mark.asyncio
+async def test_create_event_creates_reminder_when_need_to_remind_true(
+    repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
+) -> None:
+    """Test that creating an event with need_to_remind=True creates a Reminder."""
+    now = datetime.now(UTC)
+    reminder_offset = 15 * 60  # 15 minutes
+    event_data = EventCreateSchema(
+        user_id=1,
+        title="Event With Reminder",
+        date_start=now + timedelta(hours=1),
+        date_end=now + timedelta(hours=2),
+        reminder_offset=reminder_offset,
+        need_to_remind=True,
+        description=None,
+        rrule=None,
+        calendar_id=None,
+    )
+    event = await repository.create(event_data)
+
+    # Check that reminder was created
+    stmt = select(Reminder).where(Reminder.event_id == event.id)
+    result = await session.execute(stmt)
+    reminder = result.scalar_one_or_none()
+
+    assert reminder is not None
+    assert reminder.event_id == event.id
+    assert reminder.user_id == event.user_id
+    assert reminder.sent is False
+    # Check that remind_at is correctly calculated: date_start - reminder_offset
+    expected_remind_at = event.date_start - timedelta(seconds=reminder_offset)
+    assert reminder.remind_at == expected_remind_at
+
+
+@pytest.mark.asyncio
+async def test_create_event_does_not_create_reminder_when_need_to_remind_false(
+    repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
+) -> None:
+    """Test that creating an event with need_to_remind=False does not create a Reminder."""
+    now = datetime.now(UTC)
+    event_data = EventCreateSchema(
+        user_id=1,
+        title="Event Without Reminder",
+        date_start=now + timedelta(hours=1),
+        date_end=now + timedelta(hours=2),
+        reminder_offset=15 * 60,
+        need_to_remind=False,
+        description=None,
+        rrule=None,
+        calendar_id=None,
+    )
+    event = await repository.create(event_data)
+
+    # Check that no reminder was created
+    stmt = select(Reminder).where(Reminder.event_id == event.id)
+    result = await session.execute(stmt)
+    reminder = result.scalar_one_or_none()
+
+    assert reminder is None
+
+
+@pytest.mark.asyncio
+async def test_create_event_reminder_uses_default_offset(
+    repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
+) -> None:
+    """Test that reminder is created with correct remind_at when using default reminder_offset."""
+    now = datetime.now(UTC)
+    event_data = EventCreateSchema(
+        user_id=1,
+        title="Event With Default Offset",
+        date_start=now + timedelta(hours=1),
+        date_end=now + timedelta(hours=2),
+        reminder_offset=None,  # Will use default from settings
+        need_to_remind=True,
+        description=None,
+        rrule=None,
+        calendar_id=None,
+    )
+    event = await repository.create(event_data)
+
+    # Check that reminder was created with correct remind_at
+    stmt = select(Reminder).where(Reminder.event_id == event.id)
+    result = await session.execute(stmt)
+    reminder = result.scalar_one_or_none()
+
+    assert reminder is not None
+    # Check that remind_at uses the default reminder_offset from settings
+    expected_remind_at = event.date_start - timedelta(seconds=test_user_settings.default_reminder_offset)
+    assert reminder.remind_at == expected_remind_at
 
 
 @pytest.mark.asyncio
@@ -880,89 +1001,6 @@ async def test_find_with_zero_limit(
     )
     events = await repository.find(filter)
     assert len(events) == 1
-
-
-@pytest.mark.asyncio
-async def test_get_upcoming_for_reminders_with_zero_limit(
-    repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
-) -> None:
-    """Test get_upcoming_for_reminders() with limit=0 (should return empty list)."""
-    now = datetime.now(UTC)
-    event = Event(
-        user_id=1,
-        title="Upcoming Event",
-        date_start=now + timedelta(hours=1),
-        date_end=now + timedelta(hours=2),
-        reminder_offset=15 * 60,
-        need_to_remind=True,
-    )
-    session.add(event)
-    await session.flush()
-
-    # limit=0 is valid for get_upcoming_for_reminders (no validation in method signature)
-    events = await repository.get_upcoming_for_reminders(user_id=1, limit=0)
-    assert events == []
-
-
-@pytest.mark.asyncio
-async def test_get_upcoming_for_reminders_respects_limit(
-    repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
-) -> None:
-    """Test that get_upcoming_for_reminders() respects the limit parameter."""
-    now = datetime.now(UTC)
-    events = [
-        Event(
-            user_id=1,
-            title=f"Event {i}",
-            date_start=now + timedelta(hours=i + 1),
-            date_end=now + timedelta(hours=i + 2),
-            reminder_offset=15 * 60,
-            need_to_remind=True,
-        )
-        for i in range(10)
-    ]
-    session.add_all(events)
-    await session.flush()
-
-    result = await repository.get_upcoming_for_reminders(user_id=1, limit=5)
-    assert len(result) == 5
-
-
-@pytest.mark.asyncio
-async def test_get_by_user_id_ordering(
-    repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
-) -> None:
-    """Test that get_by_user_id() returns events ordered by date_start."""
-    now = datetime.now(UTC)
-    event1 = Event(
-        user_id=1,
-        title="Event 1",
-        date_start=now + timedelta(days=2),
-        date_end=now + timedelta(days=2, hours=1),
-        reminder_offset=15 * 60,
-    )
-    event2 = Event(
-        user_id=1,
-        title="Event 2",
-        date_start=now,
-        date_end=now + timedelta(hours=1),
-        reminder_offset=15 * 60,
-    )
-    event3 = Event(
-        user_id=1,
-        title="Event 3",
-        date_start=now + timedelta(days=1),
-        date_end=now + timedelta(days=1, hours=1),
-        reminder_offset=15 * 60,
-    )
-    session.add_all([event1, event2, event3])
-    await session.flush()
-
-    events = await repository.get_by_user_id(1)
-    assert len(events) == 3
-    assert events[0].title == "Event 2"  # Earliest
-    assert events[1].title == "Event 3"
-    assert events[2].title == "Event 1"  # Latest
 
 
 @pytest.mark.asyncio
