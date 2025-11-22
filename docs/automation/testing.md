@@ -62,3 +62,28 @@ we selected the following modules for unit tests:
 
 Because these modules was implemented at this sprint and they are blocking other tasks.
 
+
+## Quality attribute scenario tests
+we have automated only one QAST as we have not yet implemented the functionality of the other QASts.
+### QAST-001-1: Fast Response for Typical Command
+
+**Requirements Reference**: [QAST001-1: Fast Response for Typical Command](../requirements/quality-requirements.md#qast001-1-fast-response-for-typical-command)
+
+**Automation Approach**: 
+
+The QAST was automated using **Telethon library** to simulate real user interactions with the Telegram bot. The test performs 10 consecutive `/start` command requests and measures response times for each attempt. (we didn't check 50 times as it says in requirements.md because if you send a lot of messages, tg bans your account for a while.)
+
+**Key implementation components**:
+- **Performance testing**: [`app/tests/test_QAST/test.py`](../../app/tests/test_QAST/test.py) - `test_bot_fast_response_10_times()` function
+- **Response time measurement**: Measures time between sending command and receiving bot response
+- **Statistical validation**: Validates that 9 out of 10 responses meet the 5-second requirement
+- **Error handling**: Continues testing even if individual requests fail
+- **Detailed reporting**: Provides per-attempt timing statistics and performance metrics
+
+### How to run the test:
+  - set up the environment variables in the `.env` file (that should be in the directory where test file is located):
+    - `API_ID` - your telegram api id (you can get it from [my.telegram.org](https://my.telegram.org/))
+    - `API_HASH` - your telegram api hash (you can get it from [my.telegram.org](https://my.telegram.org/))
+    - `PHONE_NUMBER` - your telegram phone number 
+    - `BOT_USERNAME` - your telegram bot username
+  - write the command `pytest tests/test_QAST/test.py -v -s`
