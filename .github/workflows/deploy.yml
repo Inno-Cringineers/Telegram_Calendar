@@ -10,15 +10,19 @@ jobs:
       name: production
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: "pip"
-          cache-dependency-path: "app/requirements.txt"
-      - name: Install dependencies
-        working-directory: app
-        run: pip install -r requirements.txt
-      - name: Deploy
-        working-directory: app
-        run: docker compose -f docker-compose.yml up -d
+      - name: Install sshpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: Deploy to server
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
+        run: |
+          sshpass -p "$DEPLOY_PASSWORD" ssh "$DEPLOY_USER@$DEPLOY_HOST" << 'EOF'
+            cd prod
+            git pull
+            cd app
+            docker compose down
+            docker compose up -d --build
+          EOF
