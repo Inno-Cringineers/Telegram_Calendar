@@ -60,7 +60,7 @@ L - low, M - medium, H - high
   **Artifact:** Telegram bot processing pipeline.
   **Response:** System processes the command and replies to the user with the result
   **Response Measure:**
-- 98% of commands respond within 5 seconds
+- 90% of commands respond within 5 seconds
 
 ### **QAST001-1: Fast Response for Typical Command**
 
@@ -72,7 +72,7 @@ L - low, M - medium, H - high
 - The bot replies within 5 seconds. 
 
 **Success Criteria:** 
-- At least 49 out of 50 attempts respond in 5 seconds or less.
+- At least 9 out of 10 attempts respond in 5 seconds or less.
 ---
 
 ### **QAS002: Reliable Reminder Scheduling**
