@@ -11,6 +11,7 @@ def load_env():
     """Загружает .env из корня проекта"""
     load_dotenv()
 
+
 @pytest.mark.asyncio
 async def test_bot_fast_response_10_times():
     """
@@ -19,11 +20,11 @@ async def test_bot_fast_response_10_times():
     """
     load_env()
 
-    API_ID = int(os.getenv('API_ID'))
-    API_HASH = os.getenv('API_HASH')
-    PHONE_NUMBER = os.getenv('PHONE_NUMBER')
+    API_ID = int(os.getenv("API_ID"))
+    API_HASH = os.getenv("API_HASH")
+    PHONE_NUMBER = os.getenv("PHONE_NUMBER")
 
-    client = TelegramClient('test_session', API_ID, API_HASH)
+    client = TelegramClient("test_session", API_ID, API_HASH)
 
     try:
         await client.start(PHONE_NUMBER)
@@ -60,10 +61,11 @@ async def test_bot_fast_response_10_times():
 
                     for message in messages:
                         # Ищем сообщение от бота, которое НЕ является командой /start
-                        if (message.sender_id == bot.id and
-                            message.text and
-                            not message.text.strip().startswith('/start')):
-
+                        if (
+                            message.sender_id == bot.id
+                            and message.text
+                            and not message.text.strip().startswith("/start")
+                        ):
                             response_time = time.time() - start_time
                             response_times.append(response_time)
                             successful_responses += 1
@@ -96,7 +98,7 @@ async def test_bot_fast_response_10_times():
                 await asyncio.sleep(1)
 
         # 📊 Анализ результатов
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("📊 ФИНАЛЬНЫЕ РЕЗУЛЬТАТЫ:")
         print(f"✅ Успешных ответов: {successful_responses}/{total_attempts}")
         print(f"⚡ Быстрых ответов (<5 сек): {fast_responses}/{total_attempts}")
@@ -121,10 +123,7 @@ async def test_bot_fast_response_10_times():
         print("\n🎯 ПРОВЕРКА КРИТЕРИЕВ:")
 
         # 1. Проверяем что быстрых ответов >= 9
-        assert fast_responses >= 9, (
-            f"Требуется 9/{total_attempts} быстрых ответов (<5 сек), "
-            f"получено {fast_responses}"
-        )
+        assert fast_responses >= 9, f"Требуется 9/{total_attempts} быстрых ответов (<5 сек), получено {fast_responses}"
         print(f"✅ Быстрых ответов: {fast_responses}/{total_attempts} ✓")
 
         print("\n🎉 ТЕСТ ПРОЙДЕН! Бот стабильно быстро отвечает на /start")
