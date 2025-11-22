@@ -29,18 +29,20 @@ async def session_maker(engine):
 @pytest.mark.asyncio
 async def test_middleware_injects_session_and_commits(session_maker):
     """Ensure middleware injects session and commits when handler completes."""
+    # Arrange
     mw = DatabaseMiddleware(session_maker)
 
-    # create a fake handler which will use data['session']
     async def handler(event, data):
         session = data["session"]
-        # use session to add a row
         session.add(DBTestModel(id=10))
-        # do not explicitly commit - UnitOfWork should commit on exit
         return "ok"
 
     data: dict[str, Any] = {}
+
+    # Act
     result = await mw(handler, event=None, data=data)
+
+    # Assert
     assert result == "ok"
     assert "session" in data and data["session"] is not None
 
@@ -53,6 +55,7 @@ async def test_middleware_injects_session_and_commits(session_maker):
 @pytest.mark.asyncio
 async def test_middleware_rolls_back_on_handler_exception(session_maker):
     """Handler raises -> UnitOfWork must rollback and exception must propagate."""
+    # Arrange
     mw = DatabaseMiddleware(session_maker)
 
     class Boom(Exception):
@@ -63,6 +66,7 @@ async def test_middleware_rolls_back_on_handler_exception(session_maker):
         session.add(DBTestModel(id=11))
         raise Boom()
 
+    # Act & Assert
     with pytest.raises(Boom):
         await mw(bad_handler, event=None, data={})
 
