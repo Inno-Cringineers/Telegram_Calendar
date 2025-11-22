@@ -2,7 +2,7 @@ name: Deploy Stage
 
 on:
   push:
-    # branches: ["main"]
+    branches: ["main"]
     paths: ["app/**", ".github/workflows/**"]
 
 jobs:
@@ -23,3 +23,9 @@ jobs:
             cd app
             docker compose -f docker-compose.stage.yml down
             docker compose -f docker-compose.stage.yml --env-file ../.env up -d --build
+      - name: Add deployment summary
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Stage Environment" >> $GITHUB_STEP_SUMMARY
+          echo "- **Bot Link:** [https://t.me/calendar_collection_stage_bot](https://t.me/calendar_collection_stage_bot)" >> $GITHUB_STEP_SUMMARY

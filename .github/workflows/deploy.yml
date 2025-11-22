@@ -22,3 +22,9 @@ jobs:
             cd app
             docker compose down
             docker compose --env-file ../.env up -d --build
+      - name: Add deployment summary
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Production Environment" >> $GITHUB_STEP_SUMMARY
+          echo "- **Bot Link:** [https://t.me/calendar_collection_bot](https://t.me/calendar_collection_bot)" >> $GITHUB_STEP_SUMMARY
