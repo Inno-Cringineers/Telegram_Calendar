@@ -11,19 +11,15 @@ jobs:
       name: staging
     runs-on: ubuntu-latest
     steps:
-      - name: Install sshpass
-        run: sudo apt-get update && sudo apt-get install -y sshpass
-
       - name: Deploy to server
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
-        run: |
-          sshpass -p "$DEPLOY_PASSWORD" ssh -tt "$DEPLOY_USER@$DEPLOY_HOST" << 'EOF'
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          password: ${{ secrets.DEPLOY_PASSWORD }}
+          script: |
             cd stage
             git pull
             cd app
             docker compose -f docker-compose.stage.yml down
             docker compose -f docker-compose.stage.yml up -d --build
-          EOF
