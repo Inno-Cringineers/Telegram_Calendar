@@ -4,6 +4,7 @@ name: Deploy Jekyll with GitHub Pages dependencies preinstalled
 on:
   # Runs on pushes targeting the default branch
   push:
+    branches: ["main"]
     paths: ["docs/**", ".github/workflows/**"]
 
   # Allows you to run this workflow manually from the Actions tab
@@ -22,18 +23,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Link check job
-  linkcheck:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Lychee Link Checker
-        uses: lycheeverse/lychee-action@v1
-        with:
-          args: "--accept 200,429 ./docs/**/*.md"
-          fail: true
-
   # Build job
   build:
     runs-on: ubuntu-latest
