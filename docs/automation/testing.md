@@ -80,4 +80,10 @@ The QAST was automated using **Telethon library** to simulate real user interact
 - **Error handling**: Continues testing even if individual requests fail
 - **Detailed reporting**: Provides per-attempt timing statistics and performance metrics
 
-to run the test, write the command `pytest tests/test_QAST/test.py -v -s`
+### How to run the test:
+  - set up the environment variables in the `.env` file (that should be in the directory where test file is located):
+    - `API_ID` - your telegram api id (you can get it from [my.telegram.org](https://my.telegram.org/))
+    - `API_HASH` - your telegram api hash (you can get it from [my.telegram.org](https://my.telegram.org/))
+    - `PHONE_NUMBER` - your telegram phone number 
+    - `BOT_USERNAME` - your telegram bot username
+  - write the command `pytest tests/test_QAST/test.py -v -s`
