@@ -2,11 +2,54 @@ name: Deploy Stage
 
 on:
   push:
-    branches: ["main"]
+    # branches: ["main"]
     paths: ["app/**", ".github/workflows/**"]
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: "app/requirements.txt"
+      - working-directory: app
+        run: |
+          pip install -r requirements.txt
+      - name: Run ruff check
+        working-directory: app
+        run: ruff check .
+      - name: Run ruff format check
+        working-directory: app
+        run: ruff format --check .
+      - name: Run mypy
+        working-directory: app
+        run: mypy . --ignore-missing-imports
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: "app/requirements.txt"
+      - name: Install dependencies
+        working-directory: app
+        run: pip install -r requirements.txt
+      - name: Run tests with coverage
+        working-directory: app
+        env:
+          TELEGRAM_TOKEN: dummy_token_for_ci
+          DB_URL: "sqlite:///:memory:"
+        run: |
+          pytest --cov=. --cov-report=xml --cov-report=html --cov-fail-under=30
+
   deploy:
+    needs: [lint, test]
     environment:
       name: staging
     runs-on: ubuntu-latest
@@ -29,3 +72,14 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Stage Environment" >> $GITHUB_STEP_SUMMARY
           echo "- **Bot Link:** [https://t.me/calendar_collection_stage_bot](https://t.me/calendar_collection_stage_bot)" >> $GITHUB_STEP_SUMMARY
+
+  test-staging:
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test staging placeholder
+        run: |
+          echo "⚠️ Тесты для staging окружения не могут быть реализованы сейчас и будут сделаны в будущем"
+          echo "## Test Staging Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **Тесты для staging окружения не могут быть реализованы сейчас и будут сделаны в будущем**" >> $GITHUB_STEP_SUMMARY
