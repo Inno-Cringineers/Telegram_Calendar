@@ -3,18 +3,19 @@ import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from bot.config import load_config
-from bot.database import get_engine, get_session_maker, init_db
-from bot.logger import logger, setup_logger
-from bot.middlewares.database_middlware import DatabaseMiddleware
-from bot.middlewares.logging_middleware import (
+from config.config import load_config
+from database.database import get_engine, get_session_maker, init_db
+from logger.logger import logger, setup_logger
+from middlewares.database_middlware import DatabaseMiddleware
+from middlewares.logging_middleware import (
     CallbackQueryLoggingMiddleware,
     MessageLoggingMiddleware,
 )
-from bot.router import router
+from middlewares.store_middleware import StoreMiddleware
+from router.router import router
 
 
-async def setup_database(dp: Dispatcher, db_url: str):
+async def setup_database(dp: Dispatcher, db_url: str) -> None:
     """Setup database and inject session middleware."""
     engine = get_engine(db_url)
     await init_db(engine)
@@ -24,8 +25,12 @@ async def setup_database(dp: Dispatcher, db_url: str):
     dp.message.middleware(DatabaseMiddleware(session_maker))
     dp.callback_query.middleware(DatabaseMiddleware(session_maker))
 
+    # Middleware to inject Store (must be after DatabaseMiddleware)
+    dp.message.middleware(StoreMiddleware())
+    dp.callback_query.middleware(StoreMiddleware())
 
-def setup_middlewares(dp: Dispatcher):
+
+def setup_middlewares(dp: Dispatcher) -> None:
     """Setup all middlewares for dispatcher."""
     # Logging middlewares
     dp.message.outer_middleware(MessageLoggingMiddleware())
@@ -34,7 +39,7 @@ def setup_middlewares(dp: Dispatcher):
     logger.debug("Middlewares setup completed")
 
 
-async def main():
+async def main() -> None:
     cfg = load_config()
 
     # Setup logger with config
@@ -46,7 +51,7 @@ async def main():
     bot = Bot(cfg.telegram_token)
     dp = Dispatcher(storage=MemoryStorage())
 
-    await setup_database(dp, cfg.db_url)
+    await setup_database(dp, cfg.database.url)
     setup_middlewares(dp)
 
     dp.include_router(router)

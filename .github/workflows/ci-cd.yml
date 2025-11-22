@@ -19,18 +19,18 @@ jobs:
         with:
           python-version: "3.12"
           cache: "pip"
-          cache-dependency-path: "app/src/requirements.txt"
-      - working-directory: app/src
+          cache-dependency-path: "app/requirements.txt"
+      - working-directory: app
         run: |
           pip install -r requirements.txt
       - name: Run ruff check
-        working-directory: app/src
+        working-directory: app
         run: ruff check .
       - name: Run ruff format check
-        working-directory: app/src
+        working-directory: app
         run: ruff format --check .
       - name: Run mypy
-        working-directory: app/src
+        working-directory: app
         run: mypy . --ignore-missing-imports
 
   test:
@@ -41,12 +41,12 @@ jobs:
         with:
           python-version: "3.12"
           cache: "pip"
-          cache-dependency-path: "app/src/requirements.txt"
+          cache-dependency-path: "app/requirements.txt"
       - name: Install dependencies
-        working-directory: app/src
+        working-directory: app
         run: pip install -r requirements.txt
       - name: Run tests with coverage
-        working-directory: app/src
+        working-directory: app
         env:
           TELEGRAM_TOKEN: dummy_token_for_ci
           DB_URL: "sqlite:///:memory:"
@@ -57,10 +57,10 @@ jobs:
         with:
           name: coverage-report
           path: |
-            app/src/coverage.xml
-            app/src/htmlcov/
+            app/coverage.xml
+            app/htmlcov/
       - name: Add coverage summary
-        working-directory: app/src
+        working-directory: app
         run: |
           coverage report > coverage_summary.txt
           echo "## Coverage Summary" >> $GITHUB_STEP_SUMMARY
