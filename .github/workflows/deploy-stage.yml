@@ -1,13 +1,14 @@
-name: Deploy
+name: Deploy Stage
 
 on:
-  schedule:
-    - cron: '0 8 * * 0' # every sunday at 8:00 UTC
+  push:
+    branches: ["main"]
+    paths: ["app/**", ".github/workflows/**"]
 
 jobs:
   deploy:
     environment:
-      name: production
+      name: stage
     runs-on: ubuntu-latest
     steps:
       - name: Install sshpass
@@ -20,9 +21,9 @@ jobs:
           DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
         run: |
           sshpass -p "$DEPLOY_PASSWORD" ssh "$DEPLOY_USER@$DEPLOY_HOST" << 'EOF'
-            cd prod
+            cd stage
             git pull
             cd app
-            docker compose down
-            docker compose up -d --build
+            docker compose -f docker-compose.stage.yml down
+            docker compose -f docker-compose.stage.yml up -d --build
           EOF

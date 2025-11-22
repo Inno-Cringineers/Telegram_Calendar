@@ -1,7 +1,7 @@
 services:
   bot:
     build: .
-    container_name: bot-prod
+    container_name: bot-stage
     environment:
       - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
     restart: unless-stopped
@@ -10,3 +10,4 @@ services:
 
 # TODO: volume for database
 # TODO: volume for logs
+
