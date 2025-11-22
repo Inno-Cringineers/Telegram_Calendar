@@ -31,7 +31,7 @@ jobs:
       - name: Lychee Link Checker
         uses: lycheeverse/lychee-action@v1
         with:
-          args: "--accept 200,429 --exclude-all-private --exclude-mail --exclude-localhost ./docs/**/*.md"
+          args: "--accept 200,429 ./docs/**/*.md"
           fail: true
 
   # Build job
