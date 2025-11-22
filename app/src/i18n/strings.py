@@ -3,6 +3,8 @@
 All user-facing strings are stored here with English and Russian translations.
 """
 
+# TODO: Check babel format for translations
+
 STRINGS: dict[str, dict[str, str]] = {
     "en": {
         # Start handler

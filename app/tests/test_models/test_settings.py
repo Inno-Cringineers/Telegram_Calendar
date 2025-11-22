@@ -12,7 +12,6 @@ from datetime import time
 
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
 from database.database import Base
@@ -54,22 +53,6 @@ def test_quiet_hours_end_required_if_start(session):
         session.flush()  # flush triggers ORM validation
 
 
-def test_quiet_hours_end_cannot_be_before_start(session):
-    """
-    quiet_hours_end must be >= quiet_hours_start.
-    ORM validator should raise ValueError.
-    """
-    with pytest.raises(ValueError):
-        settings = Settings(
-            user_id=1,
-            quiet_hours_start=time(10, 0),
-            quiet_hours_end=time(9, 0),  # Invalid
-        )
-
-        session.add(settings)
-        session.flush()
-
-
 # ---------------------------------------------------------------------------
 # SQL CONSTRAINT TESTS
 # ---------------------------------------------------------------------------
@@ -89,22 +72,6 @@ def test_sql_constraint_end_required_if_start(session):
 
     session.add(settings)
     session.flush()  # Should NOT raise
-
-
-def test_sql_end_must_be_after_or_equal_start(session):
-    """
-    Ensure SQL CheckConstraint enforces quiet_hours_end >= quiet_hours_start.
-    """
-    with pytest.raises(ValueError):
-        settings = Settings(
-            user_id=1,
-            quiet_hours_start=time(10, 0),
-            quiet_hours_end=time(8, 0),  # Violates SQL constraint
-        )
-        session.add(settings)
-
-        with pytest.raises(IntegrityError):
-            session.commit()  # SQL constraint triggers only on commit
 
 
 # ---------------------------------------------------------------------------

@@ -11,6 +11,7 @@ from middlewares.logging_middleware import (
     CallbackQueryLoggingMiddleware,
     MessageLoggingMiddleware,
 )
+from middlewares.store_middleware import StoreMiddleware
 from router.router import router
 
 
@@ -23,6 +24,10 @@ async def setup_database(dp: Dispatcher, db_url: str) -> None:
     # Middleware to inject database session in handlers
     dp.message.middleware(DatabaseMiddleware(session_maker))
     dp.callback_query.middleware(DatabaseMiddleware(session_maker))
+
+    # Middleware to inject Store (must be after DatabaseMiddleware)
+    dp.message.middleware(StoreMiddleware())
+    dp.callback_query.middleware(StoreMiddleware())
 
 
 def setup_middlewares(dp: Dispatcher) -> None:

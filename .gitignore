@@ -141,7 +141,12 @@ vite.config.ts.timestamp-*
 # python cache
 __pycache__/
 
+# Pyright/Pylance configuration (user-specific)
+pyrightconfig.json
+
+# VSCode settings
 .vscode
 
 *.db
 .cache
+.cursor

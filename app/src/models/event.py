@@ -7,28 +7,16 @@ from datetime import UTC, datetime, timedelta
 from typing import Literal
 
 from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, Session, mapped_column, relationship, validates
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from database.database import Base
 from models.calendar import Calendar
-from models.settings import Settings
 
 # Simple regex for RRULE validation (supports basic FREQ, UNTIL, COUNT, INTERVAL)
 RRULE_REGEX = re.compile(r"^(FREQ=(DAILY|WEEKLY|MONTHLY|YEARLY))(;INTERVAL=\d+)?(;COUNT=\d+)?(;UNTIL=\d{8}T\d{6}Z)?$")
 
 # TODO: Expand RRULE
 # TODO: Dont forget PRAGMA foreign_keys = ON; at SQLite db creation
-
-
-def get_default_reminder_offset(session: Session, user_id: int) -> int:
-    """
-    Gets the default reminder time in seconds with respect to the user settings.
-    Taken from Settings.default_reminder_offset.
-    """
-    settings: Settings | None = session.query(Settings).filter_by(user_id=user_id).first()
-    if settings and settings.default_reminder_offset:
-        return settings.default_reminder_offset
-    return 15 * 60  # fallback: 15 minutes
 
 
 class Event(Base):
@@ -43,8 +31,7 @@ class Event(Base):
         calendar_id: int | None - FK to Calendar, nullable.
         date_start: datetime - DTSTART, event start. Not null.
         date_end: datetime - DTEND, event end. Not null and must be not before start.
-        reminder_offset: int - seconds before start to send reminder. Default from Settings.
-        you should use get_default_reminder_offset to get the default value.
+        reminder_offset: int - seconds before start to send reminder. Default should be from Settings.
         need_to_remind: bool - if True, the bot will send a reminder to the user.
         title: string - SUMMARY, event title, max 255 chars. Not empty.
         description: string | None - DESCRIPTION, max 1024 chars.

@@ -6,8 +6,8 @@ import pytest
 import pytest_asyncio
 from sqlalchemy import select
 
-from src.database.database import Base, get_engine, get_session_maker
-from src.middlewares.database_middlware import DatabaseMiddleware
+from database.database import Base, get_engine, get_session_maker
+from middlewares.database_middlware import DatabaseMiddleware
 
 from ..test_database.test_database import DBTestModel
 

@@ -5,7 +5,7 @@ This module defines the `Settings` class, which represents user settings in the 
 from datetime import time
 from typing import Literal
 
-from sqlalchemy import CheckConstraint, Integer, String, Time
+from sqlalchemy import CheckConstraint, Integer, String, Time, event
 from sqlalchemy.orm import Mapped, mapped_column, validates
 
 from database.database import Base
@@ -54,29 +54,9 @@ class Settings(Base):
         CheckConstraint(
             "(quiet_hours_start IS NULL OR quiet_hours_end IS NOT NULL)", name="quiet_end_required_if_start_set"
         ),
-        # quiet_hours_end must be greater than quiet_hours_start
-        CheckConstraint(
-            "(quiet_hours_start IS NULL OR quiet_hours_end > quiet_hours_start)", name="quiet_end_after_start"
-        ),
     )
 
     # --- ORM-level validation ---
-    @validates("quiet_hours_start", "quiet_hours_end")
-    def validate_quiet_hours(
-        self, key: Literal["quiet_hours_start", "quiet_hours_end"], value: time | None
-    ) -> time | None:
-        if key == "quiet_hours_start":
-            if value is not None and self.quiet_hours_end is not None:
-                if self.quiet_hours_end <= value:
-                    raise ValueError("quiet_hours_end cannot be earlier than quiet_hours_start.")
-        elif key == "quiet_hours_end":
-            if self.quiet_hours_start is not None and value is not None:
-                if value <= self.quiet_hours_start:
-                    raise ValueError("quiet_hours_end cannot be earlier than quiet_hours_start.")
-            elif self.quiet_hours_start is not None and value is None:
-                raise ValueError("quiet_hours_end must be set if quiet_hours_start is not NULL.")
-        return value
-
     @validates("default_reminder_offset")
     def validate_default_reminder_offset(self, key: Literal["default_reminder_offset"], value: int) -> int:
         if value is None:
@@ -89,3 +69,14 @@ class Settings(Base):
             raise ValueError("default_reminder_offset must be non-negative.")
 
         return value
+
+
+@event.listens_for(Settings, "before_insert", propagate=True)
+@event.listens_for(Settings, "before_update", propagate=True)
+def validate_quiet_hours_constraint(mapper, connection, target):
+    """
+    Validates that quiet_hours_end is set if quiet_hours_start is not NULL.
+    This validation runs before insert/update, ensuring all fields are set.
+    """
+    if target.quiet_hours_start is not None and target.quiet_hours_end is None:
+        raise ValueError("quiet_hours_end must be set if quiet_hours_start is not NULL.")
