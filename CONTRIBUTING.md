@@ -29,6 +29,14 @@ We follow a weekly sprint cycle (1-week sprints) with the following structure:
 
 We use [GitHub Flow](https://docs.github.com/en/get-started/using-github/github-flow) for our development workflow. This simple branching model is well-suited for our project because it enables fast iteration, is easy to understand, and works well for small teams.
 
+### Secrets
+
+We manage secrets using GitHub Secrets:
+
+- **Location**: Deploy secrets are stored in GitHub repository secrets, testing and another secrets is repo secrets (e.g. `CODECOV_TOKEN`)
+- **Deployment secrets**: Secrets used for deployment (e.g., `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_PASSWORD`) are stored in GitHub Environments (`staging` and `production`)
+- **Naming conventions**: Free format using uppercase letters (e.g., `DEPLOY_HOST`)
+
 ### Branching Strategy
 
 Our branching strategy follows GitHub Flow:
