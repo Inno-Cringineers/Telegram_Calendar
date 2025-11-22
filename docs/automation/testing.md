@@ -71,7 +71,7 @@ we have automated only one QAST as we have not yet implemented the functionality
 
 **Automation Approach**: 
 
-The QAST was automated using **Telethon library** to simulate real user interactions with the Telegram bot. The test performs 10 consecutive `/start` command requests and measures response times for each attempt. (we didn't check 50 times as it says in requirements.md because if you send a lot of messages, tg bans your account for a while.)
+The QAST was automated using **Telethon library** to simulate real user interactions with the Telegram bot. The test performs 10 consecutive `/start` command requests and measures response times for each attempt.
 
 **Key implementation components**:
 - **Performance testing**: [`app/tests/test_QAST/test.py`](../../app/tests/test_QAST/test.py) - `test_bot_fast_response_10_times()` function
