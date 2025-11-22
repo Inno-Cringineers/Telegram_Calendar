@@ -101,6 +101,7 @@ async def test_user_settings(session: "AsyncSession"):
 @pytest.mark.asyncio
 async def test_create_event_success(repository: "EventRepository") -> None:
     """Test successful event creation."""
+    # Arrange
     event_data = EventCreateSchema(
         user_id=1,
         title="Test Event",
@@ -112,7 +113,11 @@ async def test_create_event_success(repository: "EventRepository") -> None:
         rrule=None,
         calendar_id=None,
     )
+
+    # Act
     event = await repository.create(event_data)
+
+    # Assert
     assert event.id is not None
     assert event.title == "Test Event"
     assert event.user_id == 1
@@ -133,6 +138,7 @@ async def test_create_event_with_default_reminder_offset(
     repository: "EventRepository", test_user_settings: "Settings"
 ) -> None:
     """Test event creation with default reminder offset from settings."""
+    # Arrange
     event_data = EventCreateSchema(
         user_id=1,
         title="Test Event",
@@ -144,14 +150,18 @@ async def test_create_event_with_default_reminder_offset(
         rrule=None,
         calendar_id=None,
     )
+
+    # Act
     event = await repository.create(event_data)
+
+    # Assert
     assert event.reminder_offset == test_user_settings.default_reminder_offset
 
 
 @pytest.mark.asyncio
 async def test_create_event_with_calendar_id(repository: "EventRepository", session: "AsyncSession") -> None:
     """Test event creation with calendar_id."""
-    # First create a calendar
+    # Arrange
     calendar = Calendar(user_id=1, name="Work", url="http://example.com/work.ics")
     session.add(calendar)
     await session.flush()
@@ -167,7 +177,11 @@ async def test_create_event_with_calendar_id(repository: "EventRepository", sess
         rrule=None,
         calendar_id=calendar.id,
     )
+
+    # Act
     event = await repository.create(event_data)
+
+    # Assert
     assert event.calendar_id == calendar.id
 
 
@@ -179,7 +193,7 @@ async def test_create_event_with_calendar_id(repository: "EventRepository", sess
 @pytest.mark.asyncio
 async def test_get_by_id_success(repository: "EventRepository", session: "AsyncSession") -> None:
     """Test retrieving event by ID."""
-    # Create event directly first
+    # Arrange
     event = Event(
         user_id=1,
         title="Test Event",
@@ -191,7 +205,10 @@ async def test_get_by_id_success(repository: "EventRepository", session: "AsyncS
     await session.flush()
     event_id = event.id
 
+    # Act
     retrieved = await repository.get_by_id(event_id)
+
+    # Assert
     assert retrieved is not None
     assert retrieved.id == event_id
     assert retrieved.title == "Test Event"
@@ -200,14 +217,20 @@ async def test_get_by_id_success(repository: "EventRepository", session: "AsyncS
 @pytest.mark.asyncio
 async def test_get_by_id_not_found(repository: "EventRepository") -> None:
     """Test retrieving non-existent event by ID."""
-    result = await repository.get_by_id(999)
+    # Arrange
+    non_existent_id = 999
+
+    # Act
+    result = await repository.get_by_id(non_existent_id)
+
+    # Assert
     assert result is None
 
 
 @pytest.mark.asyncio
 async def test_get_by_user_id(repository: "EventRepository", session: "AsyncSession") -> None:
     """Test retrieving all events for a user."""
-    # Create multiple events for user 1
+    # Arrange
     event1 = Event(
         user_id=1,
         title="Event 1",
@@ -232,7 +255,10 @@ async def test_get_by_user_id(repository: "EventRepository", session: "AsyncSess
     session.add_all([event1, event2, event3])
     await session.flush()
 
+    # Act
     events = await repository.get_by_user_id(1)
+
+    # Assert
     assert len(events) == 2
     assert all(e.user_id == 1 for e in events)
 
@@ -240,13 +266,20 @@ async def test_get_by_user_id(repository: "EventRepository", session: "AsyncSess
 @pytest.mark.asyncio
 async def test_get_by_user_id_empty(repository: "EventRepository") -> None:
     """Test retrieving events for user with no events."""
-    events = await repository.get_by_user_id(1)
+    # Arrange
+    user_id = 1
+
+    # Act
+    events = await repository.get_by_user_id(user_id)
+
+    # Assert
     assert events == []
 
 
 @pytest.mark.asyncio
 async def test_get_by_date_range(repository: "EventRepository", session: "AsyncSession") -> None:
     """Test retrieving events within a date range using EventFilter."""
+    # Arrange
     now = datetime.now(UTC)
     past_start = now - timedelta(days=2)
     past_event = Event(
@@ -282,7 +315,11 @@ async def test_get_by_date_range(repository: "EventRepository", session: "AsyncS
         limit=100,
         offset=0,
     )
+
+    # Act
     events = await repository.find(filter)
+
+    # Assert
     assert len(events) == 1
     assert events[0].title == "Current Event"
 
@@ -290,6 +327,7 @@ async def test_get_by_date_range(repository: "EventRepository", session: "AsyncS
 @pytest.mark.asyncio
 async def test_get_upcoming_events(repository: "EventRepository", session: "AsyncSession") -> None:
     """Test retrieving upcoming events for reminders."""
+    # Arrange
     now = datetime.now(UTC)
     past_event = EventCreateSchema(
         user_id=1,
@@ -331,7 +369,10 @@ async def test_get_upcoming_events(repository: "EventRepository", session: "Asyn
     await repository.session.flush()
     await repository.set_reminder_sent(past_event.id)
 
+    # Act
     events = await repository.get_upcoming_for_reminders(user_id=1, from_time=now, to_time=now + timedelta(hours=3))
+
+    # Assert
     assert len(events) == 1
     assert events[0].title == "Upcoming Event"
 
@@ -346,6 +387,7 @@ async def test_update_event_success(
     repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
 ) -> None:
     """Test successful event update."""
+    # Arrange
     event = Event(
         user_id=1,
         title="Original Title",
@@ -358,7 +400,11 @@ async def test_update_event_success(
     event_id = event.id
 
     update_data = EventUpdateSchema(title="Updated Title", description="New description")  # type: ignore[call-arg]
+
+    # Act
     updated = await repository.update(event_id, update_data)
+
+    # Assert
     assert updated.title == "Updated Title"
     assert updated.description == "New description"
     assert updated.id == event_id
@@ -367,9 +413,13 @@ async def test_update_event_success(
 @pytest.mark.asyncio
 async def test_update_event_not_found(repository: "EventRepository") -> None:
     """Test updating non-existent event."""
+    # Arrange
+    non_existent_id = 999
     update_data = EventUpdateSchema(title="New Title")  # type: ignore[call-arg]
+
+    # Act & Assert
     with pytest.raises(EventNotFoundError):
-        await repository.update(999, update_data)
+        await repository.update(non_existent_id, update_data)
 
 
 @pytest.mark.asyncio
@@ -377,6 +427,7 @@ async def test_update_event_partial(
     repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
 ) -> None:
     """Test partial event update (only some fields)."""
+    # Arrange
     event = EventCreateSchema(
         user_id=1,
         title="Original Title",
@@ -391,7 +442,11 @@ async def test_update_event_partial(
     event = await repository.create(event)
 
     update_data = EventUpdateSchema(title="Updated Title")  # type: ignore[call-arg]
+
+    # Act
     updated = await repository.update(event.id, update_data)
+
+    # Assert
     assert updated.title == "Updated Title"
     assert updated.description == "Original Description"  # Unchanged
 
@@ -404,6 +459,7 @@ async def test_update_event_partial(
 @pytest.mark.asyncio
 async def test_delete_event_success(repository: "EventRepository") -> None:
     """Test successful event deletion."""
+    # Arrange
     event = EventCreateSchema(
         user_id=1,
         title="Event to Delete",
@@ -417,9 +473,10 @@ async def test_delete_event_success(repository: "EventRepository") -> None:
     )
     event = await repository.create(event)
 
+    # Act
     await repository.delete(event.id)
 
-    # Verify deletion
+    # Assert
     result = await repository.session.execute(select(Event).where(Event.id == event.id))
     assert result.scalar() is None
 
@@ -427,13 +484,18 @@ async def test_delete_event_success(repository: "EventRepository") -> None:
 @pytest.mark.asyncio
 async def test_delete_event_not_found(repository: "EventRepository") -> None:
     """Test deleting non-existent event."""
+    # Arrange
+    non_existent_id = 999
+
+    # Act & Assert
     with pytest.raises(EventNotFoundError):
-        await repository.delete(999)
+        await repository.delete(non_existent_id)
 
 
 @pytest.mark.asyncio
 async def test_delete_event_checks_user_ownership(repository: "EventRepository") -> None:
     """Test that deletion checks user ownership."""
+    # Arrange
     event = EventCreateSchema(
         user_id=1,
         title="User 1 Event",
@@ -447,7 +509,7 @@ async def test_delete_event_checks_user_ownership(repository: "EventRepository")
     )
     event = await repository.create(event)
 
-    # Try to delete event belonging to different user
+    # Act & Assert
     with pytest.raises(EventNotFoundError):
         await repository.delete(event.id, user_id=2)  # Different user
 
@@ -462,6 +524,7 @@ async def test_get_by_date_range_inclusive_boundaries(
     repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
 ) -> None:
     """Test that date range boundaries are inclusive using EventFilter."""
+    # Arrange
     now = datetime.now(UTC)
     event_at_start = EventCreateSchema(
         user_id=1,
@@ -497,13 +560,18 @@ async def test_get_by_date_range_inclusive_boundaries(
         limit=100,
         offset=0,
     )
+
+    # Act
     events = await repository.find(filter)
+
+    # Assert
     assert len(events) == 2
 
 
 @pytest.mark.asyncio
 async def test_get_upcoming_events_respects_need_to_remind(repository: "EventRepository") -> None:
     """Test that get_upcoming_for_reminders only returns events with need_to_remind=True."""
+    # Arrange
     now = datetime.now(UTC)
     event_with_reminder = EventCreateSchema(
         user_id=1,
@@ -530,7 +598,10 @@ async def test_get_upcoming_events_respects_need_to_remind(repository: "EventRep
     event_with_reminder = await repository.create(event_with_reminder)
     event_without_reminder = await repository.create(event_without_reminder)
 
+    # Act
     events = await repository.get_upcoming_for_reminders(user_id=1, from_time=now, to_time=now + timedelta(hours=3))
+
+    # Assert
     assert len(events) == 1
     assert events[0].title == "With Reminder"
 
@@ -543,6 +614,7 @@ async def test_get_upcoming_events_respects_need_to_remind(repository: "EventRep
 @pytest.mark.asyncio
 async def test_find_with_multiple_filters(repository: "EventRepository") -> None:
     """Test find() method with multiple filters combined."""
+    # Arrange
     calendar = Calendar(user_id=1, name="Work", url="http://example.com/work.ics")
     repository.session.add(calendar)
     await repository.session.flush()
@@ -582,7 +654,11 @@ async def test_find_with_multiple_filters(repository: "EventRepository") -> None
         limit=100,
         offset=0,
     )
+
+    # Act
     events = await repository.find(filter)
+
+    # Assert
     assert len(events) == 1
     assert events[0].title == "Work Event"
 
@@ -590,6 +666,7 @@ async def test_find_with_multiple_filters(repository: "EventRepository") -> None
 @pytest.mark.asyncio
 async def test_find_with_pagination(repository: "EventRepository") -> None:
     """Test find() method with limit and offset."""
+    # Arrange
     events = [
         EventCreateSchema(
             user_id=1,
@@ -606,6 +683,7 @@ async def test_find_with_pagination(repository: "EventRepository") -> None:
     ]
     for event in events:
         await repository.create(event)
+
     filter = EventFilter(
         user_id=1,
         limit=5,
@@ -615,9 +693,14 @@ async def test_find_with_pagination(repository: "EventRepository") -> None:
         start_date_to=None,
         need_to_remind=None,
     )
+
+    # Act
     first_page = await repository.find(filter)
+
+    # Assert
     assert len(first_page) == 5
 
+    # Arrange for second page
     filter = EventFilter(
         user_id=1,
         limit=5,
@@ -627,7 +710,11 @@ async def test_find_with_pagination(repository: "EventRepository") -> None:
         start_date_to=None,
         need_to_remind=None,
     )
+
+    # Act
     second_page = await repository.find(filter)
+
+    # Assert
     assert len(second_page) == 5
     assert first_page[0].id != second_page[0].id
 
@@ -635,6 +722,7 @@ async def test_find_with_pagination(repository: "EventRepository") -> None:
 @pytest.mark.asyncio
 async def test_find_empty_result(repository: "EventRepository") -> None:
     """Test find() method with filters that match no events."""
+    # Arrange
     filter = EventFilter(
         user_id=999,
         calendar_id=None,
@@ -644,7 +732,11 @@ async def test_find_empty_result(repository: "EventRepository") -> None:
         limit=100,
         offset=0,
     )
+
+    # Act
     events = await repository.find(filter)
+
+    # Assert
     assert events == []
 
 
@@ -656,6 +748,7 @@ async def test_find_empty_result(repository: "EventRepository") -> None:
 @pytest.mark.asyncio
 async def test_create_event_without_settings_fallback(repository: "EventRepository", session: "AsyncSession") -> None:
     """Test event creation without user settings - should use fallback (15 minutes)."""
+    # Arrange
     event_data = EventCreateSchema(
         user_id=999,  # User without settings
         title="Test Event",
@@ -667,13 +760,18 @@ async def test_create_event_without_settings_fallback(repository: "EventReposito
         rrule=None,
         calendar_id=None,
     )
+
+    # Act
     event = await repository.create(event_data)
+
+    # Assert
     assert event.reminder_offset == 15 * 60  # Fallback: 15 minutes
 
 
 @pytest.mark.asyncio
 async def test_create_event_with_minimal_data(repository: "EventRepository", test_user_settings: "Settings") -> None:
     """Test event creation with minimal required data."""
+    # Arrange
     event_data = EventCreateSchema(
         user_id=1,
         title="Minimal Event",
@@ -685,7 +783,11 @@ async def test_create_event_with_minimal_data(repository: "EventRepository", tes
         rrule=None,
         calendar_id=None,
     )
+
+    # Act
     event = await repository.create(event_data)
+
+    # Assert
     assert event.id is not None
     assert event.title == "Minimal Event"
     assert event.description is None
@@ -698,6 +800,7 @@ async def test_create_event_with_maximal_data(
     repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
 ) -> None:
     """Test event creation with all fields filled."""
+    # Arrange
     calendar = Calendar(user_id=1, name="Test Calendar", url="http://example.com/test.ics")
     session.add(calendar)
     await session.flush()
@@ -713,7 +816,11 @@ async def test_create_event_with_maximal_data(
         rrule="FREQ=DAILY;INTERVAL=1",
         calendar_id=calendar.id,
     )
+
+    # Act
     event = await repository.create(event_data)
+
+    # Assert
     assert event.id is not None
     assert event.title == "Maximal Event"
     assert event.description == "A very detailed description of the event"
@@ -726,6 +833,7 @@ async def test_create_event_with_same_start_end_date(
     repository: "EventRepository", test_user_settings: "Settings"
 ) -> None:
     """Test event creation with date_start == date_end (instant event)."""
+    # Arrange
     now = datetime.now(UTC)
     event_data = EventCreateSchema(
         user_id=1,
@@ -738,7 +846,11 @@ async def test_create_event_with_same_start_end_date(
         rrule=None,
         calendar_id=None,
     )
+
+    # Act
     event = await repository.create(event_data)
+
+    # Assert
     assert event.date_start == event.date_end
 
 
@@ -747,6 +859,7 @@ async def test_create_event_creates_reminder_when_need_to_remind_true(
     repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
 ) -> None:
     """Test that creating an event with need_to_remind=True creates a Reminder."""
+    # Arrange
     now = datetime.now(UTC)
     reminder_offset = 15 * 60  # 15 minutes
     event_data = EventCreateSchema(
@@ -760,9 +873,11 @@ async def test_create_event_creates_reminder_when_need_to_remind_true(
         rrule=None,
         calendar_id=None,
     )
+
+    # Act
     event = await repository.create(event_data)
 
-    # Check that reminder was created
+    # Assert
     stmt = select(Reminder).where(Reminder.event_id == event.id)
     result = await session.execute(stmt)
     reminder = result.scalar_one_or_none()
@@ -781,6 +896,7 @@ async def test_create_event_does_not_create_reminder_when_need_to_remind_false(
     repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
 ) -> None:
     """Test that creating an event with need_to_remind=False does not create a Reminder."""
+    # Arrange
     now = datetime.now(UTC)
     event_data = EventCreateSchema(
         user_id=1,
@@ -793,9 +909,11 @@ async def test_create_event_does_not_create_reminder_when_need_to_remind_false(
         rrule=None,
         calendar_id=None,
     )
+
+    # Act
     event = await repository.create(event_data)
 
-    # Check that no reminder was created
+    # Assert
     stmt = select(Reminder).where(Reminder.event_id == event.id)
     result = await session.execute(stmt)
     reminder = result.scalar_one_or_none()
@@ -808,6 +926,7 @@ async def test_create_event_reminder_uses_default_offset(
     repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
 ) -> None:
     """Test that reminder is created with correct remind_at when using default reminder_offset."""
+    # Arrange
     now = datetime.now(UTC)
     event_data = EventCreateSchema(
         user_id=1,
@@ -820,9 +939,11 @@ async def test_create_event_reminder_uses_default_offset(
         rrule=None,
         calendar_id=None,
     )
+
+    # Act
     event = await repository.create(event_data)
 
-    # Check that reminder was created with correct remind_at
+    # Assert
     stmt = select(Reminder).where(Reminder.event_id == event.id)
     result = await session.execute(stmt)
     reminder = result.scalar_one_or_none()
@@ -838,6 +959,7 @@ async def test_update_all_fields(
     repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
 ) -> None:
     """Test updating all fields of an event."""
+    # Arrange
     calendar = Calendar(user_id=1, name="Work", url="http://example.com/work.ics")
     session.add(calendar)
     await session.flush()
@@ -869,7 +991,11 @@ async def test_update_all_fields(
         rrule="FREQ=WEEKLY",
         calendar_id=calendar.id,
     )
+
+    # Act
     updated = await repository.update(event_id, update_data)
+
+    # Assert
     assert updated.title == "New Title"
     assert updated.description == "New Description"
     # Compare datetime objects, handling timezone differences
@@ -886,6 +1012,7 @@ async def test_update_with_none_values(
     repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
 ) -> None:
     """Test that updating with None values doesn't clear fields (None means don't update)."""
+    # Arrange
     event = Event(
         user_id=1,
         title="Test Event",
@@ -904,7 +1031,11 @@ async def test_update_with_none_values(
     # Update with no fields set (empty schema) - should not change anything
     # Pydantic's exclude_unset=True means None values are excluded if not explicitly set
     update_data = EventUpdateSchema()  # Empty update - no fields set  # type: ignore[call-arg]
+
+    # Act
     updated = await repository.update(event_id, update_data)
+
+    # Assert
     assert updated.title == "Test Event"  # Unchanged
     assert updated.description == "Some Description"  # Unchanged
     assert updated.rrule == "FREQ=DAILY"  # Unchanged
@@ -915,6 +1046,7 @@ async def test_find_with_no_filters(
     repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
 ) -> None:
     """Test find() method with no filters (should return all events)."""
+    # Arrange
     event1 = Event(
         user_id=1,
         title="Event 1",
@@ -941,7 +1073,11 @@ async def test_find_with_no_filters(
         limit=100,
         offset=0,
     )  # No filters
+
+    # Act
     events = await repository.find(filter)
+
+    # Assert
     assert len(events) == 2
 
 
@@ -950,6 +1086,7 @@ async def test_find_with_pagination_offset_exceeds_total(
     repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
 ) -> None:
     """Test find() with offset greater than total number of events."""
+    # Arrange
     event = Event(
         user_id=1,
         title="Single Event",
@@ -969,7 +1106,11 @@ async def test_find_with_pagination_offset_exceeds_total(
         start_date_to=None,
         need_to_remind=None,
     )
+
+    # Act
     events = await repository.find(filter)
+
+    # Assert
     assert events == []
 
 
@@ -978,6 +1119,7 @@ async def test_find_with_zero_limit(
     repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
 ) -> None:
     """Test find() with limit=1 (minimum valid limit, EventFilter doesn't allow limit=0)."""
+    # Arrange
     event = Event(
         user_id=1,
         title="Test Event",
@@ -999,7 +1141,11 @@ async def test_find_with_zero_limit(
         need_to_remind=None,
         offset=0,
     )
+
+    # Act
     events = await repository.find(filter)
+
+    # Assert
     assert len(events) == 1
 
 
@@ -1008,6 +1154,7 @@ async def test_delete_event_success_with_user_id_check(
     repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
 ) -> None:
     """Test successful deletion when user_id matches."""
+    # Arrange
     event = Event(
         user_id=1,
         title="Event to Delete",
@@ -1019,8 +1166,10 @@ async def test_delete_event_success_with_user_id_check(
     await session.flush()
     event_id = event.id
 
+    # Act
     await repository.delete(event_id, user_id=1)  # Correct user
 
+    # Assert
     from sqlalchemy import select
 
     result = await session.execute(select(Event).where(Event.id == event_id))
@@ -1032,6 +1181,7 @@ async def test_find_with_need_to_remind_filter(
     repository: "EventRepository", session: "AsyncSession", test_user_settings: "Settings"
 ) -> None:
     """Test find() with need_to_remind filter."""
+    # Arrange
     event1 = Event(
         user_id=1,
         title="With Reminder",
@@ -1060,10 +1210,15 @@ async def test_find_with_need_to_remind_filter(
         limit=100,
         offset=0,
     )
+
+    # Act
     events = await repository.find(filter)
+
+    # Assert
     assert len(events) == 1
     assert events[0].need_to_remind is True
 
+    # Arrange for second test
     filter = EventFilter(
         user_id=1,
         need_to_remind=False,
@@ -1073,6 +1228,10 @@ async def test_find_with_need_to_remind_filter(
         limit=100,
         offset=0,
     )
+
+    # Act
     events = await repository.find(filter)
+
+    # Assert
     assert len(events) == 1
     assert events[0].need_to_remind is False
