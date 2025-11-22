@@ -2,7 +2,7 @@ name: Deploy Stage
 
 on:
   push:
-    branches: ["main"]
+    # branches: ["main"]
     paths: ["app/**", ".github/workflows/**"]
 
 jobs:
@@ -20,7 +20,7 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
         run: |
-          sshpass -p "$DEPLOY_PASSWORD" ssh "$DEPLOY_USER@$DEPLOY_HOST" << 'EOF'
+          sshpass -p "$DEPLOY_PASSWORD" ssh -tt "$DEPLOY_USER@$DEPLOY_HOST" << 'EOF'
             cd stage
             git pull
             cd app
