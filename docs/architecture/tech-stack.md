@@ -60,6 +60,6 @@
 
 ### Link Checker Framework
 
-**Technology:** Not used
+**Technology:** lychee
 
-**Reason:** Link checkers crashing on our codebase. (for example on figma links)
+**Reason:** Works well with Jekyll and GitHub Pages.
