@@ -4,9 +4,9 @@ Pydantic schemas for repository operations.
 These schemas provide type-safe input validation for repository methods.
 """
 
-from datetime import datetime
+from datetime import datetime, time
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 # TODO: refactor repetitive code
 
@@ -284,3 +284,114 @@ class CalendarFilter(BaseModel):
             if len(v) > 255:
                 raise ValueError("Calendar URL cannot exceed 255 characters.")
         return v
+
+
+# ----------------------------------------------------------------------------
+# Settings schemas
+# ----------------------------------------------------------------------------
+
+
+class SettingsCreateSchema(BaseModel):
+    """Schema for creating a new settings.
+
+    Attributes:
+        user_id: Telegram user ID. Required.
+        timezone: Timezone. Optional, defaults to "UTC+2".
+        language: Language. Optional, defaults to "ru".
+        quiet_hours_start: Quiet hours start time. Optional, defaults to None.
+        quiet_hours_end: Quiet hours end time. Optional, defaults to None.
+        daily_plans_time: Daily plans time. Optional, defaults to None.
+        default_reminder_offset: Default reminder offset. Optional, defaults to 15 minutes.
+    """
+
+    user_id: int = Field(..., description="Telegram user ID")
+    timezone: str = Field(..., description="Timezone")
+    language: str = Field(..., description="Language")
+    quiet_hours_start: time | None = Field(None, description="Quiet hours start time")
+    quiet_hours_end: time | None = Field(None, description="Quiet hours end time")
+    daily_plans_time: time | None = Field(None, description="Daily plans time")
+    default_reminder_offset: int = Field(15 * 60, description="Default reminder offset in seconds")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "user_id": 123456789,
+                "timezone": "UTC+2",
+                "language": "ru",
+            }
+        }
+    )
+
+    @field_validator("default_reminder_offset")
+    @classmethod
+    def validate_default_reminder_offset(cls, v: int) -> int:
+        """Validate that default_reminder_offset is not negative."""
+        if v < 0:
+            raise ValueError("Default reminder offset cannot be negative.")
+        return v
+
+    @model_validator(mode="after")
+    def validate_quiet_hours(self) -> "SettingsCreateSchema":
+        """Validate that quiet_hours_end is set if quiet_hours_start is not NULL, and end > start."""
+        if self.quiet_hours_start is not None:
+            if self.quiet_hours_end is None:
+                raise ValueError("quiet_hours_end must be set if quiet_hours_start is not NULL.")
+        return self
+
+
+class SettingsUpdateSchema(BaseModel):
+    """Schema for updating an existing settings.
+
+    Attributes:
+        timezone: Timezone. Optional, defaults to "UTC+2".
+        language: Language. Optional, defaults to "ru".
+        quiet_hours_start: Quiet hours start time. Optional, defaults to None.
+        quiet_hours_end: Quiet hours end time. Optional, defaults to None.
+        daily_plans_time: Daily plans time. Optional, defaults to None.
+        default_reminder_offset: Default reminder offset. Optional, defaults to 15 minutes.
+    """
+
+    timezone: str | None = Field(None, description="Timezone")
+    language: str | None = Field(None, description="Language")
+    quiet_hours_start: time | None = Field(None, description="Quiet hours start time")
+    quiet_hours_end: time | None = Field(None, description="Quiet hours end time")
+    daily_plans_time: time | None = Field(None, description="Daily plans time")
+    default_reminder_offset: int | None = Field(None, ge=0, description="Default reminder offset in seconds")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "timezone": "UTC+2",
+                "language": "ru",
+                "quiet_hours_start": "09:00",
+                "quiet_hours_end": "18:00",
+                "daily_plans_time": "09:00",
+                "default_reminder_offset": 15 * 60,
+            }
+        }
+    )
+
+    @field_validator("default_reminder_offset")
+    @classmethod
+    def validate_default_reminder_offset(cls, v: int | None) -> int | None:
+        """Validate that default_reminder_offset is not negative."""
+        if v is not None and v < 0:
+            raise ValueError("Default reminder offset cannot be negative.")
+        return v
+
+    @model_validator(mode="after")
+    def validate_quiet_hours(self) -> "SettingsUpdateSchema":
+        """Validate quiet hours relationship when fields are being updated.
+
+        If quiet_hours_start is set to a non-None value, quiet_hours_end must also be set.
+        If both are set, validate that end > start.
+        """
+        # Check which fields are actually set (not just default values)
+        set_fields = set(self.model_dump(exclude_unset=True).keys())
+
+        # If quiet_hours_start is being set to a non-None value, quiet_hours_end must also be set
+        if "quiet_hours_start" in set_fields and self.quiet_hours_start is not None:
+            if "quiet_hours_end" not in set_fields or self.quiet_hours_end is None:
+                raise ValueError("quiet_hours_end must be set if quiet_hours_start is not NULL.")
+
+        return self

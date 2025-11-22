@@ -74,4 +74,40 @@ class ValidationError(RepositoryError):
 class EventValidationError(ValidationError):
     """Raised when Event validation fails."""
 
-    pass
+    def __init__(self, message: str) -> None:
+        """Initialize EventValidationError.
+
+        Args:
+            message: Error message describing the validation failure.
+        """
+        self.message = message
+        super().__init__(f"Event validation error: {message}")
+
+
+class SettingsValidationError(ValidationError):
+    """Raised when Settings validation fails."""
+
+    def __init__(self, message: str) -> None:
+        """Initialize SettingsValidationError.
+
+        Args:
+            message: Error message describing the validation failure.
+        """
+        self.message = message
+        super().__init__(f"Settings validation error: {message}")
+
+
+class SettingsNotFoundError(NotFoundError):
+    """Raised when Settings is not found."""
+
+    def __init__(self, settings_id: int | None = None, user_id: int | None = None) -> None:
+        """Initialize SettingsNotFoundError.
+
+        Args:
+            settings_id: The settings ID that was not found (if applicable).
+            user_id: The user ID that was used in search (if applicable).
+        """
+        self.settings_id = settings_id
+        self.user_id = user_id
+        identifier = f"id={settings_id}" if settings_id else f"user_id={user_id}"
+        super().__init__("Settings", identifier)
