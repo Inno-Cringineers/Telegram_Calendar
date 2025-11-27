@@ -80,6 +80,7 @@ async def repository(session: "AsyncSession") -> "SettingsRepository":
 @pytest.mark.asyncio
 async def test_create_settings_success(repository: "SettingsRepository") -> None:
     """Test successful settings creation."""
+    # Arrange
     settings_data = SettingsCreateSchema(
         user_id=1,
         timezone="UTC+2",
@@ -89,7 +90,11 @@ async def test_create_settings_success(repository: "SettingsRepository") -> None
         daily_plans_time=None,
         default_reminder_offset=15 * 60,
     )
+
+    # Act
     settings = await repository.create(settings_data)
+
+    # Assert
     assert settings.id is not None
     assert settings.user_id == 1
     assert settings.timezone == "UTC+2"
@@ -100,6 +105,7 @@ async def test_create_settings_success(repository: "SettingsRepository") -> None
 @pytest.mark.asyncio
 async def test_create_settings_with_quiet_hours(repository: "SettingsRepository") -> None:
     """Test settings creation with quiet hours."""
+    # Arrange
     settings_data = SettingsCreateSchema(
         user_id=1,
         timezone="UTC+2",
@@ -109,7 +115,11 @@ async def test_create_settings_with_quiet_hours(repository: "SettingsRepository"
         daily_plans_time=None,
         default_reminder_offset=15 * 60,
     )
+
+    # Act
     settings = await repository.create(settings_data)
+
+    # Assert
     assert settings.quiet_hours_start == time(22, 0)
     assert settings.quiet_hours_end == time(8, 0)
 
@@ -117,6 +127,7 @@ async def test_create_settings_with_quiet_hours(repository: "SettingsRepository"
 @pytest.mark.asyncio
 async def test_create_settings_with_daily_plans_time(repository: "SettingsRepository") -> None:
     """Test settings creation with daily plans time."""
+    # Arrange
     settings_data = SettingsCreateSchema(
         user_id=1,
         timezone="UTC+2",
@@ -126,13 +137,18 @@ async def test_create_settings_with_daily_plans_time(repository: "SettingsReposi
         daily_plans_time=time(9, 0),
         default_reminder_offset=15 * 60,
     )
+
+    # Act
     settings = await repository.create(settings_data)
+
+    # Assert
     assert settings.daily_plans_time == time(9, 0)
 
 
 @pytest.mark.asyncio
 async def test_create_settings_with_all_fields(repository: "SettingsRepository") -> None:
     """Test settings creation with all fields filled."""
+    # Arrange
     settings_data = SettingsCreateSchema(
         user_id=1,
         timezone="UTC+3",
@@ -142,7 +158,11 @@ async def test_create_settings_with_all_fields(repository: "SettingsRepository")
         daily_plans_time=time(8, 30),
         default_reminder_offset=30 * 60,
     )
+
+    # Act
     settings = await repository.create(settings_data)
+
+    # Assert
     assert settings.timezone == "UTC+3"
     assert settings.language == "en"
     assert settings.quiet_hours_start == time(23, 0)
@@ -154,6 +174,7 @@ async def test_create_settings_with_all_fields(repository: "SettingsRepository")
 @pytest.mark.asyncio
 async def test_create_settings_with_minimal_data(repository: "SettingsRepository") -> None:
     """Test settings creation with minimal required data."""
+    # Arrange
     settings_data = SettingsCreateSchema(
         user_id=1,
         timezone="UTC+2",
@@ -163,7 +184,11 @@ async def test_create_settings_with_minimal_data(repository: "SettingsRepository
         daily_plans_time=None,
         default_reminder_offset=15 * 60,
     )
+
+    # Act
     settings = await repository.create(settings_data)
+
+    # Assert
     assert settings.id is not None
     assert settings.user_id == 1
     assert settings.timezone == "UTC+2"
@@ -182,7 +207,7 @@ async def test_create_settings_with_minimal_data(repository: "SettingsRepository
 @pytest.mark.asyncio
 async def test_get_by_id_success(repository: "SettingsRepository", session: "AsyncSession") -> None:
     """Test retrieving settings by ID."""
-    # Create settings directly first
+    # Arrange
     settings = Settings(
         user_id=1,
         timezone="UTC+2",
@@ -193,7 +218,10 @@ async def test_get_by_id_success(repository: "SettingsRepository", session: "Asy
     await session.flush()
     settings_id = settings.id
 
+    # Act
     retrieved = await repository.get_by_id(settings_id)
+
+    # Assert
     assert retrieved is not None
     assert retrieved.id == settings_id
     assert retrieved.user_id == 1
@@ -203,21 +231,26 @@ async def test_get_by_id_success(repository: "SettingsRepository", session: "Asy
 @pytest.mark.asyncio
 async def test_get_by_id_not_found(repository: "SettingsRepository") -> None:
     """Test retrieving non-existent settings by ID."""
-    result = await repository.get_by_id(999)
+    # Arrange
+    non_existent_id = 999
+
+    # Act
+    result = await repository.get_by_id(non_existent_id)
+
+    # Assert
     assert result is None
 
 
 @pytest.mark.asyncio
 async def test_get_by_user_id_success(repository: "SettingsRepository", session: "AsyncSession") -> None:
     """Test retrieving settings by user ID."""
-    # Create settings for user 1
+    # Arrange
     settings1 = Settings(
         user_id=1,
         timezone="UTC+2",
         language="ru",
         default_reminder_offset=15 * 60,
     )
-    # Create settings for user 2
     settings2 = Settings(
         user_id=2,
         timezone="UTC+3",
@@ -227,7 +260,10 @@ async def test_get_by_user_id_success(repository: "SettingsRepository", session:
     session.add_all([settings1, settings2])
     await session.flush()
 
+    # Act
     retrieved = await repository.get_by_user_id(1)
+
+    # Assert
     assert retrieved is not None
     assert retrieved.user_id == 1
     assert retrieved.timezone == "UTC+2"
@@ -237,14 +273,20 @@ async def test_get_by_user_id_success(repository: "SettingsRepository", session:
 @pytest.mark.asyncio
 async def test_get_by_user_id_not_found(repository: "SettingsRepository") -> None:
     """Test retrieving settings for user with no settings."""
-    result = await repository.get_by_user_id(999)
+    # Arrange
+    non_existent_user_id = 999
+
+    # Act
+    result = await repository.get_by_user_id(non_existent_user_id)
+
+    # Assert
     assert result is None
 
 
 @pytest.mark.asyncio
 async def test_get_by_user_id_returns_single_result(repository: "SettingsRepository", session: "AsyncSession") -> None:
     """Test that get_by_user_id returns only one settings per user."""
-    # Create multiple settings for the same user (if allowed by constraints)
+    # Arrange
     settings1 = Settings(
         user_id=1,
         timezone="UTC+2",
@@ -254,7 +296,10 @@ async def test_get_by_user_id_returns_single_result(repository: "SettingsReposit
     session.add(settings1)
     await session.flush()
 
+    # Act
     retrieved = await repository.get_by_user_id(1)
+
+    # Assert
     assert retrieved is not None
     assert retrieved.id == settings1.id
 
@@ -267,6 +312,7 @@ async def test_get_by_user_id_returns_single_result(repository: "SettingsReposit
 @pytest.mark.asyncio
 async def test_update_settings_success(repository: "SettingsRepository", session: "AsyncSession") -> None:
     """Test successful settings update."""
+    # Arrange
     settings = Settings(
         user_id=1,
         timezone="UTC+2",
@@ -278,7 +324,11 @@ async def test_update_settings_success(repository: "SettingsRepository", session
     settings_id = settings.id
 
     update_data = SettingsUpdateSchema(timezone="UTC+3", language="en")  # type: ignore[call-arg]
+
+    # Act
     updated = await repository.update(settings_id, update_data)
+
+    # Assert
     assert updated.timezone == "UTC+3"
     assert updated.language == "en"
     assert updated.id == settings_id
@@ -288,14 +338,19 @@ async def test_update_settings_success(repository: "SettingsRepository", session
 @pytest.mark.asyncio
 async def test_update_settings_not_found(repository: "SettingsRepository") -> None:
     """Test updating non-existent settings."""
+    # Arrange
+    non_existent_id = 999
     update_data = SettingsUpdateSchema(timezone="UTC+3")  # type: ignore[call-arg]
+
+    # Act & Assert
     with pytest.raises(SettingsNotFoundError):
-        await repository.update(999, update_data)
+        await repository.update(non_existent_id, update_data)
 
 
 @pytest.mark.asyncio
 async def test_update_settings_partial(repository: "SettingsRepository", session: "AsyncSession") -> None:
     """Test partial settings update (only some fields)."""
+    # Arrange
     settings = Settings(
         user_id=1,
         timezone="UTC+2",
@@ -307,7 +362,11 @@ async def test_update_settings_partial(repository: "SettingsRepository", session
     settings_id = settings.id
 
     update_data = SettingsUpdateSchema(timezone="UTC+3")  # type: ignore[call-arg]
+
+    # Act
     updated = await repository.update(settings_id, update_data)
+
+    # Assert
     assert updated.timezone == "UTC+3"
     assert updated.language == "ru"  # Unchanged
     assert updated.default_reminder_offset == 15 * 60  # Unchanged
@@ -316,6 +375,7 @@ async def test_update_settings_partial(repository: "SettingsRepository", session
 @pytest.mark.asyncio
 async def test_update_settings_with_quiet_hours(repository: "SettingsRepository", session: "AsyncSession") -> None:
     """Test updating settings with quiet hours."""
+    # Arrange
     settings = Settings(
         user_id=1,
         timezone="UTC+2",
@@ -330,7 +390,11 @@ async def test_update_settings_with_quiet_hours(repository: "SettingsRepository"
         quiet_hours_start=time(22, 0),
         quiet_hours_end=time(8, 0),  # type: ignore[call-arg]
     )
+
+    # Act
     updated = await repository.update(settings_id, update_data)
+
+    # Assert
     assert updated.quiet_hours_start == time(22, 0)
     assert updated.quiet_hours_end == time(8, 0)
 
@@ -338,6 +402,7 @@ async def test_update_settings_with_quiet_hours(repository: "SettingsRepository"
 @pytest.mark.asyncio
 async def test_update_settings_with_daily_plans_time(repository: "SettingsRepository", session: "AsyncSession") -> None:
     """Test updating settings with daily plans time."""
+    # Arrange
     settings = Settings(
         user_id=1,
         timezone="UTC+2",
@@ -349,13 +414,18 @@ async def test_update_settings_with_daily_plans_time(repository: "SettingsReposi
     settings_id = settings.id
 
     update_data = SettingsUpdateSchema(daily_plans_time=time(9, 0))  # type: ignore[call-arg]
+
+    # Act
     updated = await repository.update(settings_id, update_data)
+
+    # Assert
     assert updated.daily_plans_time == time(9, 0)
 
 
 @pytest.mark.asyncio
 async def test_update_all_fields(repository: "SettingsRepository", session: "AsyncSession") -> None:
     """Test updating all fields of settings."""
+    # Arrange
     settings = Settings(
         user_id=1,
         timezone="UTC+2",
@@ -377,7 +447,11 @@ async def test_update_all_fields(repository: "SettingsRepository", session: "Asy
         daily_plans_time=time(8, 30),
         default_reminder_offset=30 * 60,
     )
+
+    # Act
     updated = await repository.update(settings_id, update_data)
+
+    # Assert
     assert updated.timezone == "UTC+5"
     assert updated.language == "en"
     assert updated.quiet_hours_start == time(23, 0)
@@ -389,6 +463,7 @@ async def test_update_all_fields(repository: "SettingsRepository", session: "Asy
 @pytest.mark.asyncio
 async def test_update_with_none_values(repository: "SettingsRepository", session: "AsyncSession") -> None:
     """Test that updating with None values doesn't clear fields (None means don't update)."""
+    # Arrange
     settings = Settings(
         user_id=1,
         timezone="UTC+2",
@@ -405,7 +480,11 @@ async def test_update_with_none_values(repository: "SettingsRepository", session
     # Update with no fields set (empty schema) - should not change anything
     # Pydantic's exclude_unset=True means None values are excluded if not explicitly set
     update_data = SettingsUpdateSchema()  # Empty update - no fields set  # type: ignore[call-arg]
+
+    # Act
     updated = await repository.update(settings_id, update_data)
+
+    # Assert
     assert updated.timezone == "UTC+2"  # Unchanged
     assert updated.language == "ru"  # Unchanged
     assert updated.quiet_hours_start == time(22, 0)  # Unchanged
@@ -421,6 +500,7 @@ async def test_update_with_none_values(repository: "SettingsRepository", session
 @pytest.mark.asyncio
 async def test_delete_settings_success(repository: "SettingsRepository", session: "AsyncSession") -> None:
     """Test successful settings deletion."""
+    # Arrange
     settings = Settings(
         user_id=1,
         timezone="UTC+2",
@@ -431,9 +511,10 @@ async def test_delete_settings_success(repository: "SettingsRepository", session
     await session.flush()
     settings_id = settings.id
 
+    # Act
     await repository.delete(settings_id)
 
-    # Verify deletion
+    # Assert
     result = await session.execute(select(Settings).where(Settings.id == settings_id))
     assert result.scalar() is None
 
@@ -441,8 +522,12 @@ async def test_delete_settings_success(repository: "SettingsRepository", session
 @pytest.mark.asyncio
 async def test_delete_settings_not_found(repository: "SettingsRepository") -> None:
     """Test deleting non-existent settings."""
+    # Arrange
+    non_existent_id = 999
+
+    # Act & Assert
     with pytest.raises(SettingsNotFoundError):
-        await repository.delete(999)
+        await repository.delete(non_existent_id)
 
 
 # ============================================================================
@@ -453,6 +538,7 @@ async def test_delete_settings_not_found(repository: "SettingsRepository") -> No
 @pytest.mark.asyncio
 async def test_create_settings_with_default_reminder_offset(repository: "SettingsRepository") -> None:
     """Test settings creation with default reminder offset."""
+    # Arrange
     settings_data = SettingsCreateSchema(
         user_id=1,
         timezone="UTC+2",
@@ -462,13 +548,18 @@ async def test_create_settings_with_default_reminder_offset(repository: "Setting
         daily_plans_time=None,
         default_reminder_offset=30 * 60,
     )
+
+    # Act
     settings = await repository.create(settings_data)
+
+    # Assert
     assert settings.default_reminder_offset == 30 * 60
 
 
 @pytest.mark.asyncio
 async def test_update_settings_clear_quiet_hours(repository: "SettingsRepository", session: "AsyncSession") -> None:
     """Test clearing quiet hours by setting both to None."""
+    # Arrange
     settings = Settings(
         user_id=1,
         timezone="UTC+2",
@@ -481,9 +572,12 @@ async def test_update_settings_clear_quiet_hours(repository: "SettingsRepository
     await session.flush()
     settings_id = settings.id
 
-    # Clear quiet hours
     update_data = SettingsUpdateSchema(quiet_hours_start=None, quiet_hours_end=None)  # type: ignore[call-arg]
+
+    # Act
     updated = await repository.update(settings_id, update_data)
+
+    # Assert
     assert updated.quiet_hours_start is None
     assert updated.quiet_hours_end is None
 
@@ -493,6 +587,7 @@ async def test_update_settings_clear_daily_plans_time(
     repository: "SettingsRepository", session: "AsyncSession"
 ) -> None:
     """Test clearing daily plans time by setting to None."""
+    # Arrange
     settings = Settings(
         user_id=1,
         timezone="UTC+2",
@@ -504,9 +599,12 @@ async def test_update_settings_clear_daily_plans_time(
     await session.flush()
     settings_id = settings.id
 
-    # Clear daily plans time
     update_data = SettingsUpdateSchema(daily_plans_time=None)  # type: ignore[call-arg]
+
+    # Act
     updated = await repository.update(settings_id, update_data)
+
+    # Assert
     assert updated.daily_plans_time is None
 
 
@@ -515,6 +613,7 @@ async def test_create_multiple_settings_for_different_users(
     repository: "SettingsRepository", session: "AsyncSession"
 ) -> None:
     """Test creating settings for multiple users."""
+    # Arrange
     settings1_data = SettingsCreateSchema(
         user_id=1,
         timezone="UTC+2",
@@ -534,9 +633,11 @@ async def test_create_multiple_settings_for_different_users(
         default_reminder_offset=15 * 60,
     )
 
+    # Act
     settings1 = await repository.create(settings1_data)
     settings2 = await repository.create(settings2_data)
 
+    # Assert
     assert settings1.user_id == 1
     assert settings2.user_id == 2
     assert settings1.id != settings2.id
@@ -553,6 +654,7 @@ async def test_create_multiple_settings_for_different_users(
 @pytest.mark.asyncio
 async def test_update_default_reminder_offset(repository: "SettingsRepository", session: "AsyncSession") -> None:
     """Test updating default reminder offset."""
+    # Arrange
     settings = Settings(
         user_id=1,
         timezone="UTC+2",
@@ -564,13 +666,18 @@ async def test_update_default_reminder_offset(repository: "SettingsRepository", 
     settings_id = settings.id
 
     update_data = SettingsUpdateSchema(default_reminder_offset=60 * 60)  # type: ignore[call-arg]
+
+    # Act
     updated = await repository.update(settings_id, update_data)
+
+    # Assert
     assert updated.default_reminder_offset == 60 * 60
 
 
 @pytest.mark.asyncio
 async def test_create_settings_with_zero_reminder_offset(repository: "SettingsRepository") -> None:
     """Test creating settings with zero reminder offset."""
+    # Arrange
     settings_data = SettingsCreateSchema(
         user_id=1,
         timezone="UTC+2",
@@ -580,5 +687,9 @@ async def test_create_settings_with_zero_reminder_offset(repository: "SettingsRe
         daily_plans_time=None,
         default_reminder_offset=0,
     )
+
+    # Act
     settings = await repository.create(settings_data)
+
+    # Assert
     assert settings.default_reminder_offset == 0

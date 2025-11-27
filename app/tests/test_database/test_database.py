@@ -15,16 +15,36 @@ class DBTestModel(Base):
 
 
 def test_normalize_db_url_sqlite_memory():
-    assert normalize_db_url("sqlite:///:memory:") == "sqlite+aiosqlite:///:memory:"
+    # Arrange
+    url = "sqlite:///:memory:"
+
+    # Act
+    result = normalize_db_url(url)
+
+    # Assert
+    assert result == "sqlite+aiosqlite:///:memory:"
 
 
 def test_normalize_db_url_sqlite_file():
-    assert normalize_db_url("sqlite:///file.db") == "sqlite+aiosqlite:///file.db"
+    # Arrange
+    url = "sqlite:///file.db"
+
+    # Act
+    result = normalize_db_url(url)
+
+    # Assert
+    assert result == "sqlite+aiosqlite:///file.db"
 
 
 def test_normalize_db_url_postgres_untouched():
+    # Arrange
     url = "postgresql+asyncpg://user:pass@localhost/db"
-    assert normalize_db_url(url) == url
+
+    # Act
+    result = normalize_db_url(url)
+
+    # Assert
+    assert result == url
 
 
 @pytest_asyncio.fixture
@@ -44,10 +64,11 @@ async def session_maker(engine):
 
 @pytest.mark.asyncio
 async def test_uow_commit_persists(session_maker):
+    # Arrange & Act
     async with UnitOfWork(session_maker) as session:
         session.add(DBTestModel(id=1))
 
-    # After context exits, data must be persisted
+    # Assert
     async with session_maker() as session:
         res = await session.execute(select(DBTestModel).where(DBTestModel.id == 1))
         assert res.scalar() is not None
@@ -55,9 +76,11 @@ async def test_uow_commit_persists(session_maker):
 
 @pytest.mark.asyncio
 async def test_uow_rollback_on_exception(session_maker):
+    # Arrange
     class Boom(Exception):
         pass
 
+    # Act & Assert
     with pytest.raises(Boom):
         async with UnitOfWork(session_maker) as session:
             session.add(DBTestModel(id=2))
@@ -71,10 +94,12 @@ async def test_uow_rollback_on_exception(session_maker):
 
 @pytest.mark.asyncio
 async def test_session_maker_direct_usage(session_maker):
+    # Arrange & Act
     async with session_maker() as session:
         session.add(DBTestModel(id=3))
         await session.commit()
 
+    # Assert
     async with session_maker() as session:
         res = await session.execute(select(DBTestModel).where(DBTestModel.id == 3))
         assert res.scalar() is not None

@@ -30,47 +30,97 @@ def session():
 
 
 def test_name_cannot_be_empty(session):
+    # Arrange
+    user_id = 1
+    name = "   "
+    url = "http://example.com/calendar.ics"
+
+    # Act & Assert
     with pytest.raises(ValueError):
-        session.add(Calendar(user_id=1, name="   ", url="http://example.com/calendar.ics"))
+        calendar = Calendar(user_id=user_id, name=name, url=url)
+
+        session.add(calendar)
         session.flush()
 
 
 def test_name_max_length(session):
+    # Arrange
+    user_id = 1
+    name = "a" * 256
+    url = "http://example.com/calendar.ics"
+
+    # Act & Assert
     with pytest.raises(ValueError):
-        session.add(Calendar(user_id=1, name="a" * 256, url="http://example.com/calendar.ics"))
+        calendar = Calendar(user_id=user_id, name=name, url=url)
+        session.add(calendar)
         session.flush()
 
 
 def test_url_must_start_with_http(session):
+    # Arrange
+    user_id = 1
+    name = "Work"
+    url = "ftp://example.com/calendar.ics"
+
+    # Act & Assert
     with pytest.raises(ValueError):
-        session.add(Calendar(user_id=1, name="Work", url="ftp://example.com/calendar.ics"))
+        calendar = Calendar(user_id=user_id, name=name, url=url)
+        session.add(calendar)
         session.flush()
 
 
 def test_url_must_end_with_ics(session):
+    # Arrange
+    user_id = 1
+    name = "Work"
+    url = "http://example.com/calendar.pdf"
+
+    # Act & Assert
     with pytest.raises(ValueError):
-        session.add(Calendar(user_id=1, name="Work", url="http://example.com/calendar.pdf"))
+        calendar = Calendar(user_id=user_id, name=name, url=url)
+        session.add(calendar)
         session.flush()
 
 
 def test_url_max_length(session):
+    # Arrange
+    user_id = 1
+    name = "Work"
     url = "http://example.com/" + "a" * 240 + ".ics"
+
+    # Act & Assert
     with pytest.raises(ValueError):
-        session.add(Calendar(user_id=1, name="Work", url=url))
+        calendar = Calendar(user_id=user_id, name=name, url=url)
+        session.add(calendar)
         session.flush()
 
 
 def test_url_cannot_be_empty(session):
+    # Arrange
+    user_id = 1
+    name = "Work"
+    url = ""
+
+    # Act & Assert
     with pytest.raises(ValueError):
-        session.add(Calendar(user_id=1, name="Work", url=""))
+        calendar = Calendar(user_id=user_id, name=name, url=url)
+        session.add(calendar)
         session.flush()
 
 
 def test_with_good_data(session):
-    cal = Calendar(user_id=1, name="Work", url="http://example.com/calendar.ics")
-    session.add(cal)
+    # Arrange
+    user_id = 1
+    name = "Work"
+    url = "http://example.com/calendar.ics"
+
+    # Act
+    calendar: Calendar = Calendar(user_id=user_id, name=name, url=url)
+    session.add(calendar)
     session.flush()
-    assert cal.id is not None
+
+    # Assert
+    assert calendar.id is not None
 
 
 # ---------------------------------------------------------------------------
@@ -79,16 +129,21 @@ def test_with_good_data(session):
 
 
 def test_unique_name_constraint(session):
-    cal1 = Calendar(user_id=1, name="Work", url="http://example.com/calendar1.ics")
-    cal2 = Calendar(user_id=2, name="Work", url="http://example.com/calendar2.ics")
+    # Arrange
+    user_id_1 = 1
+    name_1 = "Work"
+    url_1 = "http://example.com/calendar1.ics"
+    user_id_2 = 2
+    name_2 = "Work"
+    url_2 = "http://example.com/calendar2.ics"
 
-    session.add_all([cal1, cal2])
-
+    # Act & Assert
     with pytest.raises(IntegrityError):
+        calendar_1 = Calendar(user_id=user_id_1, name=name_1, url=url_1)
+        calendar_2 = Calendar(user_id=user_id_2, name=name_2, url=url_2)
+        session.add(calendar_1)
+        session.add(calendar_2)
         session.flush()
-        session.commit()
-
-    session.rollback()
 
 
 # ---------------------------------------------------------------------------
@@ -97,10 +152,18 @@ def test_unique_name_constraint(session):
 
 
 def test_sync_enabled_default(session):
-    cal = Calendar(user_id=1, name="Personal", url="http://example.com/personal.ics")
-    session.add(cal)
+    # Arrange
+    user_id = 1
+    name = "Personal"
+    url = "http://example.com/personal.ics"
+
+    # Act
+    calendar: Calendar = Calendar(user_id=user_id, name=name, url=url)
+    session.add(calendar)
     session.flush()
-    assert cal.sync_enabled is True
+
+    # Assert
+    assert calendar.sync_enabled is True
 
 
 # ---------------------------------------------------------------------------
@@ -109,7 +172,16 @@ def test_sync_enabled_default(session):
 
 
 def test_last_sync_can_be_null(session):
-    cal = Calendar(user_id=1, name="Personal", url="http://example.com/personal.ics", last_sync=None)
-    session.add(cal)
+    # Arrange
+    user_id = 1
+    name = "Personal"
+    url = "http://example.com/personal.ics"
+    last_sync = None
+
+    # Act
+    calendar: Calendar = Calendar(user_id=user_id, name=name, url=url, last_sync=last_sync)
+    session.add(calendar)
     session.flush()
-    assert cal.last_sync is None
+
+    # Assert
+    assert calendar.last_sync is None

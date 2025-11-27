@@ -41,14 +41,15 @@ def test_quiet_hours_end_required_if_start(session):
     If quiet_hours_start is set, quiet_hours_end must NOT be None.
     ORM validator should raise ValueError BEFORE sending query to DB.
     """
+    # Arrange
+    settings = Settings(
+        user_id=1,
+        quiet_hours_start=time(10, 0),
+        quiet_hours_end=None,  # Invalid
+    )
 
+    # Act & Assert
     with pytest.raises(ValueError):
-        settings = Settings(
-            user_id=1,
-            quiet_hours_start=time(10, 0),
-            quiet_hours_end=None,  # Invalid
-        )
-
         session.add(settings)
         session.flush()  # flush triggers ORM validation
 
@@ -64,14 +65,19 @@ def test_sql_constraint_end_required_if_start(session):
     when quiet_hours_start is set.
     Note: ORM already prevents this, so we test SQL side directly.
     """
+    # Arrange
     settings = Settings(
         user_id=1,
         quiet_hours_start=time(10, 0),
         quiet_hours_end=time(12, 0),  # Valid
     )
 
+    # Act
     session.add(settings)
     session.flush()  # Should NOT raise
+
+    # Assert
+    assert settings.id is not None
 
 
 # ---------------------------------------------------------------------------
@@ -83,11 +89,14 @@ def test_default_reminder_offset_value(session):
     """
     default_reminder_offset must default to 15 minutes if not provided explicitly.
     """
+    # Arrange
     settings = Settings(user_id=1)
 
+    # Act
     session.add(settings)
     session.flush()
 
+    # Assert
     assert settings.default_reminder_offset == 15 * 60
 
 
@@ -95,11 +104,14 @@ def test_default_timezone_value(session):
     """
     timezone must default to UTC+2 if not provided explicitly.
     """
+    # Arrange
     settings = Settings(user_id=1)
 
+    # Act
     session.add(settings)
     session.flush()
 
+    # Assert
     assert settings.timezone == "UTC+2"
 
 
@@ -107,11 +119,14 @@ def test_default_language_value(session):
     """
     language must default to en if not provided explicitly.
     """
+    # Arrange
     settings = Settings(user_id=1)
 
+    # Act
     session.add(settings)
     session.flush()
 
+    # Assert
     assert settings.language == "en"
 
 
@@ -125,15 +140,18 @@ def test_quiet_hours_can_be_null(session):
     Both quiet hours start and end can be NULL
     (quiet hours disabled).
     """
+    # Arrange
     settings = Settings(
         user_id=1,
         quiet_hours_start=None,
         quiet_hours_end=None,
     )
 
+    # Act
     session.add(settings)
     session.flush()
 
+    # Assert
     assert settings.quiet_hours_start is None
     assert settings.quiet_hours_end is None
 
@@ -143,12 +161,15 @@ def test_daily_plans_time_can_be_null(session):
     daily_plans_time can be NULL
     (daily plans disabled).
     """
+    # Arrange
     settings = Settings(
         user_id=1,
         daily_plans_time=None,
     )
 
+    # Act
     session.add(settings)
     session.flush()
 
+    # Assert
     assert settings.daily_plans_time is None

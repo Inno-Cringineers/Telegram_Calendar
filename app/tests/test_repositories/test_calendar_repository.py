@@ -79,12 +79,17 @@ async def repository(session: "AsyncSession") -> "CalendarRepository":
 @pytest.mark.asyncio
 async def test_create_calendar_success(repository: "CalendarRepository") -> None:
     """Test successful calendar creation."""
+    # Arrange
     calendar_data = CalendarCreateSchema(
         user_id=1,
         name="Work Calendar",
         url="http://example.com/work.ics",
     )
+
+    # Act
     calendar = await repository.create(calendar_data)
+
+    # Assert
     assert calendar.id is not None
     assert calendar.name == "Work Calendar"
     assert calendar.user_id == 1
@@ -96,12 +101,17 @@ async def test_create_calendar_success(repository: "CalendarRepository") -> None
 @pytest.mark.asyncio
 async def test_create_calendar_with_minimal_data(repository: "CalendarRepository") -> None:
     """Test calendar creation with minimal required data."""
+    # Arrange
     calendar_data = CalendarCreateSchema(
         user_id=1,
         name="Personal",
         url="https://example.com/personal.ics",
     )
+
+    # Act
     calendar = await repository.create(calendar_data)
+
+    # Assert
     assert calendar.id is not None
     assert calendar.name == "Personal"
     assert calendar.url == "https://example.com/personal.ics"
@@ -111,12 +121,17 @@ async def test_create_calendar_with_minimal_data(repository: "CalendarRepository
 @pytest.mark.asyncio
 async def test_create_calendar_with_https_url(repository: "CalendarRepository") -> None:
     """Test calendar creation with HTTPS URL."""
+    # Arrange
     calendar_data = CalendarCreateSchema(
         user_id=1,
         name="Secure Calendar",
         url="https://example.com/secure.ics",
     )
+
+    # Act
     calendar = await repository.create(calendar_data)
+
+    # Assert
     assert calendar.url == "https://example.com/secure.ics"
 
 
@@ -128,7 +143,7 @@ async def test_create_calendar_with_https_url(repository: "CalendarRepository") 
 @pytest.mark.asyncio
 async def test_get_by_id_success(repository: "CalendarRepository", session: "AsyncSession") -> None:
     """Test retrieving calendar by ID."""
-    # Create calendar directly first
+    # Arrange
     calendar = Calendar(
         user_id=1,
         name="Test Calendar",
@@ -138,7 +153,10 @@ async def test_get_by_id_success(repository: "CalendarRepository", session: "Asy
     await session.flush()
     calendar_id = calendar.id
 
+    # Act
     retrieved = await repository.get_by_id(calendar_id)
+
+    # Assert
     assert retrieved is not None
     assert retrieved.id == calendar_id
     assert retrieved.name == "Test Calendar"
@@ -147,14 +165,20 @@ async def test_get_by_id_success(repository: "CalendarRepository", session: "Asy
 @pytest.mark.asyncio
 async def test_get_by_id_not_found(repository: "CalendarRepository") -> None:
     """Test retrieving non-existent calendar by ID."""
-    result = await repository.get_by_id(999)
+    # Arrange
+    non_existent_id = 999
+
+    # Act
+    result = await repository.get_by_id(non_existent_id)
+
+    # Assert
     assert result is None
 
 
 @pytest.mark.asyncio
 async def test_get_by_user_id(repository: "CalendarRepository", session: "AsyncSession") -> None:
     """Test retrieving all calendars for a user."""
-    # Create multiple calendars for user 1
+    # Arrange
     calendar1 = Calendar(
         user_id=1,
         name="Work",
@@ -173,7 +197,10 @@ async def test_get_by_user_id(repository: "CalendarRepository", session: "AsyncS
     session.add_all([calendar1, calendar2, calendar3])
     await session.flush()
 
+    # Act
     calendars = await repository.get_by_user_id(1)
+
+    # Assert
     assert len(calendars) == 2
     assert all(c.user_id == 1 for c in calendars)
     assert {c.name for c in calendars} == {"Work", "Personal"}
@@ -182,7 +209,13 @@ async def test_get_by_user_id(repository: "CalendarRepository", session: "AsyncS
 @pytest.mark.asyncio
 async def test_get_by_user_id_empty(repository: "CalendarRepository") -> None:
     """Test retrieving calendars for user with no calendars."""
-    calendars = await repository.get_by_user_id(1)
+    # Arrange
+    user_id = 1
+
+    # Act
+    calendars = await repository.get_by_user_id(user_id)
+
+    # Assert
     assert calendars == []
 
 
@@ -194,6 +227,7 @@ async def test_get_by_user_id_empty(repository: "CalendarRepository") -> None:
 @pytest.mark.asyncio
 async def test_update_calendar_success(repository: "CalendarRepository", session: "AsyncSession") -> None:
     """Test successful calendar update."""
+    # Arrange
     calendar = Calendar(
         user_id=1,
         name="Original Name",
@@ -204,7 +238,11 @@ async def test_update_calendar_success(repository: "CalendarRepository", session
     calendar_id = calendar.id
 
     update_data = CalendarUpdateSchema(name="Updated Name", url="http://example.com/updated.ics")  # type: ignore[call-arg]
+
+    # Act
     updated = await repository.update(calendar_id, update_data)
+
+    # Assert
     assert updated.name == "Updated Name"
     assert updated.url == "http://example.com/updated.ics"
     assert updated.id == calendar_id
@@ -213,14 +251,19 @@ async def test_update_calendar_success(repository: "CalendarRepository", session
 @pytest.mark.asyncio
 async def test_update_calendar_not_found(repository: "CalendarRepository") -> None:
     """Test updating non-existent calendar."""
+    # Arrange
+    non_existent_id = 999
     update_data = CalendarUpdateSchema(name="New Name")  # type: ignore[call-arg]
+
+    # Act & Assert
     with pytest.raises(CalendarNotFoundError):
-        await repository.update(999, update_data)
+        await repository.update(non_existent_id, update_data)
 
 
 @pytest.mark.asyncio
 async def test_update_calendar_partial(repository: "CalendarRepository", session: "AsyncSession") -> None:
     """Test partial calendar update (only some fields)."""
+    # Arrange
     calendar_data = CalendarCreateSchema(
         user_id=1,
         name="Original Name",
@@ -229,7 +272,11 @@ async def test_update_calendar_partial(repository: "CalendarRepository", session
     calendar = await repository.create(calendar_data)
 
     update_data = CalendarUpdateSchema(name="Updated Name")  # type: ignore[call-arg]
+
+    # Act
     updated = await repository.update(calendar.id, update_data)
+
+    # Assert
     assert updated.name == "Updated Name"
     assert updated.url == "http://example.com/original.ics"  # Unchanged
 
@@ -237,6 +284,7 @@ async def test_update_calendar_partial(repository: "CalendarRepository", session
 @pytest.mark.asyncio
 async def test_update_calendar_url_only(repository: "CalendarRepository", session: "AsyncSession") -> None:
     """Test updating only URL field."""
+    # Arrange
     calendar_data = CalendarCreateSchema(
         user_id=1,
         name="Test Calendar",
@@ -245,7 +293,11 @@ async def test_update_calendar_url_only(repository: "CalendarRepository", sessio
     calendar = await repository.create(calendar_data)
 
     update_data = CalendarUpdateSchema(url="https://example.com/new.ics")  # type: ignore[call-arg]
+
+    # Act
     updated = await repository.update(calendar.id, update_data)
+
+    # Assert
     assert updated.name == "Test Calendar"  # Unchanged
     assert updated.url == "https://example.com/new.ics"
 
@@ -253,6 +305,7 @@ async def test_update_calendar_url_only(repository: "CalendarRepository", sessio
 @pytest.mark.asyncio
 async def test_update_all_fields(repository: "CalendarRepository", session: "AsyncSession") -> None:
     """Test updating all fields of a calendar."""
+    # Arrange
     calendar = Calendar(
         user_id=1,
         name="Original Name",
@@ -266,7 +319,11 @@ async def test_update_all_fields(repository: "CalendarRepository", session: "Asy
         name="New Name",
         url="https://example.com/new.ics",
     )
+
+    # Act
     updated = await repository.update(calendar_id, update_data)
+
+    # Assert
     assert updated.name == "New Name"
     assert updated.url == "https://example.com/new.ics"
 
@@ -274,6 +331,7 @@ async def test_update_all_fields(repository: "CalendarRepository", session: "Asy
 @pytest.mark.asyncio
 async def test_update_with_none_values(repository: "CalendarRepository", session: "AsyncSession") -> None:
     """Test that updating with None values doesn't clear fields (None means don't update)."""
+    # Arrange
     calendar = Calendar(
         user_id=1,
         name="Test Calendar",
@@ -286,7 +344,11 @@ async def test_update_with_none_values(repository: "CalendarRepository", session
     # Update with no fields set (empty schema) - should not change anything
     # Pydantic's exclude_unset=True means None values are excluded if not explicitly set
     update_data = CalendarUpdateSchema()  # Empty update - no fields set  # type: ignore[call-arg]
+
+    # Act
     updated = await repository.update(calendar_id, update_data)
+
+    # Assert
     assert updated.name == "Test Calendar"  # Unchanged
     assert updated.url == "http://example.com/test.ics"  # Unchanged
 
@@ -299,6 +361,7 @@ async def test_update_with_none_values(repository: "CalendarRepository", session
 @pytest.mark.asyncio
 async def test_delete_calendar_success(repository: "CalendarRepository") -> None:
     """Test successful calendar deletion."""
+    # Arrange
     calendar_data = CalendarCreateSchema(
         user_id=1,
         name="Calendar to Delete",
@@ -306,9 +369,10 @@ async def test_delete_calendar_success(repository: "CalendarRepository") -> None
     )
     calendar = await repository.create(calendar_data)
 
+    # Act
     await repository.delete(calendar.id)
 
-    # Verify deletion
+    # Assert
     result = await repository.session.execute(select(Calendar).where(Calendar.id == calendar.id))
     assert result.scalar() is None
 
@@ -316,8 +380,12 @@ async def test_delete_calendar_success(repository: "CalendarRepository") -> None
 @pytest.mark.asyncio
 async def test_delete_calendar_not_found(repository: "CalendarRepository") -> None:
     """Test deleting non-existent calendar."""
+    # Arrange
+    non_existent_id = 999
+
+    # Act & Assert
     with pytest.raises(CalendarNotFoundError):
-        await repository.delete(999)
+        await repository.delete(non_existent_id)
 
 
 # ============================================================================
@@ -328,6 +396,7 @@ async def test_delete_calendar_not_found(repository: "CalendarRepository") -> No
 @pytest.mark.asyncio
 async def test_find_with_multiple_filters(repository: "CalendarRepository") -> None:
     """Test find() method with multiple filters combined."""
+    # Arrange
     calendar1_data = CalendarCreateSchema(
         user_id=1,
         name="Work",
@@ -354,7 +423,11 @@ async def test_find_with_multiple_filters(repository: "CalendarRepository") -> N
         limit=100,
         offset=0,
     )
+
+    # Act
     calendars = await repository.find(filter)
+
+    # Assert
     assert len(calendars) == 1
     assert calendars[0].name == "Work"
     assert calendars[0].id == calendar1.id
@@ -363,6 +436,7 @@ async def test_find_with_multiple_filters(repository: "CalendarRepository") -> N
 @pytest.mark.asyncio
 async def test_find_with_user_id_filter(repository: "CalendarRepository") -> None:
     """Test find() method with user_id filter."""
+    # Arrange
     calendar1_data = CalendarCreateSchema(
         user_id=1,
         name="User 1 Calendar",
@@ -383,7 +457,11 @@ async def test_find_with_user_id_filter(repository: "CalendarRepository") -> Non
         limit=100,
         offset=0,
     )
+
+    # Act
     calendars = await repository.find(filter)
+
+    # Assert
     assert len(calendars) == 1
     assert calendars[0].user_id == 1
 
@@ -391,6 +469,7 @@ async def test_find_with_user_id_filter(repository: "CalendarRepository") -> Non
 @pytest.mark.asyncio
 async def test_find_with_name_filter(repository: "CalendarRepository") -> None:
     """Test find() method with name filter."""
+    # Arrange
     calendar1_data = CalendarCreateSchema(
         user_id=1,
         name="Work",
@@ -411,7 +490,11 @@ async def test_find_with_name_filter(repository: "CalendarRepository") -> None:
         limit=100,
         offset=0,
     )
+
+    # Act
     calendars = await repository.find(filter)
+
+    # Assert
     assert len(calendars) == 1
     assert all(c.name == "Work" for c in calendars)
 
@@ -419,6 +502,7 @@ async def test_find_with_name_filter(repository: "CalendarRepository") -> None:
 @pytest.mark.asyncio
 async def test_find_with_url_filter(repository: "CalendarRepository") -> None:
     """Test find() method with url filter."""
+    # Arrange
     calendar_data = CalendarCreateSchema(
         user_id=1,
         name="Test Calendar",
@@ -433,7 +517,11 @@ async def test_find_with_url_filter(repository: "CalendarRepository") -> None:
         limit=100,
         offset=0,
     )
+
+    # Act
     calendars = await repository.find(filter)
+
+    # Assert
     assert len(calendars) == 1
     assert calendars[0].url == "http://example.com/specific.ics"
 
@@ -441,6 +529,7 @@ async def test_find_with_url_filter(repository: "CalendarRepository") -> None:
 @pytest.mark.asyncio
 async def test_find_with_no_filters(repository: "CalendarRepository", session: "AsyncSession") -> None:
     """Test find() method with no filters (should return all calendars)."""
+    # Arrange
     calendar1 = Calendar(
         user_id=1,
         name="Calendar 1",
@@ -461,13 +550,18 @@ async def test_find_with_no_filters(repository: "CalendarRepository", session: "
         limit=100,
         offset=0,
     )
+
+    # Act
     calendars = await repository.find(filter)
+
+    # Assert
     assert len(calendars) == 2
 
 
 @pytest.mark.asyncio
 async def test_find_empty_result(repository: "CalendarRepository") -> None:
     """Test find() method with filters that match no calendars."""
+    # Arrange
     filter = CalendarFilter(
         user_id=999,
         name=None,
@@ -475,7 +569,11 @@ async def test_find_empty_result(repository: "CalendarRepository") -> None:
         limit=100,
         offset=0,
     )
+
+    # Act
     calendars = await repository.find(filter)
+
+    # Assert
     assert calendars == []
 
 
@@ -487,6 +585,7 @@ async def test_find_empty_result(repository: "CalendarRepository") -> None:
 @pytest.mark.asyncio
 async def test_create_calendar_name_uniqueness(repository: "CalendarRepository", session: "AsyncSession") -> None:
     """Test that calendar name must be unique."""
+    # Arrange
     calendar1_data = CalendarCreateSchema(
         user_id=1,
         name="Unique Name",
@@ -494,7 +593,6 @@ async def test_create_calendar_name_uniqueness(repository: "CalendarRepository",
     )
     await repository.create(calendar1_data)
 
-    # Try to create another calendar with the same name
     calendar2_data = CalendarCreateSchema(
         user_id=2,  # Different user, but name must still be unique
         name="Unique Name",
@@ -502,7 +600,7 @@ async def test_create_calendar_name_uniqueness(repository: "CalendarRepository",
     )
     await repository.session.flush()
 
-    # This should raise an IntegrityError due to unique constraint
+    # Act & Assert
     from sqlalchemy.exc import IntegrityError
 
     with pytest.raises(IntegrityError):
@@ -513,6 +611,7 @@ async def test_create_calendar_name_uniqueness(repository: "CalendarRepository",
 @pytest.mark.asyncio
 async def test_create_calendar_url_uniqueness(repository: "CalendarRepository", session: "AsyncSession") -> None:
     """Test that calendar URL must be unique."""
+    # Arrange
     calendar1_data = CalendarCreateSchema(
         user_id=1,
         name="Calendar 1",
@@ -520,7 +619,6 @@ async def test_create_calendar_url_uniqueness(repository: "CalendarRepository", 
     )
     await repository.create(calendar1_data)
 
-    # Try to create another calendar with the same URL
     calendar2_data = CalendarCreateSchema(
         user_id=2,  # Different user, but URL must still be unique
         name="Calendar 2",
@@ -528,7 +626,7 @@ async def test_create_calendar_url_uniqueness(repository: "CalendarRepository", 
     )
     await repository.session.flush()
 
-    # This should raise an IntegrityError due to unique constraint
+    # Act & Assert
     from sqlalchemy.exc import IntegrityError
 
     with pytest.raises(IntegrityError):
@@ -539,30 +637,41 @@ async def test_create_calendar_url_uniqueness(repository: "CalendarRepository", 
 @pytest.mark.asyncio
 async def test_calendar_sync_enabled_default(repository: "CalendarRepository") -> None:
     """Test that sync_enabled defaults to True."""
+    # Arrange
     calendar_data = CalendarCreateSchema(
         user_id=1,
         name="Test Calendar",
         url="http://example.com/test.ics",
     )
+
+    # Act
     calendar = await repository.create(calendar_data)
+
+    # Assert
     assert calendar.sync_enabled is True
 
 
 @pytest.mark.asyncio
 async def test_calendar_last_sync_default(repository: "CalendarRepository") -> None:
     """Test that last_sync defaults to None."""
+    # Arrange
     calendar_data = CalendarCreateSchema(
         user_id=1,
         name="Test Calendar",
         url="http://example.com/test.ics",
     )
+
+    # Act
     calendar = await repository.create(calendar_data)
+
+    # Assert
     assert calendar.last_sync is None
 
 
 @pytest.mark.asyncio
 async def test_find_with_combined_filters(repository: "CalendarRepository") -> None:
     """Test find() with multiple filters combined (user_id and name)."""
+    # Arrange
     calendar1_data = CalendarCreateSchema(
         user_id=1,
         name="Work",
@@ -582,7 +691,6 @@ async def test_find_with_combined_filters(repository: "CalendarRepository") -> N
     await repository.create(calendar2_data)
     await repository.create(calendar3_data)
 
-    # Filter by user_id=1 and name="Work"
     filter = CalendarFilter(
         user_id=1,
         name="Work",
@@ -590,7 +698,11 @@ async def test_find_with_combined_filters(repository: "CalendarRepository") -> N
         limit=100,
         offset=0,
     )
+
+    # Act
     calendars = await repository.find(filter)
+
+    # Assert
     assert len(calendars) == 1
     assert calendars[0].id == calendar1.id
     assert calendars[0].user_id == 1
