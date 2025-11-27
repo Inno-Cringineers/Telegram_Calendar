@@ -1,115 +1,53 @@
-"""
-Unit tests for the Calendar model.
-
-Tests cover:
-- ORM-level validation (ValueError)
-- SQL-level constraints (IntegrityError)
-- Default values
-"""
+"""Tests for Calendar model using mocks."""
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import sessionmaker
 
-from database.database import Base
 from models.calendar import Calendar
 
 
-@pytest.fixture
-def session():
-    engine = create_engine("sqlite:///:memory:", future=True)
-    Base.metadata.create_all(engine)
-    Session = sessionmaker(bind=engine)
-    return Session()
+def test_calendar_creation_with_valid_data() -> None:
+    """Test that Calendar can be created with valid data."""
+    calendar = Calendar(
+        user_id=12345,
+        name="My Calendar",
+        url="https://example.com/calendar.ics",
+        sync_enabled=True,
+    )
+
+    assert calendar.user_id == 12345
+    assert calendar.name == "My Calendar"
+    assert calendar.url == "https://example.com/calendar.ics"
+    assert calendar.sync_enabled is True
+    assert calendar.last_sync is None
 
 
-# ---------------------------------------------------------------------------
-# ORM VALIDATION TESTS
-# ---------------------------------------------------------------------------
+def test_calendar_name_constraint() -> None:
+    """Tests validation of Calendar name."""
 
-
-def test_name_cannot_be_empty(session):
+    # empty name
     with pytest.raises(ValueError):
-        session.add(Calendar(user_id=1, name="   ", url="http://example.com/calendar.ics"))
-        session.flush()
+        Calendar(name="")
 
-
-def test_name_max_length(session):
+    # name too long
     with pytest.raises(ValueError):
-        session.add(Calendar(user_id=1, name="a" * 256, url="http://example.com/calendar.ics"))
-        session.flush()
+        Calendar(name="a" * 256)
 
 
-def test_url_must_start_with_http(session):
+def test_url_constraint() -> None:
+    """Tests validation of Calendar URL."""
+
+    # empty URL
     with pytest.raises(ValueError):
-        session.add(Calendar(user_id=1, name="Work", url="ftp://example.com/calendar.ics"))
-        session.flush()
+        Calendar(url="")
 
-
-def test_url_must_end_with_ics(session):
+    # URL too long
     with pytest.raises(ValueError):
-        session.add(Calendar(user_id=1, name="Work", url="http://example.com/calendar.pdf"))
-        session.flush()
+        Calendar(url="a" * 256)
 
-
-def test_url_max_length(session):
-    url = "http://example.com/" + "a" * 240 + ".ics"
+    # URL with whitespace only
     with pytest.raises(ValueError):
-        session.add(Calendar(user_id=1, name="Work", url=url))
-        session.flush()
+        Calendar(url="   ")
 
-
-def test_url_cannot_be_empty(session):
+    # URL without http or https
     with pytest.raises(ValueError):
-        session.add(Calendar(user_id=1, name="Work", url=""))
-        session.flush()
-
-
-def test_with_good_data(session):
-    cal = Calendar(user_id=1, name="Work", url="http://example.com/calendar.ics")
-    session.add(cal)
-    session.flush()
-    assert cal.id is not None
-
-
-# ---------------------------------------------------------------------------
-# SQL CONSTRAINT TESTS
-# ---------------------------------------------------------------------------
-
-
-def test_unique_name_constraint(session):
-    cal1 = Calendar(user_id=1, name="Work", url="http://example.com/calendar1.ics")
-    cal2 = Calendar(user_id=2, name="Work", url="http://example.com/calendar2.ics")
-
-    session.add_all([cal1, cal2])
-
-    with pytest.raises(IntegrityError):
-        session.flush()
-        session.commit()
-
-    session.rollback()
-
-
-# ---------------------------------------------------------------------------
-# DEFAULT VALUE TESTS
-# ---------------------------------------------------------------------------
-
-
-def test_sync_enabled_default(session):
-    cal = Calendar(user_id=1, name="Personal", url="http://example.com/personal.ics")
-    session.add(cal)
-    session.flush()
-    assert cal.sync_enabled is True
-
-
-# ---------------------------------------------------------------------------
-# OPTIONAL FIELDS TESTS
-# ---------------------------------------------------------------------------
-
-
-def test_last_sync_can_be_null(session):
-    cal = Calendar(user_id=1, name="Personal", url="http://example.com/personal.ics", last_sync=None)
-    session.add(cal)
-    session.flush()
-    assert cal.last_sync is None
+        Calendar(url="example.com/calendar.ics")

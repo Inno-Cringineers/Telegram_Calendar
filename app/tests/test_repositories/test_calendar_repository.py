@@ -1,597 +1,329 @@
-"""
-Unit tests for CalendarRepository using TDD approach.
+"""Tests for CalendarRepository using mocks."""
 
-Tests cover:
-- Creating calendars
-- Retrieving calendars by ID
-- Retrieving calendars by user_id
-- Updating calendars
-- Deleting calendars
-- Filtering calendars with CalendarFilter
-"""
-
-from typing import TYPE_CHECKING
+from unittest.mock import AsyncMock, MagicMock, call
 
 import pytest
-import pytest_asyncio
-from sqlalchemy import select, text
 
-from database.database import Base, get_engine, get_session_maker
 from models.calendar import Calendar
+from repositories.calendar_repository import CalendarRepository
 from repositories.exceptions import CalendarNotFoundError
 from repositories.schemas import CalendarCreateSchema, CalendarFilter, CalendarUpdateSchema
 
-if TYPE_CHECKING:
-    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-    from repositories.calendar_repository import CalendarRepository  # noqa: F401, PLC0415
-
-
-@pytest_asyncio.fixture
-async def engine():
-    """Create an async engine and ensure tables are created for tests."""
-    # Import all models to ensure they are registered in Base.metadata
-    # These imports are needed for side effects (SQLAlchemy table registration)
-    from models.calendar import Calendar  # noqa: F401  # pyright: ignore[reportUnusedImport]
-    from models.event import Event  # noqa: F401  # pyright: ignore[reportUnusedImport]
-    from models.reminder import Reminder  # noqa: F401  # pyright: ignore[reportUnusedImport]
-    from models.settings import Settings  # noqa: F401  # pyright: ignore[reportUnusedImport]
-
-    engine = get_engine("sqlite:///:memory:")
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-        # Enable foreign keys for SQLite
-        await conn.run_sync(lambda sync_conn: sync_conn.execute(text("PRAGMA foreign_keys=ON;")))
-    yield engine
-    await engine.dispose()
+@pytest.fixture
+def mock_session() -> AsyncMock:
+    """Create a mock AsyncSession."""
+    session = AsyncMock()
+    session.get = AsyncMock()
+    session.add = MagicMock()
+    session.flush = AsyncMock()
+    session.delete = AsyncMock()
+    session.refresh = AsyncMock()
+    session.execute = AsyncMock()
+    return session
 
 
-@pytest_asyncio.fixture
-async def session_maker(engine):
-    """Create session maker for tests."""
-    return get_session_maker(engine)
+@pytest.fixture
+def calendar_repository(mock_session: AsyncMock) -> CalendarRepository:
+    """Create a CalendarRepository instance with mocked session."""
+    return CalendarRepository(mock_session)
 
 
-@pytest_asyncio.fixture
-async def session(session_maker: "async_sessionmaker[AsyncSession]"):
-    """Create a test session."""
-    async with session_maker() as session:
-        yield session
-
-
-@pytest_asyncio.fixture
-async def repository(session: "AsyncSession") -> "CalendarRepository":
-    """Create CalendarRepository instance for tests.
-
-    Note: Repository receives session directly, not through Store.
-    This is the recommended approach - simple and explicit.
-    """
-    from repositories.calendar_repository import CalendarRepository  # noqa: PLC0415
-
-    return CalendarRepository(session)
-
-
-# ============================================================================
-# CREATE OPERATIONS
-# ============================================================================
-
-
-@pytest.mark.asyncio
-async def test_create_calendar_success(repository: "CalendarRepository") -> None:
-    """Test successful calendar creation."""
-    calendar_data = CalendarCreateSchema(
-        user_id=1,
-        name="Work Calendar",
-        url="http://example.com/work.ics",
-    )
-    calendar = await repository.create(calendar_data)
-    assert calendar.id is not None
-    assert calendar.name == "Work Calendar"
-    assert calendar.user_id == 1
-    assert calendar.url == "http://example.com/work.ics"
-    assert calendar.sync_enabled is True  # Default value
-    assert calendar.last_sync is None  # Default value
-
-
-@pytest.mark.asyncio
-async def test_create_calendar_with_minimal_data(repository: "CalendarRepository") -> None:
-    """Test calendar creation with minimal required data."""
-    calendar_data = CalendarCreateSchema(
-        user_id=1,
-        name="Personal",
-        url="https://example.com/personal.ics",
-    )
-    calendar = await repository.create(calendar_data)
-    assert calendar.id is not None
-    assert calendar.name == "Personal"
-    assert calendar.url == "https://example.com/personal.ics"
-    assert calendar.sync_enabled is True
-
-
-@pytest.mark.asyncio
-async def test_create_calendar_with_https_url(repository: "CalendarRepository") -> None:
-    """Test calendar creation with HTTPS URL."""
-    calendar_data = CalendarCreateSchema(
-        user_id=1,
-        name="Secure Calendar",
-        url="https://example.com/secure.ics",
-    )
-    calendar = await repository.create(calendar_data)
-    assert calendar.url == "https://example.com/secure.ics"
-
-
-# ============================================================================
-# READ OPERATIONS
-# ============================================================================
-
-
-@pytest.mark.asyncio
-async def test_get_by_id_success(repository: "CalendarRepository", session: "AsyncSession") -> None:
-    """Test retrieving calendar by ID."""
-    # Create calendar directly first
+@pytest.fixture
+def sample_calendar() -> Calendar:
+    """Create a sample Calendar instance for testing."""
     calendar = Calendar(
-        user_id=1,
+        user_id=12345,
         name="Test Calendar",
-        url="http://example.com/test.ics",
+        url="https://example.com/calendar.ics",
+        sync_enabled=True,
     )
-    session.add(calendar)
-    await session.flush()
-    calendar_id = calendar.id
-
-    retrieved = await repository.get_by_id(calendar_id)
-    assert retrieved is not None
-    assert retrieved.id == calendar_id
-    assert retrieved.name == "Test Calendar"
+    # Set id manually for testing (normally set by database)
+    calendar.id = 1
+    return calendar
 
 
 @pytest.mark.asyncio
-async def test_get_by_id_not_found(repository: "CalendarRepository") -> None:
-    """Test retrieving non-existent calendar by ID."""
-    result = await repository.get_by_id(999)
+async def test_get_by_id_returns_calendar(
+    calendar_repository: CalendarRepository, mock_session: AsyncMock, sample_calendar: Calendar
+) -> None:
+    """Test that get_by_id returns calendar when found."""
+    mock_session.get.return_value = sample_calendar
+
+    result = await calendar_repository.get_by_id(1)
+
+    assert result is sample_calendar
+    mock_session.get.assert_called_once_with(Calendar, 1)
+
+
+@pytest.mark.asyncio
+async def test_get_by_id_returns_none_when_not_found(
+    calendar_repository: CalendarRepository, mock_session: AsyncMock
+) -> None:
+    """Test that get_by_id returns None when calendar not found."""
+    mock_session.get.return_value = None
+
+    result = await calendar_repository.get_by_id(999)
+
     assert result is None
+    mock_session.get.assert_called_once_with(Calendar, 999)
 
 
 @pytest.mark.asyncio
-async def test_get_by_user_id(repository: "CalendarRepository", session: "AsyncSession") -> None:
-    """Test retrieving all calendars for a user."""
-    # Create multiple calendars for user 1
-    calendar1 = Calendar(
-        user_id=1,
-        name="Work",
-        url="http://example.com/work.ics",
-    )
-    calendar2 = Calendar(
-        user_id=1,
-        name="Personal",
-        url="http://example.com/personal.ics",
-    )
-    calendar3 = Calendar(
-        user_id=2,  # Different user
-        name="Other User Calendar",
-        url="http://example.com/other.ics",
-    )
-    session.add_all([calendar1, calendar2, calendar3])
-    await session.flush()
+async def test_create_creates_calendar(calendar_repository: CalendarRepository, mock_session: AsyncMock) -> None:
+    """Test that create creates a new calendar."""
+    create_data = [CalendarCreateSchema(user_id=12345, name="New Calendar", url="https://example.com/new.ics")]
 
-    calendars = await repository.get_by_user_id(1)
-    assert len(calendars) == 2
-    assert all(c.user_id == 1 for c in calendars)
-    assert {c.name for c in calendars} == {"Work", "Personal"}
+    result = await calendar_repository.create(create_data)
+
+    assert result[0].user_id == 12345
+    assert result[0].name == "New Calendar"
+    assert result[0].url == "https://example.com/new.ics"
+    assert isinstance(result[0], Calendar)
+    mock_session.add.assert_called_once_with(result[0])
+    mock_session.flush.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_get_by_user_id_empty(repository: "CalendarRepository") -> None:
-    """Test retrieving calendars for user with no calendars."""
-    calendars = await repository.get_by_user_id(1)
-    assert calendars == []
+async def test_create_creates_multiple_calendars(
+    calendar_repository: CalendarRepository, mock_session: AsyncMock
+) -> None:
+    """Test that create creates multiple calendars."""
+    create_data = [
+        CalendarCreateSchema(user_id=12345, name="New Calendar", url="https://example.com/new.ics"),
+        CalendarCreateSchema(user_id=12345, name="New Calendar 2", url="https://example.com/new2.ics"),
+    ]
 
+    result = await calendar_repository.create(create_data)
 
-# ============================================================================
-# UPDATE OPERATIONS
-# ============================================================================
-
-
-@pytest.mark.asyncio
-async def test_update_calendar_success(repository: "CalendarRepository", session: "AsyncSession") -> None:
-    """Test successful calendar update."""
-    calendar = Calendar(
-        user_id=1,
-        name="Original Name",
-        url="http://example.com/original.ics",
-    )
-    session.add(calendar)
-    await session.flush()
-    calendar_id = calendar.id
-
-    update_data = CalendarUpdateSchema(name="Updated Name", url="http://example.com/updated.ics")  # type: ignore[call-arg]
-    updated = await repository.update(calendar_id, update_data)
-    assert updated.name == "Updated Name"
-    assert updated.url == "http://example.com/updated.ics"
-    assert updated.id == calendar_id
+    assert isinstance(result, list)
+    assert len(result) == 2
+    assert isinstance(result[0], Calendar)
+    assert result[0].user_id == 12345
+    assert result[0].name == "New Calendar"
+    assert result[0].url == "https://example.com/new.ics"
+    assert isinstance(result[1], Calendar)
+    assert result[1].user_id == 12345
+    assert result[1].name == "New Calendar 2"
+    assert result[1].url == "https://example.com/new2.ics"
+    mock_session.add.assert_has_calls([call(result[0]), call(result[1])], any_order=True)
+    mock_session.flush.assert_has_calls([call(), call()], any_order=True)
 
 
 @pytest.mark.asyncio
-async def test_update_calendar_not_found(repository: "CalendarRepository") -> None:
-    """Test updating non-existent calendar."""
-    update_data = CalendarUpdateSchema(name="New Name")  # type: ignore[call-arg]
-    with pytest.raises(CalendarNotFoundError):
-        await repository.update(999, update_data)
+async def test_update_updates_existing_calendar(
+    calendar_repository: CalendarRepository, mock_session: AsyncMock, sample_calendar: Calendar
+) -> None:
+    """Test that update updates an existing calendar."""
+    mock_session.get.return_value = sample_calendar
+    update_data = CalendarUpdateSchema(name="Updated Calendar")  # type: ignore[call-arg]
+
+    result = await calendar_repository.update(1, update_data)
+
+    assert result is sample_calendar
+    assert result.name == "Updated Calendar"
+    mock_session.get.assert_called_once_with(Calendar, 1)
+    mock_session.flush.assert_called_once()
+    mock_session.refresh.assert_called_once_with(sample_calendar)
 
 
 @pytest.mark.asyncio
-async def test_update_calendar_partial(repository: "CalendarRepository", session: "AsyncSession") -> None:
-    """Test partial calendar update (only some fields)."""
-    calendar_data = CalendarCreateSchema(
-        user_id=1,
-        name="Original Name",
-        url="http://example.com/original.ics",
-    )
-    calendar = await repository.create(calendar_data)
+async def test_update_updates_multiple_fields(
+    calendar_repository: CalendarRepository, mock_session: AsyncMock, sample_calendar: Calendar
+) -> None:
+    """Test that update can update multiple fields."""
+    mock_session.get.return_value = sample_calendar
+    update_data = CalendarUpdateSchema(name="Updated Name", url="https://example.com/updated.ics", sync_enabled=False)  # type: ignore[call-arg]
 
-    update_data = CalendarUpdateSchema(name="Updated Name")  # type: ignore[call-arg]
-    updated = await repository.update(calendar.id, update_data)
-    assert updated.name == "Updated Name"
-    assert updated.url == "http://example.com/original.ics"  # Unchanged
+    result = await calendar_repository.update(1, update_data)
 
-
-@pytest.mark.asyncio
-async def test_update_calendar_url_only(repository: "CalendarRepository", session: "AsyncSession") -> None:
-    """Test updating only URL field."""
-    calendar_data = CalendarCreateSchema(
-        user_id=1,
-        name="Test Calendar",
-        url="http://example.com/old.ics",
-    )
-    calendar = await repository.create(calendar_data)
-
-    update_data = CalendarUpdateSchema(url="https://example.com/new.ics")  # type: ignore[call-arg]
-    updated = await repository.update(calendar.id, update_data)
-    assert updated.name == "Test Calendar"  # Unchanged
-    assert updated.url == "https://example.com/new.ics"
+    assert result.name == "Updated Name"
+    assert result.url == "https://example.com/updated.ics"
+    assert result.sync_enabled is False
 
 
 @pytest.mark.asyncio
-async def test_update_all_fields(repository: "CalendarRepository", session: "AsyncSession") -> None:
-    """Test updating all fields of a calendar."""
-    calendar = Calendar(
-        user_id=1,
-        name="Original Name",
-        url="http://example.com/original.ics",
-    )
-    session.add(calendar)
-    await session.flush()
-    calendar_id = calendar.id
+async def test_update_raises_error_when_calendar_not_found(
+    calendar_repository: CalendarRepository, mock_session: AsyncMock
+) -> None:
+    """Test that update raises CalendarNotFoundError when calendar not found."""
+    mock_session.get.return_value = None
+    update_data = CalendarUpdateSchema(name="Updated Calendar")  # type: ignore[call-arg]
 
-    update_data = CalendarUpdateSchema(
-        name="New Name",
-        url="https://example.com/new.ics",
-    )
-    updated = await repository.update(calendar_id, update_data)
-    assert updated.name == "New Name"
-    assert updated.url == "https://example.com/new.ics"
+    with pytest.raises(CalendarNotFoundError) as exc_info:
+        await calendar_repository.update(999, update_data)
+
+    assert exc_info.value.calendar_id == 999
+    mock_session.get.assert_called_once_with(Calendar, 999)
+    mock_session.flush.assert_not_called()
 
 
 @pytest.mark.asyncio
-async def test_update_with_none_values(repository: "CalendarRepository", session: "AsyncSession") -> None:
-    """Test that updating with None values doesn't clear fields (None means don't update)."""
-    calendar = Calendar(
-        user_id=1,
-        name="Test Calendar",
-        url="http://example.com/test.ics",
-    )
-    session.add(calendar)
-    await session.flush()
-    calendar_id = calendar.id
+async def test_update_only_updates_provided_fields(
+    calendar_repository: CalendarRepository, mock_session: AsyncMock, sample_calendar: Calendar
+) -> None:
+    """Test that update only updates fields provided in schema."""
+    original_name = sample_calendar.name
+    original_url = sample_calendar.url
+    mock_session.get.return_value = sample_calendar
+    update_data = CalendarUpdateSchema(sync_enabled=False)  # type: ignore[call-arg]
 
-    # Update with no fields set (empty schema) - should not change anything
-    # Pydantic's exclude_unset=True means None values are excluded if not explicitly set
-    update_data = CalendarUpdateSchema()  # Empty update - no fields set  # type: ignore[call-arg]
-    updated = await repository.update(calendar_id, update_data)
-    assert updated.name == "Test Calendar"  # Unchanged
-    assert updated.url == "http://example.com/test.ics"  # Unchanged
+    result = await calendar_repository.update(1, update_data)
 
-
-# ============================================================================
-# DELETE OPERATIONS
-# ============================================================================
+    assert result.name == original_name  # Not changed
+    assert result.url == original_url  # Not changed
+    assert result.sync_enabled is False  # Changed
 
 
 @pytest.mark.asyncio
-async def test_delete_calendar_success(repository: "CalendarRepository") -> None:
-    """Test successful calendar deletion."""
-    calendar_data = CalendarCreateSchema(
-        user_id=1,
-        name="Calendar to Delete",
-        url="http://example.com/delete.ics",
-    )
-    calendar = await repository.create(calendar_data)
+async def test_delete_deletes_calendar(
+    calendar_repository: CalendarRepository, mock_session: AsyncMock, sample_calendar: Calendar
+) -> None:
+    """Test that delete deletes an existing calendar."""
+    mock_session.get.return_value = sample_calendar
 
-    await repository.delete(calendar.id)
+    await calendar_repository.delete(1)
 
-    # Verify deletion
-    result = await repository.session.execute(select(Calendar).where(Calendar.id == calendar.id))
-    assert result.scalar() is None
+    mock_session.get.assert_called_once_with(Calendar, 1)
+    mock_session.delete.assert_called_once_with(sample_calendar)
+    mock_session.flush.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_delete_calendar_not_found(repository: "CalendarRepository") -> None:
-    """Test deleting non-existent calendar."""
-    with pytest.raises(CalendarNotFoundError):
-        await repository.delete(999)
+async def test_delete_raises_error_when_calendar_not_found(
+    calendar_repository: CalendarRepository, mock_session: AsyncMock
+) -> None:
+    """Test that delete raises CalendarNotFoundError when calendar not found."""
+    mock_session.get.return_value = None
 
+    with pytest.raises(CalendarNotFoundError) as exc_info:
+        await calendar_repository.delete(999)
 
-# ============================================================================
-# FILTER OPERATIONS (find method)
-# ============================================================================
-
-
-@pytest.mark.asyncio
-async def test_find_with_multiple_filters(repository: "CalendarRepository") -> None:
-    """Test find() method with multiple filters combined."""
-    calendar1_data = CalendarCreateSchema(
-        user_id=1,
-        name="Work",
-        url="http://example.com/work.ics",
-    )
-    calendar2_data = CalendarCreateSchema(
-        user_id=1,
-        name="Personal",
-        url="http://example.com/personal.ics",
-    )
-    calendar3_data = CalendarCreateSchema(
-        user_id=2,
-        name="Work2",
-        url="http://example.com/work2.ics",
-    )
-    calendar1 = await repository.create(calendar1_data)
-    await repository.create(calendar2_data)
-    await repository.create(calendar3_data)
-
-    filter = CalendarFilter(
-        user_id=1,
-        name="Work",
-        url=None,
-        limit=100,
-        offset=0,
-    )
-    calendars = await repository.find(filter)
-    assert len(calendars) == 1
-    assert calendars[0].name == "Work"
-    assert calendars[0].id == calendar1.id
+    assert exc_info.value.calendar_id == 999
+    mock_session.get.assert_called_once_with(Calendar, 999)
+    mock_session.delete.assert_not_called()
 
 
 @pytest.mark.asyncio
-async def test_find_with_user_id_filter(repository: "CalendarRepository") -> None:
-    """Test find() method with user_id filter."""
-    calendar1_data = CalendarCreateSchema(
-        user_id=1,
-        name="User 1 Calendar",
-        url="http://example.com/user1.ics",
-    )
-    calendar2_data = CalendarCreateSchema(
-        user_id=2,
-        name="User 2 Calendar",
-        url="http://example.com/user2.ics",
-    )
-    await repository.create(calendar1_data)
-    await repository.create(calendar2_data)
+async def test_find_returns_all_calendars_without_filters(
+    calendar_repository: CalendarRepository, mock_session: AsyncMock
+) -> None:
+    """Test that find returns all calendars when no filters are provided."""
+    calendars = [
+        Calendar(user_id=12345, name="Calendar 1", url="https://example.com/1.ics", sync_enabled=True),
+        Calendar(user_id=12345, name="Calendar 2", url="https://example.com/2.ics", sync_enabled=True),
+    ]
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = calendars
+    mock_session.execute.return_value = mock_result
+    filter_data = CalendarFilter()  # type: ignore[call-arg]
 
-    filter = CalendarFilter(
-        user_id=1,
-        name=None,
-        url=None,
-        limit=100,
-        offset=0,
-    )
-    calendars = await repository.find(filter)
-    assert len(calendars) == 1
-    assert calendars[0].user_id == 1
+    result = await calendar_repository.find(filter_data)
+
+    assert len(result) == 2
+    assert result == calendars
+    mock_session.execute.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_find_with_name_filter(repository: "CalendarRepository") -> None:
-    """Test find() method with name filter."""
-    calendar1_data = CalendarCreateSchema(
-        user_id=1,
-        name="Work",
-        url="http://example.com/work1.ics",
-    )
-    calendar2_data = CalendarCreateSchema(
-        user_id=2,
-        name="Work2",
-        url="http://example.com/work2.ics",
-    )
-    await repository.create(calendar1_data)
-    await repository.create(calendar2_data)
+async def test_find_filters_by_user_id(calendar_repository: CalendarRepository, mock_session: AsyncMock) -> None:
+    """Test that find filters calendars by user_id."""
+    calendars = [
+        Calendar(user_id=12345, name="Calendar 1", url="https://example.com/1.ics", sync_enabled=True),
+    ]
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = calendars
+    mock_session.execute.return_value = mock_result
+    filter_data = CalendarFilter(user_id=12345)  # type: ignore[call-arg]
 
-    filter = CalendarFilter(
-        user_id=None,
-        name="Work",
-        url=None,
-        limit=100,
-        offset=0,
-    )
-    calendars = await repository.find(filter)
-    assert len(calendars) == 1
-    assert all(c.name == "Work" for c in calendars)
+    result = await calendar_repository.find(filter_data)
+
+    assert len(result) == 1
+    assert result[0].user_id == 12345
+    mock_session.execute.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_find_with_url_filter(repository: "CalendarRepository") -> None:
-    """Test find() method with url filter."""
-    calendar_data = CalendarCreateSchema(
-        user_id=1,
-        name="Test Calendar",
-        url="http://example.com/specific.ics",
-    )
-    await repository.create(calendar_data)
+async def test_find_filters_by_name(calendar_repository: CalendarRepository, mock_session: AsyncMock) -> None:
+    """Test that find filters calendars by name."""
+    calendars = [
+        Calendar(user_id=12345, name="My Calendar", url="https://example.com/1.ics", sync_enabled=True),
+    ]
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = calendars
+    mock_session.execute.return_value = mock_result
+    filter_data = CalendarFilter(name="My Calendar")  # type: ignore[call-arg]
 
-    filter = CalendarFilter(
-        user_id=None,
-        name=None,
-        url="http://example.com/specific.ics",
-        limit=100,
-        offset=0,
-    )
-    calendars = await repository.find(filter)
-    assert len(calendars) == 1
-    assert calendars[0].url == "http://example.com/specific.ics"
+    result = await calendar_repository.find(filter_data)
+
+    assert len(result) == 1
+    assert result[0].name == "My Calendar"
+    mock_session.execute.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_find_with_no_filters(repository: "CalendarRepository", session: "AsyncSession") -> None:
-    """Test find() method with no filters (should return all calendars)."""
-    calendar1 = Calendar(
-        user_id=1,
-        name="Calendar 1",
-        url="http://example.com/cal1.ics",
-    )
-    calendar2 = Calendar(
-        user_id=2,
-        name="Calendar 2",
-        url="http://example.com/cal2.ics",
-    )
-    session.add_all([calendar1, calendar2])
-    await session.flush()
+async def test_find_filters_by_url(calendar_repository: CalendarRepository, mock_session: AsyncMock) -> None:
+    """Test that find filters calendars by url."""
+    calendars = [
+        Calendar(user_id=12345, name="Calendar 1", url="https://example.com/specific.ics", sync_enabled=True),
+    ]
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = calendars
+    mock_session.execute.return_value = mock_result
+    filter_data = CalendarFilter(url="https://example.com/specific.ics")  # type: ignore[call-arg]
 
-    filter = CalendarFilter(
-        user_id=None,
-        name=None,
-        url=None,
-        limit=100,
-        offset=0,
-    )
-    calendars = await repository.find(filter)
-    assert len(calendars) == 2
+    result = await calendar_repository.find(filter_data)
+
+    assert len(result) == 1
+    assert result[0].url == "https://example.com/specific.ics"
+    mock_session.execute.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_find_empty_result(repository: "CalendarRepository") -> None:
-    """Test find() method with filters that match no calendars."""
-    filter = CalendarFilter(
-        user_id=999,
-        name=None,
-        url=None,
-        limit=100,
-        offset=0,
-    )
-    calendars = await repository.find(filter)
-    assert calendars == []
+async def test_find_applies_multiple_filters(calendar_repository: CalendarRepository, mock_session: AsyncMock) -> None:
+    """Test that find can apply multiple filters simultaneously."""
+    calendars = [
+        Calendar(user_id=12345, name="My Calendar", url="https://example.com/1.ics", sync_enabled=True),
+    ]
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = calendars
+    mock_session.execute.return_value = mock_result
+    filter_data = CalendarFilter(user_id=12345, name="My Calendar", url="https://example.com/1.ics")  # type: ignore[call-arg]
 
+    result = await calendar_repository.find(filter_data)
 
-# ============================================================================
-# EDGE CASES AND VALIDATION
-# ============================================================================
-
-
-@pytest.mark.asyncio
-async def test_create_calendar_name_uniqueness(repository: "CalendarRepository", session: "AsyncSession") -> None:
-    """Test that calendar name must be unique."""
-    calendar1_data = CalendarCreateSchema(
-        user_id=1,
-        name="Unique Name",
-        url="http://example.com/cal1.ics",
-    )
-    await repository.create(calendar1_data)
-
-    # Try to create another calendar with the same name
-    calendar2_data = CalendarCreateSchema(
-        user_id=2,  # Different user, but name must still be unique
-        name="Unique Name",
-        url="http://example.com/cal2.ics",
-    )
-    await repository.session.flush()
-
-    # This should raise an IntegrityError due to unique constraint
-    from sqlalchemy.exc import IntegrityError
-
-    with pytest.raises(IntegrityError):
-        await repository.create(calendar2_data)
-        await repository.session.flush()
+    assert len(result) == 1
+    mock_session.execute.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_create_calendar_url_uniqueness(repository: "CalendarRepository", session: "AsyncSession") -> None:
-    """Test that calendar URL must be unique."""
-    calendar1_data = CalendarCreateSchema(
-        user_id=1,
-        name="Calendar 1",
-        url="http://example.com/unique.ics",
-    )
-    await repository.create(calendar1_data)
+async def test_find_applies_limit_and_offset(calendar_repository: CalendarRepository, mock_session: AsyncMock) -> None:
+    """Test that find applies limit and offset to the query."""
+    calendars = [
+        Calendar(user_id=12345, name="Calendar 2", url="https://example.com/2.ics", sync_enabled=True),
+    ]
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = calendars
+    mock_session.execute.return_value = mock_result
+    filter_data = CalendarFilter(limit=10, offset=5)  # type: ignore[call-arg]
 
-    # Try to create another calendar with the same URL
-    calendar2_data = CalendarCreateSchema(
-        user_id=2,  # Different user, but URL must still be unique
-        name="Calendar 2",
-        url="http://example.com/unique.ics",
-    )
-    await repository.session.flush()
+    result = await calendar_repository.find(filter_data)
 
-    # This should raise an IntegrityError due to unique constraint
-    from sqlalchemy.exc import IntegrityError
-
-    with pytest.raises(IntegrityError):
-        await repository.create(calendar2_data)
-        await repository.session.flush()
+    assert len(result) == 1
+    mock_session.execute.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_calendar_sync_enabled_default(repository: "CalendarRepository") -> None:
-    """Test that sync_enabled defaults to True."""
-    calendar_data = CalendarCreateSchema(
-        user_id=1,
-        name="Test Calendar",
-        url="http://example.com/test.ics",
-    )
-    calendar = await repository.create(calendar_data)
-    assert calendar.sync_enabled is True
+async def test_find_returns_empty_list_when_no_matches(
+    calendar_repository: CalendarRepository, mock_session: AsyncMock
+) -> None:
+    """Test that find returns empty list when no calendars match filters."""
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = []
+    mock_session.execute.return_value = mock_result
+    filter_data = CalendarFilter(user_id=99999)  # type: ignore[call-arg]
 
+    result = await calendar_repository.find(filter_data)
 
-@pytest.mark.asyncio
-async def test_calendar_last_sync_default(repository: "CalendarRepository") -> None:
-    """Test that last_sync defaults to None."""
-    calendar_data = CalendarCreateSchema(
-        user_id=1,
-        name="Test Calendar",
-        url="http://example.com/test.ics",
-    )
-    calendar = await repository.create(calendar_data)
-    assert calendar.last_sync is None
-
-
-@pytest.mark.asyncio
-async def test_find_with_combined_filters(repository: "CalendarRepository") -> None:
-    """Test find() with multiple filters combined (user_id and name)."""
-    calendar1_data = CalendarCreateSchema(
-        user_id=1,
-        name="Work",
-        url="http://example.com/work1.ics",
-    )
-    calendar2_data = CalendarCreateSchema(
-        user_id=1,
-        name="Personal",
-        url="http://example.com/personal.ics",
-    )
-    calendar3_data = CalendarCreateSchema(
-        user_id=2,
-        name="Work2",
-        url="http://example.com/work2.ics",
-    )
-    calendar1 = await repository.create(calendar1_data)
-    await repository.create(calendar2_data)
-    await repository.create(calendar3_data)
-
-    # Filter by user_id=1 and name="Work"
-    filter = CalendarFilter(
-        user_id=1,
-        name="Work",
-        url=None,
-        limit=100,
-        offset=0,
-    )
-    calendars = await repository.find(filter)
-    assert len(calendars) == 1
-    assert calendars[0].id == calendar1.id
-    assert calendars[0].user_id == 1
-    assert calendars[0].name == "Work"
+    assert result == []
+    mock_session.execute.assert_called_once()

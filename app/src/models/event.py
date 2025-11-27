@@ -12,6 +12,7 @@ from database.database import Base
 from models.calendar import Calendar
 
 # TODO: RRULE validation
+# TODO: create indexes
 
 
 class Event(Base):

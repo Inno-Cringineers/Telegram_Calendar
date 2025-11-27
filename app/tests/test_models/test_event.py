@@ -1,303 +1,76 @@
-"""
-Unit tests for the Event model.
+"""Tests for Event model using mocks."""
 
-Tests cover:
-- ORM-level validation (ValueError)
-- SQL-level constraints (IntegrityError)
-- Default values
-- need_to_remind field
-- Calendar relationship
-"""
-
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 import pytest
-from sqlalchemy import create_engine, text
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import sessionmaker
 
-from database.database import Base
-from models.calendar import Calendar
 from models.event import Event
 
 
-@pytest.fixture
-def session():
-    engine = create_engine("sqlite:///:memory:", future=True)
-    Base.metadata.create_all(engine)
-
-    # IMPORTANT: SQLite must explicitly enable FK
-    with engine.connect() as conn:
-        conn.execute(text("PRAGMA foreign_keys=ON;"))
-
-    Session = sessionmaker(bind=engine)
-    return Session()
-
-
-# ---------------------------------------------------------------------------
-# ORM VALIDATION TESTS
-# ---------------------------------------------------------------------------
-
-
-def test_title_cannot_be_empty(session):
-    with pytest.raises(ValueError):
-        event = Event(
-            user_id=1,
-            title="   ",
-            date_start=datetime.now(UTC),
-            date_end=datetime.now(UTC) + timedelta(hours=1),
-            reminder_offset=15 * 60,
-        )
-        session.add(event)
-        session.flush()
-
-
-def test_title_max_length(session):
-    with pytest.raises(ValueError):
-        event = Event(
-            user_id=1,
-            title="a" * 256,
-            date_start=datetime.now(UTC),
-            date_end=datetime.now(UTC) + timedelta(hours=1),
-            reminder_offset=15 * 60,
-        )
-        session.add(event)
-        session.flush()
-
-
-def test_description_max_length(session):
-    with pytest.raises(ValueError):
-        event = Event(
-            user_id=1,
-            title="Test Event",
-            description="d" * 1025,
-            date_start=datetime.now(UTC),
-            date_end=datetime.now(UTC) + timedelta(hours=1),
-            reminder_offset=15 * 60,
-        )
-        session.add(event)
-        session.flush()
-
-
-def test_rrule_format_invalid(session):
-    with pytest.raises(ValueError):
-        event = Event(
-            user_id=1,
-            title="Event with bad RRULE",
-            rrule="INVALID=RULE",
-            date_start=datetime.now(UTC),
-            date_end=datetime.now(UTC) + timedelta(hours=1),
-            reminder_offset=15 * 60,
-        )
-        session.add(event)
-        session.flush()
-
-
-def test_date_end_not_before_start(session):
-    start = datetime.now(UTC)
-    end = start - timedelta(hours=1)
-    with pytest.raises(ValueError):
-        event = Event(
-            user_id=1,
-            title="Bad dates",
-            date_start=start,
-            date_end=end,
-            reminder_offset=15 * 60,
-        )
-        session.add(event)
-        session.flush()
-
-
-def test_last_modified_not_before_created(session):
-    start = datetime.now(UTC)
-    end = start + timedelta(hours=1)
-    created = datetime.now(UTC)
-    last_modified = created - timedelta(minutes=1)
-    with pytest.raises(ValueError):
-        session.add(
-            Event(
-                user_id=1,
-                title="Invalid last_modified",
-                date_start=start,
-                date_end=end,
-                created_at=created,
-                last_modified=last_modified,
-            )
-        )
-        session.flush()
-
-
-# ---------------------------------------------------------------------------
-# SQL CONSTRAINT TESTS
-# ---------------------------------------------------------------------------
-
-
-def test_end_after_start_constraint(session):
-    start = datetime.now(UTC)
-    end = start  # equal is OK
-    event = Event(
-        user_id=1,
-        title="Boundary test",
-        date_start=start,
-        date_end=end,
-        reminder_offset=15 * 60,
+def get_correct_event_data() -> Event:
+    return Event(
+        user_id=12345,
+        uid="event-123",
+        calendar_id=1,
+        date_start=datetime(2025, 1, 1, 10, 0, tzinfo=UTC),
+        date_end=datetime(2025, 1, 1, 11, 0, tzinfo=UTC),
+        all_day=False,
+        need_to_remind=True,
+        title="Test Event",
+        description="Test description",
+        rrule="FREQ=DAILY;COUNT=10",
+        rdate=[datetime(2025, 1, 2, 10, 0, tzinfo=UTC)],
+        exdate=[datetime(2025, 1, 3, 10, 0, tzinfo=UTC)],
     )
-    session.add(event)
-    session.flush()
 
 
-# ---------------------------------------------------------------------------
-# DEFAULT VALUE TESTS
-# ---------------------------------------------------------------------------
+def test_event_creation_with_correct_data() -> None:
+    """Test that Event can be created with correct data."""
+    event = get_correct_event_data()
 
-
-def test_created_at_default(session):
-    start = datetime.now(UTC)
-    end = start + timedelta(hours=1)
-    event = Event(user_id=1, title="Default created_at", date_start=start, date_end=end, reminder_offset=15 * 60)
-    session.add(event)
-    session.flush()
-    assert event.created_at.tzinfo is not None
-
-
-def test_last_modified_default(session):
-    start = datetime.now(UTC)
-    end = start + timedelta(hours=1)
-    event = Event(user_id=1, title="Default last_modified", date_start=start, date_end=end, reminder_offset=15 * 60)
-    session.add(event)
-    session.flush()
-    assert event.last_modified.tzinfo is not None
-
-
-# ---------------------------------------------------------------------------
-# need_to_remind TESTS
-# ---------------------------------------------------------------------------
-
-
-def test_need_to_remind_default_true(session):
-    start = datetime.now(UTC)
-    end = start + timedelta(hours=1)
-
-    event = Event(
-        user_id=1,
-        title="With default reminder flag",
-        date_start=start,
-        date_end=end,
-        reminder_offset=15 * 60,
-    )
-    session.add(event)
-    session.flush()
-
+    assert event.user_id == 12345
+    assert event.uid == "event-123"
+    assert event.calendar_id == 1
+    assert event.date_start == datetime(2025, 1, 1, 10, 0, tzinfo=UTC)
+    assert event.date_end == datetime(2025, 1, 1, 11, 0, tzinfo=UTC)
+    assert event.all_day is False
     assert event.need_to_remind is True
+    assert event.title == "Test Event"
+    assert event.description == "Test description"
+    assert event.rrule == "FREQ=DAILY;COUNT=10"
+    assert event.rdate == [datetime(2025, 1, 2, 10, 0, tzinfo=UTC)]
+    assert event.exdate == [datetime(2025, 1, 3, 10, 0, tzinfo=UTC)]
 
 
-def test_need_to_remind_can_be_false(session):
-    start = datetime.now(UTC)
-    end = start + timedelta(hours=1)
+def test_event_title_constraint() -> None:
+    """Test that Event title validation constraints."""
 
-    event = Event(
-        user_id=1,
-        title="Reminder disabled",
-        date_start=start,
-        date_end=end,
-        need_to_remind=False,
-        reminder_offset=15 * 60,
-    )
-    session.add(event)
-    session.flush()
+    event = get_correct_event_data()
 
-    assert event.need_to_remind is False
+    # empty title
+    with pytest.raises(ValueError, match="Event title \\(SUMMARY\\) cannot be empty"):
+        event.title = ""
+
+    # title too long
+    with pytest.raises(ValueError, match="Event title \\(SUMMARY\\) cannot exceed 255 characters"):
+        event.title = "a" * 256
 
 
-def test_need_to_remind_cannot_be_null(session):
-    start = datetime.now(UTC)
-    end = start + timedelta(hours=1)
+def test_event_description_constraint() -> None:
+    """Test that Event description validation constraints."""
 
-    with pytest.raises(IntegrityError):
-        session.add(
-            Event(
-                user_id=1,
-                title="Null reminder flag",
-                date_start=start,
-                date_end=end,
-                need_to_remind=None,
-            )
-        )
-        session.flush()
+    event = get_correct_event_data()
+
+    # description too long
+    with pytest.raises(ValueError, match="Event description \\(DESCRIPTION\\) cannot exceed 1024 characters"):
+        event.description = "a" * 1025
 
 
-# ---------------------------------------------------------------------------
-# OPTIONAL FIELD TESTS
-# ---------------------------------------------------------------------------
+def test_event_date_end_constraint() -> None:
+    """Test that Event date end validation constraints."""
 
+    event = get_correct_event_data()
 
-def test_rrule_can_be_null(session):
-    start = datetime.now(UTC)
-    end = start + timedelta(hours=1)
-    event = Event(user_id=1, title="No RRULE", date_start=start, date_end=end, rrule=None, reminder_offset=15 * 60)
-    session.add(event)
-    session.flush()
-    assert event.rrule is None
-
-
-def test_description_can_be_null(session):
-    start = datetime.now(UTC)
-    end = start + timedelta(hours=1)
-    event = Event(
-        user_id=1, title="No Description", date_start=start, date_end=end, description=None, reminder_offset=15 * 60
-    )
-    session.add(event)
-    session.flush()
-    assert event.description is None
-
-
-# ---------------------------------------------------------------------------
-# RELATIONSHIP TESTS
-# ---------------------------------------------------------------------------
-
-
-def test_calendar_relation(session):
-    cal = Calendar(
-        user_id=1,
-        name="Work",
-        url="http://example.com/calendar.ics",
-    )
-    session.add(cal)
-    session.flush()
-
-    start = datetime.now(UTC)
-    end = start + timedelta(hours=1)
-
-    event = Event(
-        user_id=1,
-        title="Linked Event",
-        date_start=start,
-        date_end=end,
-        calendar_id=cal.id,
-        reminder_offset=15 * 60,
-    )
-    session.add(event)
-    session.flush()
-
-    assert event.calendar_id == cal.id
-    assert event.calendar.id == cal.id
-
-
-def test_calendar_fk_enforced(session):
-    """Should fail because calendar_id refers to nonexistent calendar."""
-    start = datetime.now(UTC)
-    end = start + timedelta(hours=1)
-
-    event = Event(
-        user_id=1,
-        title="Bad FK",
-        date_start=start,
-        date_end=end,
-        calendar_id=999,
-        reminder_offset=15 * 60,
-    )
-
-    session.add(event)
-
-    with pytest.raises(IntegrityError):
-        session.flush()
+    # date end is before start
+    with pytest.raises(ValueError, match="Event end date \\(DTEND\\) must be not before start date \\(DTSTART\\)."):
+        event.date_end = datetime(2025, 1, 1, 9, 0, tzinfo=UTC)

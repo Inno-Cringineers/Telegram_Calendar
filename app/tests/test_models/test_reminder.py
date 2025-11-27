@@ -1,156 +1,52 @@
-"""
-Unit tests for the Remider model.
+"""Tests for Reminder model using mocks."""
 
-Tests cover:
-- ORM-level validation (ValueError)
-- SQL-level constraints (IntegrityError)
-- Default values
-"""
-
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
-from database.database import Base
-from models.event import Event
-from models.reminder import Reminder, compute_remind_at
+from models.reminder import Reminder
 
 
-@pytest.fixture
-def session():
-    engine = create_engine("sqlite:///:memory:", future=True)
-    Base.metadata.create_all(engine)
-    Session = sessionmaker(bind=engine)
-    return Session()
+def get_correct_reminder_data() -> Reminder:
+    return Reminder(
+        event_id=1,
+        description="Test description",
+        trigger_offset="-P1D",
+        trigger_datetime=datetime(2025, 1, 1, 10, 0, tzinfo=UTC),
+        repeat_count=3,
+        repeat_interval="PT10M",
+        sent=False,
+    )
 
 
-# ---------------------------------------------------------------------------
-# HELPER FUNCTION TESTS
-# ---------------------------------------------------------------------------
+def test_reminder_creation_with_correct_data() -> None:
+    """Test that Reminder can be created with minimal required data."""
+    reminder = get_correct_reminder_data()
 
-
-def test_compute_remind_at_basic():
-    start = datetime(2025, 11, 20, 12, 0, tzinfo=UTC)
-
-    class DummyEvent:
-        date_start = start
-        reminder_offset = 600  # 10 minutes
-
-    event = DummyEvent()
-    remind = compute_remind_at(event)
-    assert remind == start - timedelta(seconds=600)
-
-
-def test_compute_remind_at_invalid_offset_type():
-    start = datetime(2025, 11, 20, 12, 0, tzinfo=UTC)
-
-    class DummyEvent:
-        date_start = start
-        reminder_offset = "10"
-
-    event = DummyEvent()
-    with pytest.raises(ValueError):
-        compute_remind_at(event)
-
-
-def test_compute_remind_at_naive_datetime():
-    start = datetime(2025, 11, 20, 12, 0)  # naive
-
-    class DummyEvent:
-        date_start = start
-        reminder_offset = 600
-
-    event = DummyEvent()
-    with pytest.raises(ValueError):
-        compute_remind_at(event)
-
-
-def test_compute_remind_at_future_remind():
-    start = datetime(2025, 11, 20, 12, 0, tzinfo=UTC)
-
-    class DummyEvent:
-        date_start = start
-        reminder_offset = -10  # negative offset -> reminder after start
-
-    event = DummyEvent()
-    with pytest.raises(ValueError):
-        compute_remind_at(event)
-
-
-# ---------------------------------------------------------------------------
-# ORM / MODEL TESTS
-# ---------------------------------------------------------------------------
-
-
-def test_create_reminder(session):
-    start = datetime(2025, 11, 20, 12, 0, tzinfo=UTC)
-    end = start + timedelta(hours=1)
-    event = Event(user_id=1, title="Test Event", date_start=start, date_end=end, reminder_offset=600)
-    session.add(event)
-    session.flush()
-
-    reminder = Reminder(user_id=1, event_id=event.id, event=event, remind_at=compute_remind_at(event))
-    session.add(reminder)
-    session.flush()
-
+    assert reminder.event_id == 1
+    assert reminder.description == "Test description"
+    assert reminder.trigger_offset == "-P1D"
+    assert reminder.trigger_datetime == datetime(2025, 1, 1, 10, 0, tzinfo=UTC)
+    assert reminder.repeat_count == 3
+    assert reminder.repeat_interval == "PT10M"
     assert reminder.sent is False
-    assert reminder.remind_at == start - timedelta(seconds=600)
-    assert reminder.event_id == event.id
 
 
-def test_remind_at_must_be_datetime(session):
-    start = datetime(2025, 11, 20, 12, 0, tzinfo=UTC)
-    end = start + timedelta(hours=1)
-    event = Event(user_id=1, title="Event", date_start=start, date_end=end, reminder_offset=600)
-    session.add(event)
-    session.flush()
+def test_description_constraint() -> None:
+    """Test that Reminder description validation constraints."""
 
-    with pytest.raises(ValueError):
-        reminder = Reminder(user_id=1, event_id=event.id, event=event, remind_at="not a datetime")
-        session.add(reminder)
-        session.flush()
+    reminder = get_correct_reminder_data()
+
+    # description too long
+    with pytest.raises(ValueError, match="description cannot exceed 1024 characters"):
+        reminder.description = "a" * 1025
 
 
-def test_remind_at_must_be_timezone_aware(session):
-    start = datetime(2025, 11, 20, 12, 0, tzinfo=UTC)
-    end = start + timedelta(hours=1)
-    event = Event(user_id=1, title="Event", date_start=start, date_end=end, reminder_offset=600)
-    session.add(event)
-    session.flush()
+def test_repeat_count_constraint() -> None:
+    """Test that Reminder repeat count validation constraints."""
 
-    naive_dt = datetime(2025, 11, 20, 11, 50)  # naive datetime
-    with pytest.raises(ValueError):
-        reminder = Reminder(user_id=1, event_id=event.id, event=event, remind_at=naive_dt)
-        session.add(reminder)
-        session.flush()
+    reminder = get_correct_reminder_data()
 
-
-def test_reminder_not_after_event_start(session):
-    start = datetime(2025, 11, 20, 12, 0, tzinfo=UTC)
-    end = start + timedelta(hours=1)
-    event = Event(user_id=1, title="Event", date_start=start, date_end=end, reminder_offset=600)
-    session.add(event)
-    session.flush()
-
-    # remind_at after event start should fail
-    future_remind = start + timedelta(minutes=1)
-    with pytest.raises(ValueError):
-        reminder = Reminder(user_id=1, event_id=event.id, event=event, remind_at=future_remind)
-        session.add(reminder)
-        session.flush()
-
-
-def test_sent_default_false(session):
-    start = datetime(2025, 11, 20, 12, 0, tzinfo=UTC)
-    end = start + timedelta(hours=1)
-    event = Event(user_id=1, title="Event", date_start=start, date_end=end, reminder_offset=600)
-    session.add(event)
-    session.flush()
-
-    reminder = Reminder(user_id=1, event_id=event.id, event=event, remind_at=compute_remind_at(event))
-    session.add(reminder)
-    session.flush()
-
-    assert reminder.sent is False
+    # repeat count is negative
+    with pytest.raises(ValueError, match="repeat_count cannot be negative"):
+        reminder.repeat_count = -1

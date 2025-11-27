@@ -111,3 +111,19 @@ class SettingsNotFoundError(NotFoundError):
         self.user_id = user_id
         identifier = f"id={settings_id}" if settings_id else f"user_id={user_id}"
         super().__init__("Settings", identifier)
+
+
+class ReminderNotFoundError(NotFoundError):
+    """Raised when Reminder is not found."""
+
+    def __init__(self, reminder_id: int | None = None, event_id: int | None = None) -> None:
+        """Initialize ReminderNotFoundError.
+
+        Args:
+            reminder_id: The reminder ID that was not found (if applicable).
+            event_id: The event ID that was used in search (if applicable).
+        """
+        self.reminder_id = reminder_id
+        self.event_id = event_id
+        identifier = f"id={reminder_id}" if reminder_id else f"event_id={event_id}"
+        super().__init__("Reminder", identifier)
