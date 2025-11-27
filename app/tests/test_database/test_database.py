@@ -1,80 +1,128 @@
 """Unit tests for database utils and UnitOfWork."""
 
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-import pytest_asyncio
-from sqlalchemy import Integer, select
-from sqlalchemy.orm import Mapped, mapped_column
 
-from database.database import Base, UnitOfWork, get_engine, get_session_maker, normalize_db_url
+from database.database import UnitOfWork, normalize_db_url
 
 
-class DBTestModel(Base):
-    """Simple model with integer PK for tests."""
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-
-
-def test_normalize_db_url_sqlite_memory():
-    assert normalize_db_url("sqlite:///:memory:") == "sqlite+aiosqlite:///:memory:"
-
-
-def test_normalize_db_url_sqlite_file():
-    assert normalize_db_url("sqlite:///file.db") == "sqlite+aiosqlite:///file.db"
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        ("postgresql+asyncpg://user:pass@localhost/db", "postgresql+asyncpg://user:pass@localhost/db"),
+        ("postgresql://user:pass@localhost/db", "postgresql+asyncpg://user:pass@localhost/db"),
+    ],
+)
+def test_normalize_db_url(url: str, expected: str) -> None:
+    """Test normalize_db_url function with various URL formats."""
+    assert normalize_db_url(url) == expected
 
 
-def test_normalize_db_url_postgres_untouched():
-    url = "postgresql+asyncpg://user:pass@localhost/db"
-    assert normalize_db_url(url) == url
+@pytest.fixture
+def mock_session() -> AsyncMock:
+    """Create a mock AsyncSession."""
+    session = AsyncMock()
+    session.begin = AsyncMock()
+    session.commit = AsyncMock()
+    session.rollback = AsyncMock()
+    session.close = AsyncMock()
+    return session
 
 
-@pytest_asyncio.fixture
-async def engine():
-    """Create an async engine and ensure tables are created for tests."""
-    engine = get_engine("sqlite:///:memory:")
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    yield engine
-    await engine.dispose()
-
-
-@pytest_asyncio.fixture
-async def session_maker(engine):
-    return get_session_maker(engine)
+@pytest.fixture
+def mock_session_maker(mock_session: AsyncMock) -> MagicMock:
+    """Create a mock async_sessionmaker that returns the mock session."""
+    session_maker = MagicMock()
+    session_maker.return_value = mock_session
+    return session_maker
 
 
 @pytest.mark.asyncio
-async def test_uow_commit_persists(session_maker):
-    async with UnitOfWork(session_maker) as session:
-        session.add(DBTestModel(id=1))
+async def test_uow_commit_persists(mock_session_maker: MagicMock, mock_session: AsyncMock) -> None:
+    """Test that UnitOfWork commits transaction on successful exit."""
+    uow = UnitOfWork(mock_session_maker)
 
-    # After context exits, data must be persisted
-    async with session_maker() as session:
-        res = await session.execute(select(DBTestModel).where(DBTestModel.id == 1))
-        assert res.scalar() is not None
+    async with uow as session:
+        assert session is mock_session
+        # Verify session.begin was called
+        mock_session.begin.assert_called_once()
 
-
-@pytest.mark.asyncio
-async def test_uow_rollback_on_exception(session_maker):
-    class Boom(Exception):
-        pass
-
-    with pytest.raises(Boom):
-        async with UnitOfWork(session_maker) as session:
-            session.add(DBTestModel(id=2))
-            raise Boom()
-
-    # Ensure the insert was rolled back
-    async with session_maker() as session:
-        res = await session.execute(select(DBTestModel).where(DBTestModel.id == 2))
-        assert res.scalar() is None
+    # Verify commit was called (not rollback)
+    mock_session.commit.assert_called_once()
+    mock_session.rollback.assert_not_called()
+    mock_session.close.assert_called_once()
+    mock_session_maker.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_session_maker_direct_usage(session_maker):
-    async with session_maker() as session:
-        session.add(DBTestModel(id=3))
+async def test_uow_rollback_on_exception(mock_session_maker: MagicMock, mock_session: AsyncMock) -> None:
+    """Test that UnitOfWork rolls back transaction on exception."""
+    uow = UnitOfWork(mock_session_maker)
+
+    class TestException(Exception):
+        """Test exception for rollback testing."""
+
+    with pytest.raises(TestException):
+        async with uow as session:
+            assert session is mock_session
+            mock_session.begin.assert_called_once()
+            raise TestException("Test error")
+
+    # Verify rollback was called (not commit)
+    mock_session.rollback.assert_called_once()
+    mock_session.commit.assert_not_called()
+    mock_session.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_uow_direct_usage(mock_session_maker: MagicMock, mock_session: AsyncMock) -> None:
+    """Test that UnitOfWork works with manual commit."""
+    uow = UnitOfWork(mock_session_maker)
+
+    async with uow as session:
+        assert session is mock_session
+        mock_session.begin.assert_called_once()
+        # Manual commit inside context
         await session.commit()
 
-    async with session_maker() as session:
-        res = await session.execute(select(DBTestModel).where(DBTestModel.id == 3))
-        assert res.scalar() is not None
+    # Verify commit was called (both manual and automatic)
+    assert mock_session.commit.call_count == 2
+    mock_session.rollback.assert_not_called()
+    mock_session.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_uow_session_not_created_error(mock_session_maker: MagicMock) -> None:
+    """Test that UnitOfWork raises error if session was not created."""
+    uow = UnitOfWork(mock_session_maker)
+    # Manually set session to None to simulate error
+    uow.session = None
+
+    with pytest.raises(RuntimeError, match="UnitOfWork session was not created"):
+        await uow.__aexit__(None, None, None)
+
+
+@pytest.mark.asyncio
+async def test_uow_begin_called(mock_session_maker: MagicMock, mock_session: AsyncMock) -> None:
+    """Test that UnitOfWork calls begin() on session entry."""
+    uow = UnitOfWork(mock_session_maker)
+
+    async with uow:
+        mock_session.begin.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_uow_close_always_called(mock_session_maker: MagicMock, mock_session: AsyncMock) -> None:
+    """Test that UnitOfWork always closes session, even if commit/rollback fails."""
+    uow = UnitOfWork(mock_session_maker)
+    # Make commit raise an exception
+    mock_session.commit.side_effect = Exception("Commit failed")
+
+    # Exception from commit should be raised, but close should still be called
+    with pytest.raises(Exception, match="Commit failed"):
+        async with uow:
+            pass
+
+    # Even though commit failed, close should still be called (in finally block)
+    mock_session.close.assert_called_once()

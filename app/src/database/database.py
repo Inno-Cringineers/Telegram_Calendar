@@ -3,8 +3,8 @@ Async database utilities for SQLAlchemy.
 
 Provides:
 - Base declarative class with automatic table naming
-- normalize_db_url: convert sqlite URLs to async driver form
-- get_engine: create async engine (SQLite and other DBs)
+- normalize_db_url: convert Postgresql URLs to async driver form
+- get_engine: create async engine (Postgresql and other DBs)
 - get_session_maker: create async_sessionmaker
 - init_db: import models and create tables
 - UnitOfWork: async context manager for transactional sessions

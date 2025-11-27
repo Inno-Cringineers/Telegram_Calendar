@@ -2,7 +2,7 @@
 This module defines the `Event` class, which represents calendar events in the application.
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Literal
 
 from sqlalchemy import ARRAY, Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String
@@ -78,19 +78,24 @@ class Event(Base):
         passive_deletes=True,
     )
 
+    # --- date section ---
     date_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     date_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    all_day: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
-    reminder_offset: Mapped[int] = mapped_column(Integer, nullable=False)
-
+    # --- reminder section ---
     need_to_remind: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
-    title: Mapped[str] = mapped_column(String(255), nullable=False)
-    description: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    # --- recurrence section---
     rrule: Mapped[str | None] = mapped_column(String(255), nullable=True)
     rdate: Mapped[list[datetime] | None] = mapped_column(ARRAY(DateTime(timezone=True)), nullable=True)
     exdate: Mapped[list[datetime] | None] = mapped_column(ARRAY(DateTime(timezone=True)), nullable=True)
 
+    # --- content section ---
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+
+    # --- metadata section ---
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.now(UTC))
     last_modified: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=datetime.now(UTC), onupdate=datetime.now(UTC)
@@ -119,30 +124,8 @@ class Event(Base):
             raise ValueError("Event description (DESCRIPTION) cannot exceed 1024 characters.")
         return value
 
-    @validates("rrule")
-    def validate_rrule(self, key: Literal["rrule"], value: str | None) -> str | None:
-        if value is not None:
-            value = value.strip().upper()
-            if not RRULE_REGEX.match(value):
-                raise ValueError("RRULE must comply with RFC 5545 format, e.g., 'FREQ=DAILY;COUNT=10;INTERVAL=2'")
-        return value
-
     @validates("date_end")
     def validate_date_end(self, key: Literal["date_end"], value: datetime) -> datetime:
         if self.date_start is not None and value < self.date_start:
             raise ValueError("Event end date (DTEND) must be not before start date (DTSTART).")
-        return value
-
-    @validates("last_modified")
-    def validate_last_modified(self, key: Literal["last_modified"], value: datetime) -> datetime:
-        if self.created_at is not None and value < self.created_at:
-            raise ValueError("last_modified cannot be earlier than created_at.")
-        return value
-
-    @validates("reminder_offset")
-    def validate_reminder_offset(self, key: Literal["reminder_offset"], value: int | timedelta) -> int:
-        if isinstance(value, timedelta):
-            value = int(value.total_seconds())
-        if value < 0:
-            raise ValueError("reminder_offset must be non-negative")
         return value
