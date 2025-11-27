@@ -150,3 +150,5 @@ pyrightconfig.json
 *.db
 .cache
 .cursor
+
+*.session
