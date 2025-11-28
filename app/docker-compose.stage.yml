@@ -1,13 +1,67 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: telegram_calendar_postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-telegram_calendar}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   bot:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: bot-stage
     environment:
       - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - SINGLE_USER=${SINGLE_USER:-false}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-telegram_calendar}
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      # Set DEV_MODE=true to enable hot reload (auto-restart on file changes)
+      - DEV_MODE=${DEV_MODE:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     volumes:
+      # Mount source code for hot reload in development
       - ./src:/app/src
+    # Use hot reload script in dev mode, otherwise use main.py
+    command: >
+      sh -c "
+      if [ \"$$DEV_MODE\" = \"true\" ]; then
+        echo 'Running in development mode with hot reload...';
+        python run_dev.py;
+      else
+        echo 'Running in production mode...';
+        python main.py;
+      fi
+      "
 
-# TODO: volume for database
-# TODO: volume for logs
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: telegram_calendar_pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL:-admin@admin.com}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD:-admin}
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    depends_on:
+      - postgres
+    restart: unless-stopped
 
+volumes:
+  postgres_data:
