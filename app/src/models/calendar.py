@@ -10,6 +10,9 @@ from sqlalchemy.orm import Mapped, mapped_column, validates
 
 from database.database import Base
 
+# TODO: save ics file after sync
+# TODO: validation
+
 
 class Calendar(Base):
     """
@@ -30,8 +33,8 @@ class Calendar(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     url: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
 
-    last_sync: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     sync_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    last_sync: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # --- SQL-level constraints ---
     __table_args__ = (
@@ -60,10 +63,4 @@ class Calendar(Base):
             raise ValueError("Calendar URL must link to the .ics file.")
         if len(value) > 255:
             raise ValueError("Calendar URL cannot exceed 255 characters.")
-        return value
-
-    @validates("last_sync")
-    def validate_last_sync(self, key: Literal["last_sync"], value: datetime | None) -> datetime | None:
-        if value is not None and not isinstance(value, datetime):
-            raise ValueError("last_sync must be a datetime object or None.")
         return value

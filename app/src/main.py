@@ -4,7 +4,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from config.config import load_config
-from database.database import get_engine, get_session_maker, init_db
+from database.database import create_engine, create_session_maker, create_tables
 from logger.logger import logger, setup_logger
 from middlewares.database_middlware import DatabaseMiddleware
 from middlewares.logging_middleware import (
@@ -16,10 +16,18 @@ from router.router import router
 
 
 async def setup_database(dp: Dispatcher, db_url: str) -> None:
-    """Setup database and inject session middleware."""
-    engine = get_engine(db_url)
-    await init_db(engine)
-    session_maker = get_session_maker(engine)
+    """Setup database and inject session middleware.
+
+    Args:
+        dp: Aiogram Dispatcher instance.
+        db_url: Database connection URL.
+    """
+    # Create async SQLAlchemy engine
+    engine = create_engine(db_url)
+    # Create tables
+    await create_tables(engine)
+    # Create session maker
+    session_maker = create_session_maker(engine)
 
     # Middleware to inject database session in handlers
     dp.message.middleware(DatabaseMiddleware(session_maker))
@@ -40,24 +48,39 @@ def setup_middlewares(dp: Dispatcher) -> None:
 
 
 async def main() -> None:
+    # Load config
     cfg = load_config()
 
     # Setup logger with config
     setup_logger(cfg.logger)
 
-    logger.info("Starting Telegram Calendar Bot...")
-    logger.info(f"Logger level: {cfg.logger.level}")
+    logger.info("Starting Telegram Calendar Bot")
+    logger.debug("Config:")
+    logger.debug(f"Bot token: {cfg.bot.telegram_token}")
+    logger.debug(f"Database URL: {cfg.database.url}")
+    logger.debug(f"Logger level: {cfg.logger.level}")
+    logger.debug(f"Logger console: {cfg.logger.console}")
+    logger.debug(f"Logger file: {cfg.logger.file_enabled}")
+    logger.debug(f"Logger file path: {cfg.logger.file_path}")
+    logger.debug(f"Logger file max bytes: {cfg.logger.max_bytes}")
+    logger.debug(f"Logger file backup count: {cfg.logger.backup_count}")
+    logger.debug(f"Bot timeout: {cfg.bot.timeout}")
+    logger.debug(f"Bot single user: {cfg.bot.single_user}")
 
-    bot = Bot(cfg.telegram_token)
+    # Create bot
+    bot = Bot(token=cfg.bot.telegram_token)
+    # Create dispatcher
     dp = Dispatcher(storage=MemoryStorage())
-
+    # TODO: Add Redis storage for FSM
+    # Setup database
     await setup_database(dp, cfg.database.url)
+    # Setup middlewares
     setup_middlewares(dp)
-
+    # Include router
     dp.include_router(router)
-
-    logger.info("Bot is running...")
-    await dp.start_polling(bot)
+    # Start bot
+    logger.info("Bot is running in polling mode...")
+    await dp.start_polling(bot, timeout=cfg.bot.timeout)
 
 
 if __name__ == "__main__":

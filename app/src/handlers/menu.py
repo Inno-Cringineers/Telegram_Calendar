@@ -18,7 +18,7 @@ async def cmd_menu(message: Message, state: FSMContext) -> None:
     logger.info(f"User {user_id} opened main menu")
 
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     await state.set_state(MainMenuStates.in_main_menu)
     await message.answer(
@@ -35,7 +35,7 @@ async def back_to_main(query: CallbackQuery, state: FSMContext) -> None:
     logger.debug(f"User {user_id} going back to main menu")
 
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     await state.set_state(MainMenuStates.in_main_menu)
 

@@ -3,8 +3,8 @@ Async database utilities for SQLAlchemy.
 
 Provides:
 - Base declarative class with automatic table naming
-- normalize_db_url: convert sqlite URLs to async driver form
-- get_engine: create async engine (SQLite and other DBs)
+- normalize_db_url: convert Postgresql URLs to async driver form
+- get_engine: create async engine (Postgresql and other DBs)
 - get_session_maker: create async_sessionmaker
 - init_db: import models and create tables
 - UnitOfWork: async context manager for transactional sessions
@@ -19,7 +19,6 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import DeclarativeBase, declared_attr
-from sqlalchemy.pool import StaticPool
 
 from logger.logger import logger
 
@@ -44,8 +43,8 @@ class Base(DeclarativeBase):
 def normalize_db_url(db_url: str) -> str:
     """Normalize DB URL to async-compatible variant.
 
-    For SQLite URLs that don't already include an async driver, replace the
-    scheme to use aiosqlite.
+    For PostgreSQL URLs that don't already include an async driver, replace the
+    scheme to use asyncpg.
 
     Args:
         db_url: Original DB connection URL.
@@ -53,45 +52,33 @@ def normalize_db_url(db_url: str) -> str:
     Returns:
         Async-compatible DB URL.
     """
-    if db_url.startswith("sqlite://") and "+aiosqlite" not in db_url:
-        db_url = db_url.replace("sqlite://", "sqlite+aiosqlite://")
+    if db_url.startswith("postgresql://") and "+asyncpg" not in db_url:
+        db_url = db_url.replace("postgresql://", "postgresql+asyncpg://")
     return db_url
 
 
-def get_engine(db_url: str) -> AsyncEngine:
+def create_engine(db_url: str) -> AsyncEngine:
     """Create an async SQLAlchemy engine.
 
-    Uses a StaticPool only for in-memory SQLite databases to ensure the same
-    connection is reused (necessary for :memory: databases).
+    For PostgreSQL URLs that don't already include an async driver, replace the
+    scheme to use asyncpg.
 
     Args:
-        db_url: Database connection URL (can be sqlite or any other supported DB).
+        db_url: Database connection URL.
 
     Returns:
         AsyncEngine: configured SQLAlchemy async engine.
     """
     db_url = normalize_db_url(db_url)
-    is_sqlite = db_url.startswith("sqlite")
-    use_static_pool = db_url.endswith(":memory:")
 
-    pool = StaticPool if use_static_pool else None
-    connect_args = {"check_same_thread": False} if is_sqlite else {}
-
-    logger.debug("Creating async engine for %s (sqlite=%s, static_pool=%s)", db_url, is_sqlite, use_static_pool)
-    return create_async_engine(
-        db_url,
-        echo=False,
-        future=True,
-        poolclass=pool,
-        connect_args=connect_args,
-    )
+    return create_async_engine(db_url, echo=False, future=True)
 
 
-def get_session_maker(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
+def create_session_maker(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
     """Create an async session factory (async_sessionmaker).
 
     Args:
-        engine: AsyncEngine returned by :func:`get_engine`.
+        engine: AsyncEngine returned by :func:`create_engine`.
 
     Returns:
         async_sessionmaker bound to the engine.
@@ -99,20 +86,20 @@ def get_session_maker(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
     return async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 
-async def init_db(engine: AsyncEngine) -> None:
+async def create_tables(engine: AsyncEngine) -> None:
     """Import models and create database tables.
 
     Args:
-        engine: AsyncEngine created via :func:`get_engine`.
+        engine: AsyncEngine created via :func:`create_engine`.
     """
     # Import models to register them with SQLAlchemy metadata.
     # Add any other model modules that should be included.
     try:
         # Import known models (if they exist in your project)
-        from models.calendar import Calendar  # noqa: F401
-        from models.event import Event  # noqa: F401
-        from models.reminder import Reminder  # noqa: F401
-        from models.settings import Settings  # noqa: F401
+        from models.calendar import Calendar  # noqa: F401 # pyright: ignore[reportUnusedImport]
+        from models.event import Event  # noqa: F401 # pyright: ignore[reportUnusedImport]
+        from models.reminder import Reminder  # noqa: F401 # pyright: ignore[reportUnusedImport]
+        from models.settings import Settings  # noqa: F401 # pyright: ignore[reportUnusedImport]
     except Exception:
         # If project does not have those modules yet, skip — tests can import test models
         logger.debug("Some model imports failed during init_db (maybe not present in test env).")

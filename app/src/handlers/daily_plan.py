@@ -16,7 +16,7 @@ async def get_daily_plan(query: CallbackQuery, state: FSMContext) -> None:
     logger.info(f"User {user_id} requested daily plan")
 
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     await query.answer(t("daily_plan.generating", lang=lang))
 

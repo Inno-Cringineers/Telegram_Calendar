@@ -8,7 +8,7 @@ All user-facing strings are stored here with English and Russian translations.
 STRINGS: dict[str, dict[str, str]] = {
     "en": {
         # Start handler
-        "start.welcome": "👋 <b>Welcome to the Telegram Calendar reminder, {user_name}!</b>\n\nI can help to manage your events and reminders, even from external calendars.\n\n📋 <b>Commands:</b>\n/start - Show this dialog\n/help - Get help\n/menu - Open main menu\n\n🎯 <b>Main functions:</b>\n• 📅 Events viewing\n• ➕ Creating events\n• ✏️ Editing events\n• 🗑️ Deleting events\n• 🔗 Exporting external calendars (google, outlook, etc.)\n• ⏰ Events reminders\n• 📋 Daily planss",  # noqa: E501
+        "start.welcome": "👋 <b>Welcome to the Telegram Calendar reminder, {user_name}!</b>\n\nI can help you manage your events and reminders, including from external calendars.\n\n📋 <b>Commands:</b>\n/start - Show this dialog\n/help - Get help\n/menu - Open main menu\n\n🎯 <b>Main functions:</b>\n• 📅 Viewing events \n• ➕ Creating events\n• ✏️ Editing events\n• 🗑️ Deleting events\n• 🔗 Importing external calendars (google, outlook, etc.)\n• 📤 Exporting events\n• ⏰ Reminders for events \n• 📋 Daily plans",  # noqa: E501
         # Menu
         "menu.main.title": "🏠 <b>Main Menu</b>\n\nChoose an option:",
         "menu.updated": "Menu updated",
@@ -28,7 +28,7 @@ STRINGS: dict[str, dict[str, str]] = {
         "settings.quiet_hours.current": "Current quiet hours: 22:00 - 08:00 (Mocked)",
         "settings.quiet_hours.description": "Feature is under development. No notifications will be sent during quiet hours.",  # noqa: E501
         "settings.daily_plans_time.selected": "✅ Daily plans time setting selected",
-        "settings.daily_plans_time.title": "⏰ <b>Daily Plans Time</b>",
+        "settings.daily_plans_time.title": "⏰ <b>Daily plans Time</b>",
         "settings.daily_plans_time.current": "Current time: 09:00 (Mocked)",
         "settings.daily_plans_time.description": "Feature is under development. Daily plan will be sent at this time every day.",  # noqa: E501
         # Events
@@ -38,7 +38,7 @@ STRINGS: dict[str, dict[str, str]] = {
         "events.import.description": "Please load file in .ics format to the chat",
         "events.export.selected": "📥 Event export selected",
         "events.export.title": "📥 <b>Events export</b>",
-        "events.export.description": "This is your events in .ics format (only internal events)",
+        "events.export.description": "Your events exported in .ics format (only internal events)",
         "events.create.selected": "➕ Event creation selected",
         "events.create.title": "➕ <b>Events creation</b>",
         "events.view.selected": "🔍 Events viewing selected",
@@ -47,7 +47,7 @@ STRINGS: dict[str, dict[str, str]] = {
         # Create event
         "create_event.enter_title": "📝 Enter event title:\n\n",
         "create_event.cancelled": "❌ Event creation cancelled",
-        "create_event.title_empty": "❌ Title shouldnt be empty",
+        "create_event.title_empty": "❌ Title should not be empty",
         "create_event.title_too_long": "❌ Title too long (maximum 100 chars)",
         "create_event.enter_description": "📄 Enter description:\n\n",
         "create_event.enter_date": "📅 Enter start date:\n\nFormat: DD.MM.YYYY (example: 25.12.2025)",
@@ -56,7 +56,7 @@ STRINGS: dict[str, dict[str, str]] = {
         "create_event.time_format_error": "❌ Incorrect time format\n\nUse format: HH:MM (example: 14:30)",
         "create_event.preview.title": "📋 Check event data:",
         "create_event.preview.title_label": "📝 <b>Title:</b> {title}",
-        "create_event.preview.description_label": "📄 <b>description:</b> {description}",
+        "create_event.preview.description_label": "📄 <b>Description:</b> {description}",
         "create_event.preview.date_label": "📅 <b>Start date:</b> {date}",
         "create_event.preview.time_label": "⏰ <b>Start time:</b> {time}",
         "create_event.preview.confirm": "✅ All right?",
@@ -107,8 +107,8 @@ STRINGS: dict[str, dict[str, str]] = {
         "btn.skip": "⏭ Skip",
         "btn.accept": "✅ Accept",
         "btn.reject": "❌ Reject",
-        "btn.delete": "❌ delete",
-        "btn.edit": "✎ edit",
+        "btn.delete": "❌ Delete",
+        "btn.edit": "✏️ Edit",
         # Calendar widget
         "calendar.prev_month": "<<",
         "calendar.next_month": ">>",

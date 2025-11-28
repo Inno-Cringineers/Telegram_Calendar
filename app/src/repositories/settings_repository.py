@@ -34,28 +34,17 @@ class SettingsRepository(BaseRepository[Settings]):
         result = await self.session.get(Settings, entity_id)
         return result
 
-    async def get_by_user_id(self, user_id: int) -> Settings | None:
-        """Retrieve a settings by user ID.
-
-        Args:
-            user_id: The user ID to filter settings by.
-
-        Returns:
-            The settings if found, None otherwise.
-        """
-        result = await self.session.execute(select(Settings).where(Settings.user_id == user_id))
-        return result.scalar_one_or_none()
-
     async def create(self, data: SettingsCreateSchema, *args, **kwargs) -> Settings:
         """Create a new settings.
 
         Args:
-            data: The data to create the settings with.
+            data: SettingsCreateSchema with settings data.
         """
         settings = Settings(
             user_id=data.user_id,
             timezone=data.timezone,
             language=data.language,
+            quiet_hours=data.quiet_hours,
             quiet_hours_start=data.quiet_hours_start,
             quiet_hours_end=data.quiet_hours_end,
             daily_plans_time=data.daily_plans_time,
@@ -83,6 +72,18 @@ class SettingsRepository(BaseRepository[Settings]):
         await self.session.flush()
         await self.session.refresh(settings)
         return settings
+
+    async def find(self, user_id: int) -> Settings | None:
+        """Find settings by user ID.
+
+        Args:
+            user_id: The ID of the user to find settings for.
+
+        Returns:
+            The settings if found, None otherwise.
+        """
+        result = await self.session.execute(select(Settings).where(Settings.user_id == user_id))
+        return result.scalar()
 
     async def delete(self, entity_id: int, *args, **kwargs) -> None:
         """Delete a settings by ID.

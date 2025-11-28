@@ -12,6 +12,8 @@ from repositories.base_repository import BaseRepository
 from repositories.exceptions import CalendarNotFoundError
 from repositories.schemas import CalendarCreateSchema, CalendarFilter, CalendarUpdateSchema
 
+# TODO: Validation and exeptions
+
 
 class CalendarRepository(BaseRepository[Calendar]):
     """Repository for Calendar entity operations.
@@ -40,23 +42,26 @@ class CalendarRepository(BaseRepository[Calendar]):
         result = await self.session.get(Calendar, entity_id)
         return result
 
-    async def create(self, data: CalendarCreateSchema, *args, **kwargs) -> Calendar:
+    async def create(self, data: list[CalendarCreateSchema], *args, **kwargs) -> list[Calendar]:
         """Create a new calendar.
 
         Args:
-            data: CalendarCreateSchema with calendar data.
+            data: list of CalendarCreateSchema with calendar data.
 
         Returns:
             The created calendar.
         """
-        calendar = Calendar(
-            user_id=data.user_id,
-            name=data.name,
-            url=data.url,
-        )
-        self.session.add(calendar)
-        await self.session.flush()
-        return calendar
+        calendars = []
+        for item in data:
+            calendar = Calendar(
+                user_id=item.user_id,
+                name=item.name,
+                url=item.url,
+            )
+            self.session.add(calendar)
+            await self.session.flush()
+            calendars.append(calendar)
+        return calendars
 
     async def update(self, entity_id: int, data: CalendarUpdateSchema, *args, **kwargs) -> Calendar:
         """Update an existing calendar.
@@ -93,19 +98,6 @@ class CalendarRepository(BaseRepository[Calendar]):
         await self.session.delete(calendar)
         await self.session.flush()
 
-    async def get_by_user_id(self, user_id: int) -> list[Calendar]:
-        """Retrieve all calendars for a specific user.
-
-        Args:
-            user_id: The user ID to filter calendars by.
-
-        Returns:
-            List of calendars for the user.
-        """
-        stmt = select(Calendar).where(Calendar.user_id == user_id)
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
-
     async def find(self, filter: CalendarFilter) -> list[Calendar]:
         """Find calendars matching the provided filter.
 
@@ -124,6 +116,9 @@ class CalendarRepository(BaseRepository[Calendar]):
             stmt = stmt.where(Calendar.name == filter.name)
         if filter.url is not None:
             stmt = stmt.where(Calendar.url == filter.url)
+
+        # limit and offset
+        stmt = stmt.limit(filter.limit).offset(filter.offset)
 
         result = await self.session.execute(stmt)
         return list(result.scalars().all())

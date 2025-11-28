@@ -47,7 +47,7 @@ async def process_create_new_event_callback(query: CallbackQuery, state: FSMCont
     logger.info(f"User {user_name} (ID: {user_id}) creating event")
 
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     await state.set_state(CreateEventStates.waiting_for_title)
 
@@ -62,7 +62,7 @@ async def process_create_new_event_callback(query: CallbackQuery, state: FSMCont
 async def cancel_event_creation(query: CallbackQuery, state: FSMContext) -> None:
     """Cancel event creation."""
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     await state.clear()
     if isinstance(query.message, Message):
@@ -76,7 +76,7 @@ async def cancel_event_creation(query: CallbackQuery, state: FSMContext) -> None
 async def process_event_title(message: Message, state: FSMContext) -> None:
     """Process event title."""
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     title = message.text
     if title is None or len(title) == 0:
@@ -100,7 +100,7 @@ async def process_event_title(message: Message, state: FSMContext) -> None:
 async def process_event_description(message: Message, state: FSMContext) -> None:
     """Process event description."""
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     description = message.text
 
@@ -117,7 +117,7 @@ async def process_event_description(message: Message, state: FSMContext) -> None
 async def skip_event_description(query: CallbackQuery, state: FSMContext) -> None:
     """Skip event description step."""
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     await state.update_data(description=None)
     await state.set_state(CreateEventStates.waiting_for_start_date)
@@ -133,7 +133,7 @@ async def skip_event_description(query: CallbackQuery, state: FSMContext) -> Non
 async def process_event_date(message: Message, state: FSMContext) -> None:
     """Process event date with validation."""
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     if message.text is None:
         await message.answer(
@@ -163,7 +163,7 @@ async def process_event_date(message: Message, state: FSMContext) -> None:
 async def process_event_time(message: Message, state: FSMContext) -> None:
     """Process event time with validation."""
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     if message.text is None:
         await message.answer(t("create_event.time_format_error", lang=lang))
@@ -203,7 +203,7 @@ async def process_event_time(message: Message, state: FSMContext) -> None:
 async def confirm_event(query: CallbackQuery, state: FSMContext) -> None:
     """Confirm and save event."""
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     data = await state.get_data()
     user_id = query.from_user.id
