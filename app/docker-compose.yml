@@ -31,7 +31,7 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       # Set DEV_MODE=true to enable hot reload (auto-restart on file changes)
-      - DEV_MODE=${DEV_MODE:-true}
+      - DEV_MODE=${DEV_MODE:-false}
     depends_on:
       postgres:
         condition: service_healthy
