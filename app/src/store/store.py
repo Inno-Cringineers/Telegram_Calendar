@@ -16,7 +16,10 @@ from typing import TYPE_CHECKING
 from sqlalchemy.ext.asyncio import AsyncSession
 
 if TYPE_CHECKING:
+    from repositories.calendar_repository import CalendarRepository
     from repositories.event_repository import EventRepository
+    from repositories.reminder_repository import ReminderRepository
+    from repositories.settings_repository import SettingsRepository
     # from services.event_service import EventService
 
 
@@ -31,7 +34,10 @@ class Store:
             store: Store = data["store"]  # From StoreMiddleware
 
             # Use repositories directly
+            calendar = await store.calendars.create(...)
             event = await store.events.create(...)
+            reminder = await store.reminders.create(...)
+            settings = await store.settings.create(...)
 
             # Or use services (which use repositories through Store)
             # event = await store.event_service.create_with_reminder(...)
@@ -46,7 +52,10 @@ class Store:
         """
         self.session = session
         # Repositories are initialized lazily to avoid circular imports
+        self._calendar_repository: CalendarRepository | None = None
         self._event_repository: EventRepository | None = None
+        self._reminder_repository: ReminderRepository | None = None
+        self._settings_repository: SettingsRepository | None = None
         # Services will be initialized here when implemented
         # self._event_service: "EventService | None" = None
 
@@ -55,7 +64,20 @@ class Store:
     # ========================================================================
 
     @property
-    def events(self) -> "EventRepository":
+    def get_calendar_repository(self) -> "CalendarRepository":
+        """Get CalendarRepository instance.
+
+        Returns:
+            CalendarRepository: The calendar repository instance using Store's session.
+        """
+        if self._calendar_repository is None:
+            from repositories.calendar_repository import CalendarRepository
+
+            self._calendar_repository = CalendarRepository(self.session)
+        return self._calendar_repository
+
+    @property
+    def get_event_repository(self) -> "EventRepository":
         """Get EventRepository instance.
 
         Returns:
@@ -67,20 +89,31 @@ class Store:
             self._event_repository = EventRepository(self.session)
         return self._event_repository
 
-    # Future repositories can be added here:
-    # @property
-    # def calendars(self) -> "CalendarRepository":
-    #     if self._calendar_repository is None:
-    #         from repositories.calendar_repository import CalendarRepository
-    #         self._calendar_repository = CalendarRepository(self.session)
-    #     return self._calendar_repository
-    #
-    # @property
-    # def settings(self) -> "SettingsRepository":
-    #     if self._settings_repository is None:
-    #         from repositories.settings_repository import SettingsRepository
-    #         self._settings_repository = SettingsRepository(self.session)
-    #     return self._settings_repository
+    @property
+    def get_reminder_repository(self) -> "ReminderRepository":
+        """Get ReminderRepository instance.
+
+        Returns:
+            ReminderRepository: The reminder repository instance using Store's session.
+        """
+        if self._reminder_repository is None:
+            from repositories.reminder_repository import ReminderRepository
+
+            self._reminder_repository = ReminderRepository(self.session)
+        return self._reminder_repository
+
+    @property
+    def get_settings_repository(self) -> "SettingsRepository":
+        """Get SettingsRepository instance.
+
+        Returns:
+            SettingsRepository: The settings repository instance using Store's session.
+        """
+        if self._settings_repository is None:
+            from repositories.settings_repository import SettingsRepository
+
+            self._settings_repository = SettingsRepository(self.session)
+        return self._settings_repository
 
     # ========================================================================
     # SERVICES (when implemented)

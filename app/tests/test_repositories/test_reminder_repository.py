@@ -232,12 +232,12 @@ async def test_find_returns_reminder_by_event_id(
 ) -> None:
     """Test that find returns reminder when found by event_id."""
     mock_result = MagicMock()
-    mock_result.scalar.return_value = sample_reminder
+    mock_result.scalars.return_value.all.return_value = [sample_reminder]
     mock_session.execute.return_value = mock_result
 
     result = await reminder_repository.find(1)
 
-    assert result is sample_reminder
+    assert result == [sample_reminder]
     mock_session.execute.assert_called_once()
 
 
@@ -252,7 +252,7 @@ async def test_find_returns_none_when_not_found(
 
     result = await reminder_repository.find(999)
 
-    assert result is None
+    assert result == []
     mock_session.execute.assert_called_once()
 
 

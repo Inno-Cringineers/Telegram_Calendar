@@ -23,22 +23,27 @@ class Event(Base):
 
     Attributes:
         --- id section ---
+
         id: int - Primary key.
         user_id: int - Telegram ID of the user.
         uid: str - UID, event unique identifier from icalendar. if null - then event is not imported from external calendar.
 
         --- foreign keys section ---
+
         calendar_id: int | None - FK to Calendar entity, nullable.
 
         --- date section ---
+
         date_start: datetime - DTSTART (RFC 5545), event start date and time. Not null.
         date_end: datetime - DTEND (RFC 5545), event end date and time. Not null and must be not before start.
         all_day: bool - if True, the event is all day event (in DTSTART and DTEND are only dates, without times).
 
         --- reminder section ---
+
         need_to_remind: bool - if True, the bot will send a reminder to the user. Needed to mute reminder notifications.
 
         --- recurrence section (RFC 5545)---
+
         rrule: string | None - RRULE. RFC 5545 format. Sets the main recurrence rule.
         rdate: list[datetime] | None - RDATE. RFC 5545 format. Sets the additional recurrence dates.
         exdate: list[datetime] | None - EXDATE. RFC 5545 format. Sets the exception dates.
@@ -54,10 +59,12 @@ class Event(Base):
         EXDATE = [datetime(2025, 11, 27, 9, 0, tzinfo=UTC)] # event will be excluded from the calendar on 2025-11-27 at 09:00 Moscow time.
 
         --- content section ---
+
         title: string - SUMMARY. RFC 5545 format. Event title, max 255 chars. Not empty.
         description: string | None - DESCRIPTION, max 1024 chars.
 
         --- metadata section ---
+
         created_at: datetime - CREATED, auto-set if not provided.
         last_modified: datetime - LAST-MODIFIED, auto-updates on change.
 

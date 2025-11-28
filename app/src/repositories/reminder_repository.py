@@ -75,17 +75,17 @@ class ReminderRepository(BaseRepository[Reminder]):
         await self.session.refresh(reminder)
         return reminder
 
-    async def find(self, event_id: int) -> Reminder | None:
+    async def find(self, event_id: int) -> list[Reminder]:
         """Find reminders by event ID.
 
         Args:
             event_id: The ID of the event to find reminders for.
 
         Returns:
-            The reminder if found, None otherwise.
+            The list of reminders if found, empty list otherwise.
         """
         result = await self.session.execute(select(Reminder).where(Reminder.event_id == event_id))
-        return result.scalar()
+        return list(result.scalars().all())
 
     async def delete(self, entity_id: int, *args, **kwargs) -> None:
         """Delete a reminder by ID.
