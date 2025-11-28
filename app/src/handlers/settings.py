@@ -23,7 +23,7 @@ async def open_settings_menu(query: CallbackQuery, state: FSMContext) -> None:
     logger.info(f"User {user_id} opened settings menu")
 
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     await state.set_state(SettingsStates.in_settings)
 
@@ -42,7 +42,7 @@ async def settings_timezone(query: CallbackQuery, state: FSMContext) -> None:
     logger.info(f"User {user_id} is editing timezone")
 
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     await state.set_state(SettingsStates.editing_timezone)
     await query.answer(t("settings.timezone.selected", lang=lang))
@@ -99,7 +99,7 @@ async def settings_language(query: CallbackQuery, state: FSMContext) -> None:
     logger.info(f"User {user_id} is editing language")
 
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     await state.set_state(SettingsStates.editing_language)
     await query.answer(t("settings.language.selected", lang=lang))
@@ -124,7 +124,7 @@ async def settings_quiet_hours(query: CallbackQuery, state: FSMContext) -> None:
     logger.info(f"User {user_id} is editing quiet hours")
 
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     await state.set_state(SettingsStates.editing_quiet_hours)
     await query.answer(t("settings.quiet_hours.selected", lang=lang))
@@ -149,7 +149,7 @@ async def settings_daily_plans_time(query: CallbackQuery, state: FSMContext) -> 
     logger.info(f"User {user_id} is editing daily plans time")
 
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     await state.set_state(SettingsStates.editing_daily_plans_time)
     await query.answer(t("settings.daily_plans_time.selected", lang=lang))

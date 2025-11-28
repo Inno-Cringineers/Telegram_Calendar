@@ -22,7 +22,7 @@ async def open_events_menu(query: CallbackQuery, state: FSMContext) -> None:
     logger.info(f"User {user_id} opened events menu")
 
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     await state.set_state(EventsMenuStates.in_events_menu)
 
@@ -41,7 +41,7 @@ async def events_import(query: CallbackQuery, state: FSMContext) -> None:
     logger.info(f"User {user_id} is importing events")
 
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     await state.set_state(EventsMenuStates.in_events_import)
     await query.answer(t("events.import.selected", lang=lang))
@@ -66,7 +66,7 @@ async def events_export(query: CallbackQuery, state: FSMContext) -> None:
     logger.info(f"User {user_id} is exporting events")
 
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     await state.set_state(EventsMenuStates.in_events_export)
     await query.answer(t("events.export.selected", lang=lang))
@@ -91,7 +91,7 @@ async def events_create(query: CallbackQuery, state: FSMContext) -> None:
     logger.info(f"User {user_id} is choosing creating event option")
 
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     await state.set_state(EventsMenuStates.in_events_create)
     await query.answer(t("events.create.selected", lang=lang))
@@ -112,7 +112,7 @@ async def events_view(query: CallbackQuery, state: FSMContext) -> None:
     logger.info(f"User {user_id} is viewing events")
 
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     await state.set_state(EventsMenuStates.in_events_view)
     await query.answer(t("events.view.selected", lang=lang))
