@@ -17,7 +17,7 @@ async def open_calendar_menu(query: CallbackQuery, state: FSMContext) -> None:
     logger.info(f"User {user_id} opened calendar menu")
 
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     await state.set_state(CalendarLinkingStates.in_calendar_menu)
 
@@ -37,7 +37,7 @@ async def calendar_list(query: CallbackQuery, state: FSMContext) -> None:
     logger.info(f"User {user_id} viewing calendar list")
 
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     await state.set_state(CalendarLinkingStates.in_calendar_list)
     await query.answer(t("calendar.list.answer", lang=lang))
@@ -66,7 +66,7 @@ async def calendar_new(query: CallbackQuery, state: FSMContext) -> None:
     logger.info(f"User {user_id} initiated linking new calendar")
 
     # TODO: Get user language from settings when session is available
-    lang = "ru"
+    lang = "en"
 
     await state.set_state(CalendarLinkingStates.waiting_for_calendar_link)
     await query.answer(t("calendar.new.answer", lang=lang))
