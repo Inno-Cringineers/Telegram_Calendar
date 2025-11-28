@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   schedule:
-    - cron: '0 8 * * 0' # every sunday at 8:00 UTC
+    - cron: "0 8 * * 0" # every sunday at 8:00 UTC
 
 jobs:
   lint:
@@ -63,8 +63,8 @@ jobs:
             cd prod
             git pull
             cd app
-            docker compose down
-            docker compose --env-file ../.env up -d --build
+            docker compose -f docker-compose.yml down
+            docker compose -f docker-compose.yml --env-file ../.env up -d --build
       - name: Add deployment summary
         run: |
           echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY

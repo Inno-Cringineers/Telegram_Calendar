@@ -113,7 +113,6 @@ class Event(Base):
     __table_args__ = (
         CheckConstraint("date_end >= date_start", name="end_after_start"),
         CheckConstraint("last_modified >= created_at", name="last_modified_after_created"),
-        CheckConstraint("reminder_offset >= 0", name="reminder_offset_non_negative"),
     )
 
     # --- ORM-level validation ---
