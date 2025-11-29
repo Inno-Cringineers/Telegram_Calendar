@@ -1,0 +1,54 @@
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment_name:
+        required: true
+        type: string
+        description: "Environment name (staging or production)"
+      directory:
+        required: true
+        type: string
+        description: "Directory name on server (stage or prod)"
+      compose_file:
+        required: true
+        type: string
+        description: "Docker compose file name (optional, e.g., docker-compose.stage.yml)"
+      bot_link:
+        required: true
+        type: string
+        description: "Telegram bot link URL"
+      environment_display_name:
+        required: false
+        type: string
+        description: "Display name for environment in summary"
+
+jobs:
+  deploy:
+    environment:
+      name: ${{ inputs.environment_name }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          password: ${{ secrets.DEPLOY_PASSWORD }}
+          script: |
+            cd ${{ inputs.directory }}
+            git pull
+            cd app
+            docker compose -f ${{ inputs.compose_file }} down
+            docker compose -f ${{ inputs.compose_file }} --env-file ../.env up -d --build
+      - name: Add deployment summary
+        run: |
+          ENV_DISPLAY="${{ inputs.environment_display_name }}"
+          if [ -z "$ENV_DISPLAY" ]; then
+            ENV_DISPLAY="${{ inputs.environment_name }}"
+          fi
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### $ENV_DISPLAY Environment" >> $GITHUB_STEP_SUMMARY
+          echo "- **Bot Link:** [${{ inputs.bot_link }}](${{ inputs.bot_link }})" >> $GITHUB_STEP_SUMMARY
