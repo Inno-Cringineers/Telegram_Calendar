@@ -15,6 +15,7 @@ jobs:
     needs: [lint, test]
     uses: ./.github/workflows/jobs/deploy.yml
     with:
+      compose_file: docker-compose.yml
       environment_name: production
       directory: prod
       bot_link: https://t.me/calendar_collection_bot

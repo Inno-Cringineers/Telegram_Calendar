@@ -12,7 +12,7 @@ on:
         type: string
         description: "Directory name on server (stage or prod)"
       compose_file:
-        required: false
+        required: true
         type: string
         description: "Docker compose file name (optional, e.g., docker-compose.stage.yml)"
       bot_link:
@@ -40,13 +40,8 @@ jobs:
             cd ${{ inputs.directory }}
             git pull
             cd app
-            if [ -n "${{ inputs.compose_file }}" ]; then
-              docker compose -f ${{ inputs.compose_file }} down
-              docker compose -f ${{ inputs.compose_file }} --env-file ../.env up -d --build
-            else
-              docker compose down
-              docker compose --env-file ../.env up -d --build
-            fi
+            docker compose -f ${{ inputs.compose_file }} down
+            docker compose -f ${{ inputs.compose_file }} --env-file ../.env up -d --build
       - name: Add deployment summary
         run: |
           ENV_DISPLAY="${{ inputs.environment_display_name }}"
@@ -57,4 +52,3 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### $ENV_DISPLAY Environment" >> $GITHUB_STEP_SUMMARY
           echo "- **Bot Link:** [${{ inputs.bot_link }}](${{ inputs.bot_link }})" >> $GITHUB_STEP_SUMMARY
-
