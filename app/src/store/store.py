@@ -20,6 +20,9 @@ if TYPE_CHECKING:
     from repositories.event_repository import EventRepository
     from repositories.reminder_repository import ReminderRepository
     from repositories.settings_repository import SettingsRepository
+    from services.import_service import ImportService
+    from services.upload_service import UploadService
+
     # from services.event_service import EventService
 
 
@@ -56,6 +59,8 @@ class Store:
         self._event_repository: EventRepository | None = None
         self._reminder_repository: ReminderRepository | None = None
         self._settings_repository: SettingsRepository | None = None
+        self._upload_service: UploadService | None = None
+        self._import_service: ImportService | None = None
         # Services will be initialized here when implemented
         # self._event_service: "EventService | None" = None
 
@@ -114,6 +119,32 @@ class Store:
 
             self._settings_repository = SettingsRepository(self.session)
         return self._settings_repository
+
+    @property
+    def get_upload_service(self) -> "UploadService":
+        """Get UploadService instance.
+
+        Returns:
+            UploadService: The upload service instance using Store's session.
+        """
+        if self._upload_service is None:
+            from services.upload_service import UploadService
+
+            self._upload_service = UploadService(self)
+        return self._upload_service
+
+    @property
+    def get_import_service(self) -> "ImportService":
+        """Get ImportService instance.
+
+        Returns:
+            ImportService: The import service instance using Store's session.
+        """
+        if self._import_service is None:
+            from services.import_service import ImportService
+
+            self._import_service = ImportService(self)
+        return self._import_service
 
     # ========================================================================
     # SERVICES (when implemented)

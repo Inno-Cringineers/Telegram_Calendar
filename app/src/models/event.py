@@ -60,7 +60,7 @@ class Event(Base):
 
         --- content section ---
 
-        title: string - SUMMARY. RFC 5545 format. Event title, max 255 chars. Not empty.
+        title: string | None - SUMMARY. RFC 5545 format. Event title, max 255 chars. Not empty.
         description: string | None - DESCRIPTION, max 1024 chars.
 
         --- metadata section ---
@@ -100,7 +100,7 @@ class Event(Base):
     exdate: Mapped[list[datetime] | None] = mapped_column(ARRAY(DateTime(timezone=True)), nullable=True)
 
     # --- content section ---
-    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     description: Mapped[str | None] = mapped_column(String(1024), nullable=True)
 
     # --- metadata section ---
@@ -118,11 +118,13 @@ class Event(Base):
     # --- ORM-level validation ---
     @validates("title")
     def validate_title(self, key: Literal["title"], value: str) -> str:
-        value = value.strip()
-        if not value:
-            raise ValueError("Event title (SUMMARY) cannot be empty.")
-        if len(value) > 255:
-            raise ValueError("Event title (SUMMARY) cannot exceed 255 characters.")
+        if value is not None:
+            value = value.strip()
+            if not value:
+                raise ValueError("Event title (SUMMARY) cannot be empty.")
+            if len(value) > 255:
+                raise ValueError("Event title (SUMMARY) cannot exceed 255 characters.")
+            return value
         return value
 
     @validates("description")
