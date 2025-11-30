@@ -31,7 +31,7 @@ class Calendar(Base):
     user_id: Mapped[int] = mapped_column(Integer, nullable=False)
 
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
-    url: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    url: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True)
 
     sync_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     last_sync: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -39,9 +39,9 @@ class Calendar(Base):
     # --- SQL-level constraints ---
     __table_args__ = (
         # name must be unique
-        UniqueConstraint("name", name="uq_calendar_name"),
-        # url must be unique
-        UniqueConstraint("url", name="uq_calendar_url"),
+        UniqueConstraint("user_id", "name", name="uq_calendar_name"),
+        # url must be unique if not None
+        UniqueConstraint("user_id", "url", name="uq_calendar_url"),
     )
 
     # --- ORM-level validation ---

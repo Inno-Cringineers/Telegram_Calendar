@@ -138,7 +138,7 @@ class CalendarCreateSchema(BaseModel):
 
     user_id: int = Field(..., description="Telegram user ID")
     name: str = Field(..., description="Calendar name")
-    url: str = Field(..., description="Calendar URL")
+    url: str | None = Field(None, description="Calendar URL")
 
 
 class CalendarUpdateSchema(BaseModel):
