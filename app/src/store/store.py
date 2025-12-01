@@ -69,7 +69,7 @@ class Store:
     # ========================================================================
 
     @property
-    def get_calendar_repository(self) -> "CalendarRepository":
+    def CalendarRepository(self) -> "CalendarRepository":
         """Get CalendarRepository instance.
 
         Returns:
@@ -82,7 +82,7 @@ class Store:
         return self._calendar_repository
 
     @property
-    def get_event_repository(self) -> "EventRepository":
+    def EventRepository(self) -> "EventRepository":
         """Get EventRepository instance.
 
         Returns:
@@ -95,7 +95,7 @@ class Store:
         return self._event_repository
 
     @property
-    def get_reminder_repository(self) -> "ReminderRepository":
+    def ReminderRepository(self) -> "ReminderRepository":
         """Get ReminderRepository instance.
 
         Returns:
@@ -108,7 +108,7 @@ class Store:
         return self._reminder_repository
 
     @property
-    def get_settings_repository(self) -> "SettingsRepository":
+    def SettingsRepository(self) -> "SettingsRepository":
         """Get SettingsRepository instance.
 
         Returns:
@@ -120,8 +120,12 @@ class Store:
             self._settings_repository = SettingsRepository(self.session)
         return self._settings_repository
 
+    # ========================================================================
+    # SERVICES
+    # ========================================================================
+
     @property
-    def get_upload_service(self) -> "UploadService":
+    def UploadService(self) -> "UploadService":
         """Get UploadService instance.
 
         Returns:
@@ -134,7 +138,7 @@ class Store:
         return self._upload_service
 
     @property
-    def get_import_service(self) -> "ImportService":
+    def ImportService(self) -> "ImportService":
         """Get ImportService instance.
 
         Returns:
@@ -145,10 +149,6 @@ class Store:
 
             self._import_service = ImportService(self)
         return self._import_service
-
-    # ========================================================================
-    # SERVICES (when implemented)
-    # ========================================================================
 
     # @property
     # def event_service(self) -> "EventService":

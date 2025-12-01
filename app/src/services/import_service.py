@@ -56,7 +56,7 @@ class ImportService:
 
         # check if calendar already exists
         filter = CalendarFilter(user_id=user_id, name="local calendar")  # type: ignore[call-arg]
-        calendar = await self.store.get_calendar_repository.find(filter)
+        calendar = await self.store.CalendarRepository.find(filter)
         if calendar != []:
             # updating calendar if it exists
             await self._update_local_calendar(calendar[0], entities)
@@ -71,7 +71,7 @@ class ImportService:
             user_id: Telegram user ID.
             entities: List of tuples containing (Event, list[Reminder]) to import.
         """
-        calendar_repo = self.store.get_calendar_repository
+        calendar_repo = self.store.CalendarRepository
 
         # Create local calendar
         calendar = await calendar_repo.create([CalendarCreateSchema(user_id=user_id, name="local calendar", url=None)])
@@ -107,8 +107,8 @@ class ImportService:
             calendar: Calendar to update.
             entities: List of tuples containing (Event, list[Reminder]) to import.
         """
-        event_repo = self.store.get_event_repository
-        reminder_repo = self.store.get_reminder_repository
+        event_repo = self.store.EventRepository
+        reminder_repo = self.store.ReminderRepository
 
         for new_event, new_reminders in entities:
             # Find existing event by UID
@@ -163,7 +163,7 @@ class ImportService:
         # loading entities from file using ICSParser
         entities = ICSParser(file_path).get_entities()
 
-        calendar_repo = self.store.get_calendar_repository
+        calendar_repo = self.store.CalendarRepository
 
         filter = CalendarFilter(user_id=user_id, name=calendar_name)  # type: ignore[call-arg]
         calendar = await calendar_repo.find(filter)
@@ -194,7 +194,7 @@ class ImportService:
             calendar_url: URL of the external calendar.
             entities: List of tuples containing (Event, list[Reminder]) to import.
         """
-        calendar_repo = self.store.get_calendar_repository
+        calendar_repo = self.store.CalendarRepository
 
         # Create external calendar
         calendar = await calendar_repo.create(
@@ -220,7 +220,7 @@ class ImportService:
             calendar: Calendar to update.
             entities: List of tuples containing (Event, list[Reminder]) to import.
         """
-        event_repo = self.store.get_event_repository
+        event_repo = self.store.EventRepository
 
         # Delete all existing events in the calendar
         events = await event_repo.find(EventFilter(calendar_id=calendar.id))  # type: ignore[call-arg]
@@ -248,7 +248,7 @@ class ImportService:
         Raises:
             ValueError: If unable to generate a unique UID after 1000 attempts.
         """
-        event_repo = self.store.get_event_repository
+        event_repo = self.store.EventRepository
         for _ in range(1000):
             uid = str(uuid.uuid4())
             if not await event_repo.find(EventFilter(uid=uid)):  # type: ignore[call-arg]
@@ -326,7 +326,7 @@ class ImportService:
         """
         uid = event.uid if event.uid is not None else await self._generate_uid()
         event_schema = self._build_event_create_schema(user_id=user_id, calendar_id=calendar_id, event=event, uid=uid)
-        created_events = await self.store.get_event_repository.create([event_schema])
+        created_events = await self.store.EventRepository.create([event_schema])
         return created_events[0]
 
     def _build_event_update_schema(self, event: Event) -> EventUpdateSchema:
@@ -358,7 +358,7 @@ class ImportService:
             event: Event model with new data.
         """
         update_schema = self._build_event_update_schema(event)
-        await self.store.get_event_repository.update(event_id, update_schema)
+        await self.store.EventRepository.update(event_id, update_schema)
 
     async def _create_reminders(self, event_id: int, reminders: list[Reminder]) -> None:
         """Create reminders for an event.
@@ -368,7 +368,7 @@ class ImportService:
             reminders: List of Reminder models to create.
         """
         for reminder in reminders:
-            await self.store.get_reminder_repository.create(
+            await self.store.ReminderRepository.create(
                 [
                     ReminderCreateSchema(
                         event_id=event_id,
@@ -392,14 +392,14 @@ class ImportService:
             event_id: ID of the event to create reminder for.
             event_start: Start datetime of the event.
         """
-        settings_repo = self.store.get_settings_repository
+        settings_repo = self.store.SettingsRepository
         settings = await settings_repo.get_by_id(user_id)
 
         if settings is not None and settings.default_reminder_offset is not None:
             # Convert seconds to RFC 5545 duration format (e.g., "-PT15M" for 15 minutes before)
             trigger_offset = vDuration(timedelta(seconds=-settings.default_reminder_offset)).to_ical().decode("utf-8")
 
-            await self.store.get_reminder_repository.create(
+            await self.store.ReminderRepository.create(
                 [
                     ReminderCreateSchema(
                         event_id=event_id,

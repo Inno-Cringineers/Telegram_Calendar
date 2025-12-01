@@ -65,10 +65,10 @@ def mock_store(
         Mock store instance with all repositories configured.
     """
     store = MagicMock()
-    store.get_calendar_repository = mock_calendar_repo
-    store.get_event_repository = mock_event_repo
-    store.get_reminder_repository = mock_reminder_repo
-    store.get_settings_repository = mock_settings_repo
+    store.CalendarRepository = mock_calendar_repo
+    store.EventRepository = mock_event_repo
+    store.ReminderRepository = mock_reminder_repo
+    store.SettingsRepository = mock_settings_repo
     return store
 
 

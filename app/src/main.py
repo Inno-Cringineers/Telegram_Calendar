@@ -2,21 +2,20 @@ import asyncio
 
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
+from middlewares.store_middleware import StoreMiddleware
 
 from config.config import load_config
 from database.database import create_engine, create_session_maker, create_tables
 from logger.logger import logger, setup_logger
-from middlewares.database_middlware import DatabaseMiddleware
 from middlewares.logging_middleware import (
     CallbackQueryLoggingMiddleware,
     MessageLoggingMiddleware,
 )
-from middlewares.store_middleware import StoreMiddleware
 from router.router import router
 
 
-async def setup_database(dp: Dispatcher, db_url: str) -> None:
-    """Setup database and inject session middleware.
+async def setup_database_and_store(dp: Dispatcher, db_url: str) -> None:
+    """Setup database and create store middleware.
 
     Args:
         dp: Aiogram Dispatcher instance.
@@ -29,13 +28,9 @@ async def setup_database(dp: Dispatcher, db_url: str) -> None:
     # Create session maker
     session_maker = create_session_maker(engine)
 
-    # Middleware to inject database session in handlers
-    dp.message.middleware(DatabaseMiddleware(session_maker))
-    dp.callback_query.middleware(DatabaseMiddleware(session_maker))
-
     # Middleware to inject Store (must be after DatabaseMiddleware)
-    dp.message.middleware(StoreMiddleware())
-    dp.callback_query.middleware(StoreMiddleware())
+    dp.message.middleware(StoreMiddleware(session_maker))
+    dp.callback_query.middleware(StoreMiddleware(session_maker))
 
 
 def setup_middlewares(dp: Dispatcher) -> None:

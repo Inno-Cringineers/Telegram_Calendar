@@ -135,17 +135,18 @@ class UnitOfWork:
         self.session_maker = session_maker
         self.session: AsyncSession | None = None
 
-    async def __aenter__(self) -> AsyncSession:
+    async def __aenter__(self) -> "UnitOfWork":
         """Enter context: create session and begin transaction.
 
         Returns:
-            AsyncSession: session to use inside the context.
+            UnitOfWork: UnitOfWork instance to use inside the context.
         """
         self.session = self.session_maker()
         logger.debug("UnitOfWork: opening session and beginning transaction")
         # begin a transaction
+        # TODO: возможно begin тут лишний и его стоит убрать, т.к. в сессии уже есть транзакция
         await self.session.begin()
-        return self.session
+        return self
 
     async def __aexit__(
         self,
