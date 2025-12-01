@@ -39,7 +39,7 @@ class UploadService:
                     raise ValueError(f"Failed to download .ics file from {url}")
                 file_content = await response.read()
                 file_path = f"downloads/{url.split('/')[-1]}"
-                os.makedirs(file_path, exist_ok=True)
+                os.makedirs("downloads", exist_ok=True)
                 with open(file_path, "wb") as f:
                     f.write(file_content)
                 return file_path
@@ -77,7 +77,9 @@ class UploadService:
         await bot.download_file(file_path, save_path)
 
         # get user id
-        user_id = message.from_user.id  # type: ignore[attr-defined]
+        if message.from_user is None:
+            raise ValueError("User is None")
+        user_id = message.from_user.id
         if user_id is None:
             raise ValueError("User id is None")
 

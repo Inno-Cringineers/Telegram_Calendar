@@ -52,6 +52,8 @@ class CalendarLinkingStates(StatesGroup):
     in_calendar_menu = State()
     in_calendar_list = State()
     waiting_for_calendar_link = State()
+    waiting_for_calendar_name = State()
+    waiting_for_calendar_confirmation = State()
 
 
 class MainMenuStates(StatesGroup):

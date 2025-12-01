@@ -2,7 +2,6 @@ import asyncio
 
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
-from middlewares.store_middleware import StoreMiddleware
 
 from config.config import load_config
 from database.database import create_engine, create_session_maker, create_tables
@@ -11,6 +10,7 @@ from middlewares.logging_middleware import (
     CallbackQueryLoggingMiddleware,
     MessageLoggingMiddleware,
 )
+from middlewares.store_middlware import StoreMiddleware
 from router.router import router
 
 
@@ -68,7 +68,7 @@ async def main() -> None:
     dp = Dispatcher(storage=MemoryStorage())
     # TODO: Add Redis storage for FSM
     # Setup database
-    await setup_database(dp, cfg.database.url)
+    await setup_database_and_store(dp, cfg.database.url)
     # Setup middlewares
     setup_middlewares(dp)
     # Include router
@@ -76,6 +76,9 @@ async def main() -> None:
     # Start bot
     logger.info("Bot is running in polling mode...")
     await dp.start_polling(bot, timeout=cfg.bot.timeout)
+
+    # TODO: Add graceful shutdown
+    # TODO: setup sync service
 
 
 if __name__ == "__main__":

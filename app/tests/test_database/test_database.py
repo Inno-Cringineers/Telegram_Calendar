@@ -41,9 +41,9 @@ def mock_session_maker(mock_session: AsyncMock) -> MagicMock:
 @pytest.mark.asyncio
 async def test_uow_commit_persists(mock_session_maker: MagicMock, mock_session: AsyncMock) -> None:
     """Test that UnitOfWork commits transaction on successful exit."""
-    uow = UnitOfWork(mock_session_maker)
 
-    async with uow as session:
+    async with UnitOfWork(mock_session_maker) as uow:
+        session = uow.session
         assert session is mock_session
         # Verify session.begin was called
         mock_session.begin.assert_called_once()
@@ -58,13 +58,15 @@ async def test_uow_commit_persists(mock_session_maker: MagicMock, mock_session: 
 @pytest.mark.asyncio
 async def test_uow_rollback_on_exception(mock_session_maker: MagicMock, mock_session: AsyncMock) -> None:
     """Test that UnitOfWork rolls back transaction on exception."""
-    uow = UnitOfWork(mock_session_maker)
 
     class TestException(Exception):
         """Test exception for rollback testing."""
 
     with pytest.raises(TestException):
-        async with uow as session:
+        async with UnitOfWork(mock_session_maker) as uow:
+            session = uow.session
+            if session is None:
+                raise RuntimeError("Session is None")
             assert session is mock_session
             mock_session.begin.assert_called_once()
             raise TestException("Test error")
@@ -78,12 +80,14 @@ async def test_uow_rollback_on_exception(mock_session_maker: MagicMock, mock_ses
 @pytest.mark.asyncio
 async def test_uow_direct_usage(mock_session_maker: MagicMock, mock_session: AsyncMock) -> None:
     """Test that UnitOfWork works with manual commit."""
-    uow = UnitOfWork(mock_session_maker)
 
-    async with uow as session:
+    async with UnitOfWork(mock_session_maker) as uow:
+        session = uow.session
         assert session is mock_session
         mock_session.begin.assert_called_once()
         # Manual commit inside context
+        if session is None:
+            raise RuntimeError("Session is None")
         await session.commit()
 
     # Verify commit was called (both manual and automatic)
