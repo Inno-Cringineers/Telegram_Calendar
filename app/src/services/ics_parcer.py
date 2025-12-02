@@ -1,8 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import icalendar
-from icalendar.prop import vDuration
+from icalendar.prop import vDDDTypes
 
 from models.event import Event
 from models.reminder import Reminder
@@ -18,17 +18,17 @@ class ICSParser:
         entities = []
         for event in icalendar_file.walk("VEVENT"):
             if event.name == "VEVENT":
-                event = Event(
+                new_event = Event(
                     uid=str(event.get("UID")) if event.get("UID") else None,
                     title=str(event.get("SUMMARY")) if event.get("SUMMARY") else None,
                     description=str(event.get("DESCRIPTION")) if event.get("DESCRIPTION") else None,
                     date_start=event.get("DTSTART").dt if event.get("DTSTART") else None,
                     date_end=event.get("DTEND").dt if event.get("DTEND") else None,
-                    rrule=event.get("RRULE") if event.get("RRULE") else None,
+                    rrule=event.get("RRULE").to_ical().decode("utf-8") if event.get("RRULE") else None,
                     rdate=_get_rdates(event),
                     exdate=_get_exdates(event),
                 )
-                entities.append((event, _extract_alarms(event)))
+                entities.append((new_event, _extract_alarms(event)))
         return entities
 
 
@@ -68,7 +68,7 @@ def _extract_alarms(event):
             Reminder(
                 description=str(alarm.get("DESCRIPTION")) if alarm.get("DESCRIPTION") else None,
                 repeat_count=int(alarm.get("REPEAT")) if alarm.get("REPEAT") else None,
-                repeat_interval=str(alarm.get("DURATION")) if alarm.get("DURATION") else None,
+                repeat_interval=alarm.get("DURATION").to_ical().decode("utf-8") if alarm.get("DURATION") else None,
                 trigger_offset=_get_trigger_offset(alarm),
                 trigger_datetime=_get_trigger_datetime(alarm),
             )
@@ -80,10 +80,8 @@ def _get_trigger_offset(alarm):
     trigger = alarm.get("TRIGGER")
     if trigger is None:
         return None
-
-    if isinstance(trigger, vDuration):
-        return str(trigger)
-
+    if isinstance(trigger, vDDDTypes) and isinstance(trigger.dt, timedelta):
+        return trigger.to_ical().decode("utf-8")
     return None
 
 
@@ -91,8 +89,6 @@ def _get_trigger_datetime(alarm):
     trigger = alarm.get("TRIGGER")
     if trigger is None:
         return None
-
-    if isinstance(trigger.dt, datetime):
+    if isinstance(trigger, vDDDTypes) and isinstance(trigger.dt, datetime):
         return trigger.dt
-
     return None

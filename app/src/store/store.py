@@ -20,6 +20,9 @@ if TYPE_CHECKING:
     from repositories.event_repository import EventRepository
     from repositories.reminder_repository import ReminderRepository
     from repositories.settings_repository import SettingsRepository
+    from services.import_service import ImportService
+    from services.upload_service import UploadService
+
     # from services.event_service import EventService
 
 
@@ -56,6 +59,8 @@ class Store:
         self._event_repository: EventRepository | None = None
         self._reminder_repository: ReminderRepository | None = None
         self._settings_repository: SettingsRepository | None = None
+        self._upload_service: UploadService | None = None
+        self._import_service: ImportService | None = None
         # Services will be initialized here when implemented
         # self._event_service: "EventService | None" = None
 
@@ -64,7 +69,7 @@ class Store:
     # ========================================================================
 
     @property
-    def get_calendar_repository(self) -> "CalendarRepository":
+    def CalendarRepository(self) -> "CalendarRepository":
         """Get CalendarRepository instance.
 
         Returns:
@@ -77,7 +82,7 @@ class Store:
         return self._calendar_repository
 
     @property
-    def get_event_repository(self) -> "EventRepository":
+    def EventRepository(self) -> "EventRepository":
         """Get EventRepository instance.
 
         Returns:
@@ -90,7 +95,7 @@ class Store:
         return self._event_repository
 
     @property
-    def get_reminder_repository(self) -> "ReminderRepository":
+    def ReminderRepository(self) -> "ReminderRepository":
         """Get ReminderRepository instance.
 
         Returns:
@@ -103,7 +108,7 @@ class Store:
         return self._reminder_repository
 
     @property
-    def get_settings_repository(self) -> "SettingsRepository":
+    def SettingsRepository(self) -> "SettingsRepository":
         """Get SettingsRepository instance.
 
         Returns:
@@ -116,8 +121,34 @@ class Store:
         return self._settings_repository
 
     # ========================================================================
-    # SERVICES (when implemented)
+    # SERVICES
     # ========================================================================
+
+    @property
+    def UploadService(self) -> "UploadService":
+        """Get UploadService instance.
+
+        Returns:
+            UploadService: The upload service instance using Store's session.
+        """
+        if self._upload_service is None:
+            from services.upload_service import UploadService
+
+            self._upload_service = UploadService(self)
+        return self._upload_service
+
+    @property
+    def ImportService(self) -> "ImportService":
+        """Get ImportService instance.
+
+        Returns:
+            ImportService: The import service instance using Store's session.
+        """
+        if self._import_service is None:
+            from services.import_service import ImportService
+
+            self._import_service = ImportService(self)
+        return self._import_service
 
     # @property
     # def event_service(self) -> "EventService":

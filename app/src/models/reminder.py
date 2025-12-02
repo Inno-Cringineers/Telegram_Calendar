@@ -70,14 +70,7 @@ class Reminder(Base):
 
     # --- SQL-level constraints ---
     __table_args__ = (
-        # trigger_datetime is required to be not null if trigger_offset is set (trigger is set)
-        CheckConstraint(
-            "(trigger_offset IS NULL OR trigger_datetime IS NOT NULL)", name="trigger_datetime_required_if_offset_set"
-        ),
-        # trigger_offset is required to be not null if trigger_datetime is set (trigger is set)
-        CheckConstraint(
-            "(trigger_datetime IS NULL OR trigger_offset IS NOT NULL)", name="trigger_offset_required_if_datetime_set"
-        ),
+        CheckConstraint("(trigger_offset IS NOT NULL OR trigger_datetime IS NOT NULL)", name="trigger_specified"),
     )
 
     # --- ORM-level validation ---

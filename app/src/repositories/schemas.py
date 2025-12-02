@@ -34,7 +34,7 @@ class EventCreateSchema(BaseModel):
         rdate: list[datetime] | None - Additional recurrence dates. Optional.
         exdate: list[datetime] | None - Exception dates. Optional.
 
-        title: str - Event title. Required.
+        title: str | None - Event title. Optional.
         description: str | None - Event description. Optional.
     """  # noqa: E501
 
@@ -55,7 +55,7 @@ class EventCreateSchema(BaseModel):
     rrule: str | None = Field(None, description="Recurrence rule.")
     rdate: list[datetime] | None = Field(None, description="Additional recurrence dates.")
     exdate: list[datetime] | None = Field(None, description="Exception dates.")
-    title: str = Field(..., description="Event title.")
+    title: str | None = Field(None, description="Event title.")
     description: str | None = Field(None, description="Event description.")
 
 
@@ -138,7 +138,7 @@ class CalendarCreateSchema(BaseModel):
 
     user_id: int = Field(..., description="Telegram user ID")
     name: str = Field(..., description="Calendar name")
-    url: str = Field(..., description="Calendar URL")
+    url: str | None = Field(None, description="Calendar URL")
 
 
 class CalendarUpdateSchema(BaseModel):
