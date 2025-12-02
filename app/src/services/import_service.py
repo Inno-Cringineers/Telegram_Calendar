@@ -6,14 +6,15 @@ from typing import TYPE_CHECKING
 
 from icalendar.prop import vDuration
 
-from models.calendar import Calendar
 from models.event import Event
 from models.reminder import Reminder
 from repositories.schemas import (
     CalendarCreateSchema,
     CalendarFilter,
+    CalendarResponse,
     EventCreateSchema,
     EventFilter,
+    EventResponse,
     EventUpdateSchema,
     ReminderCreateSchema,
 )
@@ -96,7 +97,9 @@ class ImportService:
                 event_start=created_event.date_start,
             )
 
-    async def _update_local_calendar(self, calendar: Calendar, entities: list[tuple[Event, list[Reminder]]]) -> None:
+    async def _update_local_calendar(
+        self, calendar: CalendarResponse, entities: list[tuple[Event, list[Reminder]]]
+    ) -> None:
         """Update existing local calendar with new events and reminders.
 
         For each entity:
@@ -210,7 +213,9 @@ class ImportService:
                 event=event,
             )
 
-    async def _update_external_calendar(self, calendar: Calendar, entities: list[tuple[Event, list[Reminder]]]) -> None:
+    async def _update_external_calendar(
+        self, calendar: CalendarResponse, entities: list[tuple[Event, list[Reminder]]]
+    ) -> None:
         """Update external calendar by deleting all existing events and importing new ones.
 
         Note: Reminders are not imported from external calendars in this version.
@@ -313,7 +318,7 @@ class ImportService:
             description=event.description,
         )
 
-    async def _create_event(self, user_id: int, calendar_id: int, event: Event) -> Event:
+    async def _create_event(self, user_id: int, calendar_id: int, event: Event) -> EventResponse:
         """Create a new event in the database.
 
         Args:
@@ -393,7 +398,7 @@ class ImportService:
             event_start: Start datetime of the event.
         """
         settings_repo = self.store.SettingsRepository
-        settings = await settings_repo.get_by_id(user_id)
+        settings = await settings_repo.find(user_id)
 
         if settings is not None and settings.default_reminder_offset is not None:
             # Convert seconds to RFC 5545 duration format (e.g., "-PT15M" for 15 minutes before)

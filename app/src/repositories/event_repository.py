@@ -10,12 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models.event import Event
 from repositories.base_repository import BaseRepository
 from repositories.exceptions import EventNotFoundError
-from repositories.schemas import EventCreateSchema, EventFilter, EventUpdateSchema
+from repositories.schemas import EventCreateSchema, EventFilter, EventResponse, EventUpdateSchema
 
 # TODO: Validation and exeptions
 
 
-class EventRepository(BaseRepository[Event]):
+class EventRepository(BaseRepository[EventResponse]):
     """Repository for Event entity operations.
 
     Provides methods for creating, reading, updating, and deleting events,
@@ -30,19 +30,21 @@ class EventRepository(BaseRepository[Event]):
         """
         super().__init__(session)
 
-    async def get_by_id(self, entity_id: int) -> Event | None:
+    async def get_by_id(self, entity_id: int) -> EventResponse | None:
         """Retrieve an event by its ID.
 
         Args:
             entity_id: The ID of the event to retrieve.
 
         Returns:
-            The event if found, None otherwise.
+            The event response if found, None otherwise.
         """
         result = await self.session.get(Event, entity_id)
-        return result
+        if result is None:
+            return None
+        return EventResponse.from_model(result)
 
-    async def create(self, data: list[EventCreateSchema], *args, **kwargs) -> list[Event]:
+    async def create(self, data: list[EventCreateSchema], *args, **kwargs) -> list[EventResponse]:
         """Create a new event.
 
         If reminder_offset is not provided, uses default from user settings.
@@ -52,7 +54,7 @@ class EventRepository(BaseRepository[Event]):
             data: list of EventCreateSchema with event data.
 
         Returns:
-            The created events list.
+            The created events list as responses.
         """
         events = []
         for item in data:
@@ -72,10 +74,11 @@ class EventRepository(BaseRepository[Event]):
             )
             self.session.add(event)
             await self.session.flush()
-            events.append(event)
+            await self.session.refresh(event)
+            events.append(EventResponse.from_model(event))
         return events
 
-    async def update(self, event_id: int, data: EventUpdateSchema, *args, **kwargs) -> Event:
+    async def update(self, event_id: int, data: EventUpdateSchema, *args, **kwargs) -> EventResponse:
         """Update an existing event.
 
         Only provided fields will be updated. Other fields remain unchanged.
@@ -85,23 +88,23 @@ class EventRepository(BaseRepository[Event]):
             data: EventUpdateSchema with fields to update.
 
         Returns:
-            The updated event.
+            The updated event response.
 
         Raises:
             EventNotFoundError: If the event is not found.
         """
-        event = await self.get_by_id(event_id)
-        if event is None:
+        event_model = await self.session.get(Event, event_id)
+        if event_model is None:
             raise EventNotFoundError(event_id=event_id)
 
         # Update only provided fields
         update_data = data.model_dump(exclude_unset=True)
         for key, value in update_data.items():
-            setattr(event, key, value)
+            setattr(event_model, key, value)
         await self.session.flush()
 
-        await self.session.refresh(event)
-        return event
+        await self.session.refresh(event_model)
+        return EventResponse.from_model(event_model)
 
     async def delete(self, entity_id: int, *args, **kwargs) -> None:
         """Delete an event by ID.
@@ -109,21 +112,21 @@ class EventRepository(BaseRepository[Event]):
         Args:
             entity_id: The ID of the event to delete.
         """
-        event = await self.get_by_id(entity_id)
-        if event is None:
+        event_model = await self.session.get(Event, entity_id)
+        if event_model is None:
             raise EventNotFoundError(event_id=entity_id)
 
-        await self.session.delete(event)
+        await self.session.delete(event_model)
         await self.session.flush()
 
-    async def find(self, filter: EventFilter) -> list[Event]:
+    async def find(self, filter: EventFilter) -> list[EventResponse]:
         """Find events matching the provided filter.
 
         Args:
             filter: EventFilter with filtering criteria.
 
         Returns:
-            List of matching events, ordered by date_start.
+            List of matching events as responses, ordered by date_start.
         """
         stmt = select(Event)
 
@@ -146,4 +149,5 @@ class EventRepository(BaseRepository[Event]):
         stmt = stmt.offset(filter.offset).limit(filter.limit)
 
         result = await self.session.execute(stmt)
-        return list(result.scalars().all())
+        events = list(result.scalars().all())
+        return [EventResponse.from_model(event) for event in events]

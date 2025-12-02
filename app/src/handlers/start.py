@@ -16,7 +16,7 @@ router = Router()
 
 
 @router.message(Command("start"))
-async def start_handler(message: Message) -> None:
+async def start_handler(message: Message, lang: str) -> None:
     """Handle /start command and deep-link processing.
 
     Processes both regular /start command and deep-links (e.g., ?start=tz_utc3).
@@ -57,8 +57,6 @@ async def start_handler(message: Message) -> None:
 
     logger.info(f"User {user_name} (ID: {user_id}) started the bot")
 
-    # TODO: Get user language from settings when session is available
-    lang = "en"
     welcome_text = t("start.welcome", lang=lang, user_name=user_name)
 
     await message.answer(

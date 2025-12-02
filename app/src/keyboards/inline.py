@@ -99,8 +99,8 @@ def get_back_button(callback_data: str = "back_to_main", lang: str = "ru") -> In
 def get_language_menu_inline(lang: str = "ru") -> InlineKeyboardMarkup:
     """Language menu with 3 options."""
     buttons = [
-        [InlineKeyboardButton(text=t("btn.language.en", lang=lang), callback_data="en")],
-        [InlineKeyboardButton(text=t("btn.language.ru", lang=lang), callback_data="ru")],
+        [InlineKeyboardButton(text=t("btn.language.en", lang=lang), callback_data="language_en")],
+        [InlineKeyboardButton(text=t("btn.language.ru", lang=lang), callback_data="language_ru")],
         [InlineKeyboardButton(text=t("btn.back", lang=lang), callback_data="menu_settings")],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)

@@ -12,18 +12,16 @@ from keyboards.inline import (
 )
 from logger.logger import logger
 from states.states import SettingsStates
+from store.store import Store
 
 router = Router()
 
 
 @router.callback_query(F.data == "menu_settings")
-async def open_settings_menu(query: CallbackQuery, state: FSMContext) -> None:
+async def open_settings_menu(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
     """Open settings menu."""
     user_id = query.from_user.id
     logger.info(f"User {user_id} opened settings menu")
-
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     await state.set_state(SettingsStates.in_settings)
 
@@ -36,13 +34,10 @@ async def open_settings_menu(query: CallbackQuery, state: FSMContext) -> None:
 
 
 @router.callback_query(F.data == "settings_timezone", SettingsStates.in_settings)
-async def settings_timezone(query: CallbackQuery, state: FSMContext) -> None:
+async def settings_timezone(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Handle timezone setting."""
     user_id = query.from_user.id
     logger.info(f"User {user_id} is editing timezone")
-
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     await state.set_state(SettingsStates.editing_timezone)
     await query.answer(t("settings.timezone.selected", lang=lang))
@@ -93,13 +88,10 @@ async def settings_timezone(query: CallbackQuery, state: FSMContext) -> None:
 
 
 @router.callback_query(F.data == "settings_language", SettingsStates.in_settings)
-async def settings_language(query: CallbackQuery, state: FSMContext) -> None:
+async def settings_language(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Handle language setting."""
     user_id = query.from_user.id
     logger.info(f"User {user_id} is editing language")
-
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     await state.set_state(SettingsStates.editing_language)
     await query.answer(t("settings.language.selected", lang=lang))
@@ -117,14 +109,61 @@ async def settings_language(query: CallbackQuery, state: FSMContext) -> None:
         )
 
 
+@router.callback_query(F.data == "language_en", SettingsStates.editing_language)
+async def language_en(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
+    """Handle language change to English."""
+    user_id = query.from_user.id
+    logger.info(f"User {user_id} is changing language to English")
+
+    # Update language in settings
+    settings_service = store.SettingsService
+    await settings_service.update_by_user_id(user_id, language="en")
+
+    # Return to settings menu
+    await state.set_state(SettingsStates.in_settings)
+
+    # Show popup notification
+    await query.answer(t("settings.language.changed", lang="en"))
+
+    # Update message with new language
+    if query.message and hasattr(query.message, "edit_text"):
+        await query.message.edit_text(
+            t("settings.title", lang="en"),
+            parse_mode="HTML",
+            reply_markup=get_settings_menu_inline(lang="en"),
+        )
+
+
+@router.callback_query(F.data == "language_ru", SettingsStates.editing_language)
+async def language_ru(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
+    """Handle language change to Russian."""
+    user_id = query.from_user.id
+    logger.info(f"User {user_id} is changing language to Russian")
+
+    # Update language in settings
+    settings_service = store.SettingsService
+    await settings_service.update_by_user_id(user_id, language="ru")
+
+    # Return to settings menu
+    await state.set_state(SettingsStates.in_settings)
+
+    # Show popup notification
+    await query.answer(t("settings.language.changed", lang="ru"))
+
+    # Update message with new language
+    if query.message and hasattr(query.message, "edit_text"):
+        await query.message.edit_text(
+            t("settings.title", lang="ru"),
+            parse_mode="HTML",
+            reply_markup=get_settings_menu_inline(lang="ru"),
+        )
+
+
 @router.callback_query(F.data == "settings_quiet_hours", SettingsStates.in_settings)
-async def settings_quiet_hours(query: CallbackQuery, state: FSMContext) -> None:
+async def settings_quiet_hours(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Handle quiet hours setting."""
     user_id = query.from_user.id
     logger.info(f"User {user_id} is editing quiet hours")
-
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     await state.set_state(SettingsStates.editing_quiet_hours)
     await query.answer(t("settings.quiet_hours.selected", lang=lang))
@@ -143,13 +182,10 @@ async def settings_quiet_hours(query: CallbackQuery, state: FSMContext) -> None:
 
 
 @router.callback_query(F.data == "settings_daily_plans_time", SettingsStates.in_settings)
-async def settings_daily_plans_time(query: CallbackQuery, state: FSMContext) -> None:
+async def settings_daily_plans_time(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Handle daily plans time setting."""
     user_id = query.from_user.id
     logger.info(f"User {user_id} is editing daily plans time")
-
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     await state.set_state(SettingsStates.editing_daily_plans_time)
     await query.answer(t("settings.daily_plans_time.selected", lang=lang))

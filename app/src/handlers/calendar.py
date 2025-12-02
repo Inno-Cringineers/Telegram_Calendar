@@ -12,13 +12,10 @@ router = Router()
 
 
 @router.callback_query(F.data == "menu_link_calendar")
-async def open_calendar_menu(query: CallbackQuery, state: FSMContext) -> None:
+async def open_calendar_menu(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Open calendar linking menu."""
     user_id = query.from_user.id
     logger.info(f"User {user_id} opened calendar menu")
-
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     await state.set_state(CalendarLinkingStates.in_calendar_menu)
 
@@ -32,13 +29,10 @@ async def open_calendar_menu(query: CallbackQuery, state: FSMContext) -> None:
 
 
 @router.callback_query(F.data == "calendar_list", CalendarLinkingStates.in_calendar_menu)
-async def calendar_list(query: CallbackQuery, state: FSMContext) -> None:
+async def calendar_list(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Show list of linked calendars."""
     user_id = query.from_user.id
     logger.info(f"User {user_id} viewing calendar list")
-
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     await state.set_state(CalendarLinkingStates.in_calendar_list)
     await query.answer(t("calendar.list.answer", lang=lang))
@@ -61,13 +55,10 @@ async def calendar_list(query: CallbackQuery, state: FSMContext) -> None:
 
 
 @router.callback_query(F.data == "calendar_new", CalendarLinkingStates.in_calendar_menu)
-async def calendar_new(query: CallbackQuery, state: FSMContext) -> None:
+async def calendar_new(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Link a new calendar."""
     user_id = query.from_user.id
     logger.info(f"User {user_id} initiated linking new calendar")
-
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     await state.set_state(CalendarLinkingStates.waiting_for_calendar_link)
     await query.answer(t("calendar.new.answer", lang=lang))
@@ -86,10 +77,8 @@ async def calendar_new(query: CallbackQuery, state: FSMContext) -> None:
 
 
 @router.message(CalendarLinkingStates.waiting_for_calendar_link)
-async def process_calendar_link(message: Message, state: FSMContext) -> None:
+async def process_calendar_link(message: Message, state: FSMContext, lang: str) -> None:
     """Process calendar link."""
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     url = message.text
     if url is None or len(url) == 0:
@@ -110,10 +99,8 @@ async def process_calendar_link(message: Message, state: FSMContext) -> None:
 
 
 @router.message(CalendarLinkingStates.waiting_for_calendar_name)
-async def process_calendar_name(message: Message, state: FSMContext) -> None:
+async def process_calendar_name(message: Message, state: FSMContext, lang: str) -> None:
     """Process calendar name."""
-    # TODO: Get user language from settings when session is available
-    lang = "en"
     name = message.text
     if name is None or len(name) == 0:
         await message.answer(t("calendar.link.name_empty", lang=lang))
@@ -133,10 +120,8 @@ async def process_calendar_name(message: Message, state: FSMContext) -> None:
 
 
 @router.callback_query(F.data == "calendar_confirm", CalendarLinkingStates.waiting_for_calendar_confirmation)
-async def calendar_confirm(query: CallbackQuery, state: FSMContext, store: Store) -> None:
+async def calendar_confirm(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
     """Confirm calendar linking."""
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     # Get data from state
     state_data = await state.get_data()

@@ -1,6 +1,7 @@
 import os
 import re
 from dataclasses import dataclass
+from datetime import time
 from pathlib import Path
 from typing import Any
 
@@ -32,10 +33,34 @@ class BotConfig:
 
 
 @dataclass
+class SettingsConfig:
+    """Default user settings configuration.
+
+    Attributes:
+        timezone: Default timezone string (e.g., "UTC+2").
+        language: Default language code (e.g., "en").
+        quiet_hours: Whether quiet hours are enabled by default.
+        quiet_hours_start: Default quiet hours start time as "HH:MM" string.
+        quiet_hours_end: Default quiet hours end time as "HH:MM" string.
+        daily_plans_time: Default daily plans time as "HH:MM" string, or None to disable.
+        default_reminder_offset: Default reminder offset in seconds.
+    """
+
+    timezone: str
+    language: str
+    quiet_hours: bool
+    quiet_hours_start: str
+    quiet_hours_end: str
+    daily_plans_time: str | None
+    default_reminder_offset: int | None
+
+
+@dataclass
 class Config:
     logger: LoggerConfig
     database: DatabaseConfig
     bot: BotConfig
+    settings: SettingsConfig
 
 
 def substitute_env_vars(value: Any) -> Any:
@@ -117,6 +142,23 @@ def str_to_bool(value: Any) -> bool:
     return bool(value)
 
 
+def parse_time(time_str: str | None) -> time | None:
+    """Parse time string in HH:MM format to time object.
+
+    Args:
+        time_str: Time string in "HH:MM" format, or None.
+
+    Returns:
+        time object or None if time_str is None.
+    """
+    if time_str is None:
+        return None
+    parts = time_str.split(":")
+    if len(parts) != 2:
+        raise ValueError(f"Invalid time format: {time_str}. Expected HH:MM")
+    return time(hour=int(parts[0]), minute=int(parts[1]))
+
+
 def load_config() -> Config:
     """Load and validate configuration from environment and YAML."""
     # Load YAML config
@@ -136,4 +178,16 @@ def load_config() -> Config:
         single_user=str_to_bool(yaml_config.get("bot", {}).get("single_user", False)),
         telegram_token=yaml_config.get("bot", {}).get("telegram_token"),
     )
-    return Config(logger=logger_config, database=database_config, bot=bot_config)
+
+    settings_config_data = yaml_config.get("settings", {})
+    settings_config = SettingsConfig(
+        timezone=settings_config_data.get("timezone", "UTC+2"),
+        language=settings_config_data.get("language", "en"),
+        quiet_hours=str_to_bool(settings_config_data.get("quiet_hours", False)),
+        quiet_hours_start=settings_config_data.get("quiet_hours_start", "00:00"),
+        quiet_hours_end=settings_config_data.get("quiet_hours_end", "06:00"),
+        daily_plans_time=settings_config_data.get("daily_plans_time", "09:00"),
+        default_reminder_offset=settings_config_data.get("default_reminder_offset", 900),
+    )
+
+    return Config(logger=logger_config, database=database_config, bot=bot_config, settings=settings_config)

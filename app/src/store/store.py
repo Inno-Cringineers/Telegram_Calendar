@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from repositories.reminder_repository import ReminderRepository
     from repositories.settings_repository import SettingsRepository
     from services.import_service import ImportService
+    from services.settings_service import SettingsService
     from services.upload_service import UploadService
 
     # from services.event_service import EventService
@@ -61,6 +62,7 @@ class Store:
         self._settings_repository: SettingsRepository | None = None
         self._upload_service: UploadService | None = None
         self._import_service: ImportService | None = None
+        self._settings_service: SettingsService | None = None
         # Services will be initialized here when implemented
         # self._event_service: "EventService | None" = None
 
@@ -149,6 +151,19 @@ class Store:
 
             self._import_service = ImportService(self)
         return self._import_service
+
+    @property
+    def SettingsService(self) -> "SettingsService":
+        """Get SettingsService instance.
+
+        Returns:
+            SettingsService: The settings service instance using Store's session.
+        """
+        if self._settings_service is None:
+            from services.settings_service import SettingsService
+
+            self._settings_service = SettingsService(self)
+        return self._settings_service
 
     # @property
     # def event_service(self) -> "EventService":

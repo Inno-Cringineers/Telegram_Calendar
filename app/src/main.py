@@ -10,6 +10,7 @@ from middlewares.logging_middleware import (
     CallbackQueryLoggingMiddleware,
     MessageLoggingMiddleware,
 )
+from middlewares.settings_middleware import SettingsMiddleware
 from middlewares.store_middlware import StoreMiddleware
 from router.router import router
 
@@ -38,7 +39,9 @@ def setup_middlewares(dp: Dispatcher) -> None:
     # Logging middlewares
     dp.message.outer_middleware(MessageLoggingMiddleware())
     dp.callback_query.outer_middleware(CallbackQueryLoggingMiddleware())
-
+    # Settings middleware
+    dp.message.middleware(SettingsMiddleware())
+    dp.callback_query.middleware(SettingsMiddleware())
     logger.debug("Middlewares setup completed")
 
 

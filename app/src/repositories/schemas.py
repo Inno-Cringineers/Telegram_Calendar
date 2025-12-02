@@ -8,6 +8,11 @@ from datetime import datetime, time
 
 from pydantic import BaseModel, Field
 
+from models.calendar import Calendar
+from models.event import Event
+from models.reminder import Reminder
+from models.settings import Settings
+
 # TODO: refactor repetitive code
 
 # ----------------------------------------------------------------------------
@@ -319,3 +324,172 @@ class ReminderUpdateSchema(BaseModel):
     repeat_interval: str | None = Field(
         None, description="DURATION in RFC 5545. Sets the interval to repeat the reminder."
     )
+
+
+# ----------------------------------------------------------------------------
+# Response schemas (for repository return values)
+# ----------------------------------------------------------------------------
+
+
+class EventResponse(BaseModel):
+    """Response schema for Event entity.
+
+    Contains all fields from the Event model, including id and metadata.
+    """
+
+    id: int = Field(..., description="Primary key")
+    user_id: int = Field(..., description="Telegram user ID")
+    uid: str | None = Field(None, description="Event unique identifier from icalendar")
+    calendar_id: int | None = Field(None, description="Associated calendar ID")
+    date_start: datetime = Field(..., description="Event start date and time")
+    date_end: datetime = Field(..., description="Event end date and time")
+    all_day: bool = Field(..., description="If True, the event is all day event")
+    need_to_remind: bool = Field(..., description="If True, the bot will send a reminder")
+    rrule: str | None = Field(None, description="Recurrence rule")
+    rdate: list[datetime] | None = Field(None, description="Additional recurrence dates")
+    exdate: list[datetime] | None = Field(None, description="Exception dates")
+    title: str | None = Field(None, description="Event title")
+    description: str | None = Field(None, description="Event description")
+    created_at: datetime = Field(..., description="Creation timestamp")
+    last_modified: datetime = Field(..., description="Last modification timestamp")
+
+    @classmethod
+    def from_model(cls, event: Event) -> "EventResponse":
+        """Create EventResponse from Event model.
+
+        Args:
+            event: Event model instance.
+
+        Returns:
+            EventResponse instance.
+        """
+
+        return cls(
+            id=event.id,
+            user_id=event.user_id,
+            uid=event.uid,
+            calendar_id=event.calendar_id,
+            date_start=event.date_start,
+            date_end=event.date_end,
+            all_day=event.all_day,
+            need_to_remind=event.need_to_remind,
+            rrule=event.rrule,
+            rdate=event.rdate,
+            exdate=event.exdate,
+            title=event.title,
+            description=event.description,
+            created_at=event.created_at,
+            last_modified=event.last_modified,
+        )
+
+
+class CalendarResponse(BaseModel):
+    """Response schema for Calendar entity.
+
+    Contains all fields from the Calendar model, including id and metadata.
+    """
+
+    id: int = Field(..., description="Primary key")
+    user_id: int = Field(..., description="Telegram user ID")
+    name: str = Field(..., description="Calendar name")
+    url: str | None = Field(None, description="Calendar URL")
+    sync_enabled: bool = Field(..., description="Whether sync is enabled")
+    last_sync: datetime | None = Field(None, description="Last sync timestamp")
+
+    @classmethod
+    def from_model(cls, calendar: Calendar) -> "CalendarResponse":
+        """Create CalendarResponse from Calendar model.
+
+        Args:
+            calendar: Calendar model instance.
+
+        Returns:
+            CalendarResponse instance.
+        """
+
+        return cls(
+            id=calendar.id,
+            user_id=calendar.user_id,
+            name=calendar.name,
+            url=calendar.url,
+            sync_enabled=calendar.sync_enabled,
+            last_sync=calendar.last_sync,
+        )
+
+
+class SettingsResponse(BaseModel):
+    """Response schema for Settings entity.
+
+    Contains all fields from the Settings model, including id.
+    """
+
+    id: int = Field(..., description="Primary key")
+    user_id: int = Field(..., description="Telegram user ID")
+    timezone: str = Field(..., description="User timezone")
+    language: str = Field(..., description="User language")
+    quiet_hours: bool = Field(..., description="Whether quiet hours are enabled")
+    quiet_hours_start: time = Field(..., description="Quiet hours start time")
+    quiet_hours_end: time = Field(..., description="Quiet hours end time")
+    daily_plans_time: time | None = Field(None, description="Daily plans time")
+    default_reminder_offset: int | None = Field(None, description="Default reminder offset in seconds")
+
+    @classmethod
+    def from_model(cls, settings: "Settings") -> "SettingsResponse":  # type: ignore[name-defined]
+        """Create SettingsResponse from Settings model.
+
+        Args:
+            settings: Settings model instance.
+
+        Returns:
+            SettingsResponse instance.
+        """
+
+        return cls(
+            id=settings.id,
+            user_id=settings.user_id,
+            timezone=settings.timezone,
+            language=settings.language,
+            quiet_hours=settings.quiet_hours,
+            quiet_hours_start=settings.quiet_hours_start,
+            quiet_hours_end=settings.quiet_hours_end,
+            daily_plans_time=settings.daily_plans_time,
+            default_reminder_offset=settings.default_reminder_offset,
+        )
+
+
+class ReminderResponse(BaseModel):
+    """Response schema for Reminder entity.
+
+    Contains all fields from the Reminder model, including id and metadata.
+    """
+
+    id: int = Field(..., description="Primary key")
+    event_id: int = Field(..., description="FK to Event")
+    description: str | None = Field(None, description="Reminder description")
+    trigger_offset: str | None = Field(None, description="Trigger offset in RFC 5545 format")
+    trigger_datetime: datetime | None = Field(None, description="Trigger datetime")
+    repeat_count: int | None = Field(None, description="Repeat count")
+    repeat_interval: str | None = Field(None, description="Repeat interval in RFC 5545 format")
+    sent: bool = Field(..., description="Whether the reminder has been sent")
+
+    @classmethod
+    def from_model(cls, reminder: Reminder) -> "ReminderResponse":
+        """Create ReminderResponse from Reminder model.
+
+        Args:
+            reminder: Reminder model instance.
+
+        Returns:
+            ReminderResponse instance.
+        """
+
+        return cls(
+            id=reminder.id,
+            event_id=reminder.event_id,
+            description=reminder.description,
+            trigger_offset=reminder.trigger_offset,
+            trigger_datetime=reminder.trigger_datetime,
+            repeat_count=reminder.repeat_count,
+            repeat_interval=reminder.repeat_interval,
+            sent=reminder.sent,
+        )

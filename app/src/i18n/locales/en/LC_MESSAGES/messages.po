@@ -1,0 +1,294 @@
+# Translation file for EN
+# Copyright (C) 2024
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "btn_accept"
+msgstr "✅ Accept"
+
+msgid "btn_add"
+msgstr "➕ Add"
+
+msgid "btn_back"
+msgstr "« Back"
+
+msgid "btn_calendar_list"
+msgstr "📑 List of Calendars"
+
+msgid "btn_cancel"
+msgstr "❌ Cancel"
+
+msgid "btn_create_by_dialog"
+msgstr "📅 Create by dialog"
+
+msgid "btn_daily_plan"
+msgstr "📋 Get Daily Plan"
+
+msgid "btn_daily_plan_time_enter"
+msgstr "enter daily plans time"
+
+msgid "btn_daily_plans_time"
+msgstr "⏰ Daily Plans Time"
+
+msgid "btn_delete"
+msgstr "❌ Delete"
+
+msgid "btn_edit"
+msgstr "✏️ Edit"
+
+msgid "btn_events"
+msgstr "📅 Events"
+
+msgid "btn_export"
+msgstr "📤 Export"
+
+msgid "btn_external_calendars"
+msgstr "🔗 External calendars"
+
+msgid "btn_import"
+msgstr "📥 Import"
+
+msgid "btn_language"
+msgstr "🇬🇧 Language"
+
+msgid "btn_language_en"
+msgstr "English"
+
+msgid "btn_language_ru"
+msgstr "Русский"
+
+msgid "btn_link_calendar"
+msgstr "🔗 Link a New Calendar"
+
+msgid "btn_quiet_hours"
+msgstr "🔇 Quiet Hours"
+
+msgid "btn_quiet_hours_enter"
+msgstr "enter quiet hours"
+
+msgid "btn_reject"
+msgstr "❌ Reject"
+
+msgid "btn_settings"
+msgstr "⚙️ Settings"
+
+msgid "btn_skip"
+msgstr "⏭ Skip"
+
+msgid "btn_timezone"
+msgstr "🌍 Timezone"
+
+msgid "btn_view"
+msgstr "🔍 View"
+
+msgid "calendar_link_title"
+msgstr "🔗 <b>Link a Calendar</b>\n\nChoose an action:"
+
+msgid "calendar_list_answer"
+msgstr "📑 Your calendars"
+
+msgid "calendar_list_feature_dev"
+msgstr "Feature is under development. You can unlink calendars here."
+
+msgid "calendar_list_linked"
+msgstr "<b>Linked Calendars:</b>"
+
+msgid "calendar_list_title"
+msgstr "📑 <b>Your Calendars</b>"
+
+msgid "calendar_new_answer"
+msgstr "🔗 Link new calendar"
+
+msgid "calendar_new_enter_link"
+msgstr "<b>Enter the ical link:</b>"
+
+msgid "calendar_new_title"
+msgstr "🔗 <b>Link a New Calendar</b>"
+
+msgid "calendar_next_month"
+msgstr ">>"
+
+msgid "calendar_prev_month"
+msgstr "<<"
+
+msgid "calendar_weekdays"
+msgstr "Mon,Tue,Wed,Thu,Fri,Sat,Sun"
+
+msgid "create_event_cancelled"
+msgstr "❌ Event creation cancelled"
+
+msgid "create_event_confirmed"
+msgstr "✅ Event created!"
+
+msgid "create_event_date_format_error"
+msgstr "❌ Incorrect date format
+
+Format: DD.MM.YYYY (example: 25.12.2025)"
+
+msgid "create_event_enter_date"
+msgstr "📅 Enter start date:
+
+Format: DD.MM.YYYY (example: 25.12.2025)"
+
+msgid "create_event_enter_description"
+msgstr "📄 Enter description:
+
+"
+
+msgid "create_event_enter_time"
+msgstr "⏰ Enter start time:
+
+Format: HH:MM (example: 14:30)"
+
+msgid "create_event_enter_title"
+msgstr "📝 Enter event title:
+
+"
+
+msgid "create_event_preview_confirm"
+msgstr "✅ All right?"
+
+msgid "create_event_preview_date_label"
+msgstr "📅 <b>Start date:</b> {date}"
+
+msgid "create_event_preview_description_label"
+msgstr "📄 <b>Description:</b> {description}"
+
+msgid "create_event_preview_description_none"
+msgstr "(None)"
+
+msgid "create_event_preview_time_label"
+msgstr "⏰ <b>Start time:</b> {time}"
+
+msgid "create_event_preview_title"
+msgstr "📋 Check event data:"
+
+msgid "create_event_preview_title_label"
+msgstr "📝 <b>Title:</b> {title}"
+
+msgid "create_event_success"
+msgstr "✅ <b>Event successfully created</b>"
+
+msgid "create_event_time_format_error"
+msgstr "❌ Incorrect time format
+
+Use format: HH:MM (example: 14:30)"
+
+msgid "create_event_title_empty"
+msgstr "❌ Title should not be empty"
+
+msgid "create_event_title_too_long"
+msgstr "❌ Title too long (maximum 100 chars)"
+
+msgid "daily_plan_end"
+msgstr "End of daily plan"
+
+msgid "daily_plan_generating"
+msgstr "📋 Generating daily plan..."
+
+msgid "events_create_selected"
+msgstr "➕ Event creation selected"
+
+msgid "events_create_title"
+msgstr "➕ <b>Events creation</b>"
+
+msgid "events_export_description"
+msgstr "Your events exported in .ics format (only internal events)"
+
+msgid "events_export_selected"
+msgstr "📥 Event export selected"
+
+msgid "events_export_title"
+msgstr "📥 <b>Events export</b>"
+
+msgid "events_feature_dev"
+msgstr "Feature is under development."
+
+msgid "events_import_description"
+msgstr "Please load file in .ics format to the chat"
+
+msgid "events_import_selected"
+msgstr "📥 Event import selected"
+
+msgid "events_import_title"
+msgstr "📥 <b>Events import</b>"
+
+msgid "events_title"
+msgstr "📅 <b>Events</b>\n\nChoose an events option:"
+
+msgid "events_view_selected"
+msgstr "🔍 Events viewing selected"
+
+msgid "events_view_title"
+msgstr "🔍 <b>Events viewing</b>"
+
+msgid "menu_main_title"
+msgstr ""
+"🏠 <b>Main Menu</b>\n\n"
+"Choose an option:"
+
+msgid "menu_updated"
+msgstr "Menu updated"
+
+msgid "settings_daily_plans_time_current"
+msgstr "Current time: 09:00 (Mocked)"
+
+msgid "settings_daily_plans_time_description"
+msgstr "Feature is under development. Daily plan will be sent at this time every day."
+
+msgid "settings_daily_plans_time_selected"
+msgstr "✅ Daily plans time setting selected"
+
+msgid "settings_daily_plans_time_title"
+msgstr "⏰ <b>Daily plans Time</b>"
+
+msgid "settings_language_available"
+msgstr "Feature is under development. Available languages: English, Русский"
+
+msgid "settings_language_current"
+msgstr "Current language: English (Mocked)"
+
+msgid "settings_language_selected"
+msgstr "✅ Language setting selected"
+
+msgid "settings_language_changed"
+msgstr "✅ Language changed successfully"
+
+msgid "settings_language_title"
+msgstr "🇬🇧 <b>Language</b>"
+
+msgid "settings_quiet_hours_current"
+msgstr "Current quiet hours: 22:00 - 08:00 (Mocked)"
+
+msgid "settings_quiet_hours_description"
+msgstr "Feature is under development. No notifications will be sent during quiet hours."
+
+msgid "settings_quiet_hours_selected"
+msgstr "✅ Quiet hours setting selected"
+
+msgid "settings_quiet_hours_title"
+msgstr "🔇 <b>Quiet Hours</b>"
+
+msgid "settings_timezone_current"
+msgstr "Current timezone: UTC+2 (Mocked)"
+
+msgid "settings_timezone_feature_dev"
+msgstr "Feature is under development."
+
+msgid "settings_timezone_select"
+msgstr "Select timezone:"
+
+msgid "settings_timezone_selected"
+msgstr "✅ Timezone setting selected"
+
+msgid "settings_timezone_title"
+msgstr "🌍 Timezone"
+
+msgid "settings_title"
+msgstr "⚙️ <b>Settings</b>\n\nChoose a setting to modify:"
+
+msgid "start_welcome"
+msgstr "👋 <b>Welcome to the Telegram Calendar reminder, {user_name}!</b>\n\nI can help you manage your events and reminders, including from external calendars.\n\n📋 <b>Commands:</b>\n/start - Show this dialog\n/help - Get help\n/menu - Open main menu\n\n🎯 <b>Main functions:</b>\n• 📅 Viewing events\n• ➕ Creating events\n• ✏️ Editing events\n• 🗑️ Deleting events\n• 🔗 Importing external calendars (google, outlook, etc.)\n• 📤 Exporting events\n• ⏰ Reminders for events\n• 📋 Daily plans"
+

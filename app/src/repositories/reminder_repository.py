@@ -10,10 +10,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models.reminder import Reminder
 from repositories.base_repository import BaseRepository
 from repositories.exceptions import ReminderNotFoundError
-from repositories.schemas import ReminderCreateSchema, ReminderUpdateSchema
+from repositories.schemas import ReminderCreateSchema, ReminderResponse, ReminderUpdateSchema
 
 
-class ReminderRepository(BaseRepository[Reminder]):
+class ReminderRepository(BaseRepository[ReminderResponse]):
     def __init__(self, session: AsyncSession) -> None:
         """Initialize SettingsRepository with a database session.
 
@@ -22,23 +22,28 @@ class ReminderRepository(BaseRepository[Reminder]):
         """
         super().__init__(session)
 
-    async def get_by_id(self, entity_id: int) -> Reminder | None:
+    async def get_by_id(self, entity_id: int) -> ReminderResponse | None:
         """Retrieve a reminder by its ID.
 
         Args:
             entity_id: The ID of the reminder to retrieve.
 
         Returns:
-            The reminder if found, None otherwise.
+            The reminder response if found, None otherwise.
         """
         result = await self.session.get(Reminder, entity_id)
-        return result
+        if result is None:
+            return None
+        return ReminderResponse.from_model(result)
 
-    async def create(self, data: list[ReminderCreateSchema], *args, **kwargs) -> list[Reminder]:
+    async def create(self, data: list[ReminderCreateSchema], *args, **kwargs) -> list[ReminderResponse]:
         """Create a new reminders.
 
         Args:
             data: list of ReminderCreateSchema with reminders data.
+
+        Returns:
+            Created reminders as responses.
         """
         reminders = []
         for item in data:
@@ -53,39 +58,44 @@ class ReminderRepository(BaseRepository[Reminder]):
             )
             self.session.add(reminder)
             await self.session.flush()
-            reminders.append(reminder)
+            await self.session.refresh(reminder)
+            reminders.append(ReminderResponse.from_model(reminder))
         return reminders
 
-    async def update(self, entity_id: int, data: ReminderUpdateSchema, *args, **kwargs) -> Reminder:
+    async def update(self, entity_id: int, data: ReminderUpdateSchema, *args, **kwargs) -> ReminderResponse:
         """Update an existing reminder.
 
         Args:
             entity_id: The ID of the reminder to update.
             data: ReminderUpdateSchema with fields to update.
+
+        Returns:
+            Updated reminder response.
         """
-        reminder = await self.get_by_id(entity_id)
-        if reminder is None:
+        reminder_model = await self.session.get(Reminder, entity_id)
+        if reminder_model is None:
             raise ReminderNotFoundError(reminder_id=entity_id)
 
         update_data = data.model_dump(exclude_unset=True)
         for key, value in update_data.items():
-            setattr(reminder, key, value)
+            setattr(reminder_model, key, value)
 
         await self.session.flush()
-        await self.session.refresh(reminder)
-        return reminder
+        await self.session.refresh(reminder_model)
+        return ReminderResponse.from_model(reminder_model)
 
-    async def find(self, event_id: int) -> list[Reminder]:
+    async def find(self, event_id: int) -> list[ReminderResponse]:
         """Find reminders by event ID.
 
         Args:
             event_id: The ID of the event to find reminders for.
 
         Returns:
-            The list of reminders if found, empty list otherwise.
+            The list of reminders as responses if found, empty list otherwise.
         """
         result = await self.session.execute(select(Reminder).where(Reminder.event_id == event_id))
-        return list(result.scalars().all())
+        reminders = list(result.scalars().all())
+        return [ReminderResponse.from_model(reminder) for reminder in reminders]
 
     async def delete(self, entity_id: int, *args, **kwargs) -> None:
         """Delete a reminder by ID.
@@ -93,8 +103,8 @@ class ReminderRepository(BaseRepository[Reminder]):
         Args:
             entity_id: The ID of the reminder to delete.
         """
-        reminder = await self.get_by_id(entity_id)
-        if reminder is None:
+        reminder_model = await self.session.get(Reminder, entity_id)
+        if reminder_model is None:
             raise ReminderNotFoundError(reminder_id=entity_id)
-        await self.session.delete(reminder)
+        await self.session.delete(reminder_model)
         await self.session.flush()

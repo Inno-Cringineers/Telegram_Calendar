@@ -40,14 +40,12 @@ def is_valid_time(time_str: str) -> bool:
 
 
 @router.callback_query(F.data == "create_new_event", EventsMenuStates.in_events_create)
-async def process_create_new_event_callback(query: CallbackQuery, state: FSMContext) -> None:
+async def process_create_new_event_callback(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Transition beetween states."""
     user_name = query.from_user.first_name
     user_id = query.from_user.id
     logger.info(f"User {user_name} (ID: {user_id}) creating event")
 
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     await state.set_state(CreateEventStates.waiting_for_title)
 
@@ -59,10 +57,8 @@ async def process_create_new_event_callback(query: CallbackQuery, state: FSMCont
 
 
 @router.callback_query(F.data == "events_cancel", StateFilter(CreateEventStates))
-async def cancel_event_creation(query: CallbackQuery, state: FSMContext) -> None:
+async def cancel_event_creation(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Cancel event creation."""
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     await state.clear()
     if isinstance(query.message, Message):
@@ -73,10 +69,8 @@ async def cancel_event_creation(query: CallbackQuery, state: FSMContext) -> None
 
 
 @router.message(CreateEventStates.waiting_for_title)
-async def process_event_title(message: Message, state: FSMContext) -> None:
+async def process_event_title(message: Message, state: FSMContext, lang: str) -> None:
     """Process event title."""
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     title = message.text
     if title is None or len(title) == 0:
@@ -97,10 +91,8 @@ async def process_event_title(message: Message, state: FSMContext) -> None:
 
 
 @router.message(CreateEventStates.waiting_for_description)
-async def process_event_description(message: Message, state: FSMContext) -> None:
+async def process_event_description(message: Message, state: FSMContext, lang: str) -> None:
     """Process event description."""
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     description = message.text
 
@@ -114,10 +106,8 @@ async def process_event_description(message: Message, state: FSMContext) -> None
 
 
 @router.callback_query(F.data == "skip_description", CreateEventStates.waiting_for_description)
-async def skip_event_description(query: CallbackQuery, state: FSMContext) -> None:
+async def skip_event_description(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Skip event description step."""
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     await state.update_data(description=None)
     await state.set_state(CreateEventStates.waiting_for_start_date)
@@ -130,10 +120,8 @@ async def skip_event_description(query: CallbackQuery, state: FSMContext) -> Non
 
 
 @router.message(CreateEventStates.waiting_for_start_date)
-async def process_event_date(message: Message, state: FSMContext) -> None:
+async def process_event_date(message: Message, state: FSMContext, lang: str) -> None:
     """Process event date with validation."""
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     if message.text is None:
         await message.answer(
@@ -160,10 +148,8 @@ async def process_event_date(message: Message, state: FSMContext) -> None:
 
 
 @router.message(CreateEventStates.waiting_for_start_time)
-async def process_event_time(message: Message, state: FSMContext) -> None:
+async def process_event_time(message: Message, state: FSMContext, lang: str) -> None:
     """Process event time with validation."""
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     if message.text is None:
         await message.answer(t("create_event.time_format_error", lang=lang))
@@ -200,10 +186,8 @@ async def process_event_time(message: Message, state: FSMContext) -> None:
 
 
 @router.callback_query(F.data == "confirm_event", CreateEventStates.waiting_for_confirmation)
-async def confirm_event(query: CallbackQuery, state: FSMContext) -> None:
+async def confirm_event(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Confirm and save event."""
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     data = await state.get_data()
     user_id = query.from_user.id

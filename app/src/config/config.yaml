@@ -36,3 +36,20 @@ bot:
   single_user: ${SINGLE_USER:-false}
   # Telegram token
   telegram_token: ${TELEGRAM_TOKEN}
+
+# Default user settings
+settings:
+  # Default timezone
+  timezone: UTC+2
+  # Default language
+  language: en
+  # Quiet hours enabled by default
+  quiet_hours: false
+  # Quiet hours start time (HH:MM)
+  quiet_hours_start: "00:00"
+  # Quiet hours end time (HH:MM)
+  quiet_hours_end: "06:00"
+  # Daily plans time (HH:MM), null to disable
+  daily_plans_time: "09:00"
+  # Default reminder offset in seconds (15 minutes = 900 seconds)
+  default_reminder_offset: 900

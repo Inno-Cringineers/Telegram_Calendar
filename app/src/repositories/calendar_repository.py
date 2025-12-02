@@ -10,12 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models.calendar import Calendar
 from repositories.base_repository import BaseRepository
 from repositories.exceptions import CalendarNotFoundError
-from repositories.schemas import CalendarCreateSchema, CalendarFilter, CalendarUpdateSchema
+from repositories.schemas import CalendarCreateSchema, CalendarFilter, CalendarResponse, CalendarUpdateSchema
 
 # TODO: Validation and exeptions
 
 
-class CalendarRepository(BaseRepository[Calendar]):
+class CalendarRepository(BaseRepository[CalendarResponse]):
     """Repository for Calendar entity operations.
 
     Provides methods for creating, reading, updating, and deleting calendars,
@@ -30,26 +30,28 @@ class CalendarRepository(BaseRepository[Calendar]):
         """
         super().__init__(session)
 
-    async def get_by_id(self, entity_id: int) -> Calendar | None:
+    async def get_by_id(self, entity_id: int) -> CalendarResponse | None:
         """Retrieve a calendar by its ID.
 
         Args:
             entity_id: The ID of the calendar to retrieve.
 
         Returns:
-            The calendar if found, None otherwise.
+            The calendar response if found, None otherwise.
         """
         result = await self.session.get(Calendar, entity_id)
-        return result
+        if result is None:
+            return None
+        return CalendarResponse.from_model(result)
 
-    async def create(self, data: list[CalendarCreateSchema], *args, **kwargs) -> list[Calendar]:
+    async def create(self, data: list[CalendarCreateSchema], *args, **kwargs) -> list[CalendarResponse]:
         """Create a new calendar.
 
         Args:
             data: list of CalendarCreateSchema with calendar data.
 
         Returns:
-            The created calendar.
+            The created calendars as responses.
         """
         calendars = []
         for item in data:
@@ -60,10 +62,11 @@ class CalendarRepository(BaseRepository[Calendar]):
             )
             self.session.add(calendar)
             await self.session.flush()
-            calendars.append(calendar)
+            await self.session.refresh(calendar)
+            calendars.append(CalendarResponse.from_model(calendar))
         return calendars
 
-    async def update(self, entity_id: int, data: CalendarUpdateSchema, *args, **kwargs) -> Calendar:
+    async def update(self, entity_id: int, data: CalendarUpdateSchema, *args, **kwargs) -> CalendarResponse:
         """Update an existing calendar.
 
         Args:
@@ -71,20 +74,20 @@ class CalendarRepository(BaseRepository[Calendar]):
             data: CalendarUpdateSchema with calendar data.
 
         Returns:
-            The updated calendar.
+            The updated calendar response.
         """
-        calendar = await self.get_by_id(entity_id)
-        if calendar is None:
+        calendar_model = await self.session.get(Calendar, entity_id)
+        if calendar_model is None:
             raise CalendarNotFoundError(calendar_id=entity_id)
 
         # Update only provided fields
         update_data = data.model_dump(exclude_unset=True)
         for key, value in update_data.items():
-            setattr(calendar, key, value)
+            setattr(calendar_model, key, value)
         await self.session.flush()
 
-        await self.session.refresh(calendar)
-        return calendar
+        await self.session.refresh(calendar_model)
+        return CalendarResponse.from_model(calendar_model)
 
     async def delete(self, entity_id: int, *args, **kwargs) -> None:
         """Delete a calendar by ID.
@@ -92,20 +95,20 @@ class CalendarRepository(BaseRepository[Calendar]):
         Args:
             entity_id: The ID of the calendar to delete.
         """
-        calendar = await self.get_by_id(entity_id)
-        if calendar is None:
+        calendar_model = await self.session.get(Calendar, entity_id)
+        if calendar_model is None:
             raise CalendarNotFoundError(calendar_id=entity_id)
-        await self.session.delete(calendar)
+        await self.session.delete(calendar_model)
         await self.session.flush()
 
-    async def find(self, filter: CalendarFilter) -> list[Calendar]:
+    async def find(self, filter: CalendarFilter) -> list[CalendarResponse]:
         """Find calendars matching the provided filter.
 
         Args:
             filter: CalendarFilter with filtering criteria.
 
         Returns:
-            List of matching calendars.
+            List of matching calendars as responses.
         """
         stmt = select(Calendar)
 
@@ -121,4 +124,5 @@ class CalendarRepository(BaseRepository[Calendar]):
         stmt = stmt.limit(filter.limit).offset(filter.offset)
 
         result = await self.session.execute(stmt)
-        return list(result.scalars().all())
+        calendars = list(result.scalars().all())
+        return [CalendarResponse.from_model(calendar) for calendar in calendars]

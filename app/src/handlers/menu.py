@@ -12,13 +12,10 @@ router = Router()
 
 
 @router.message(Command("menu"))
-async def cmd_menu(message: Message, state: FSMContext) -> None:
+async def cmd_menu(message: Message, state: FSMContext, lang: str) -> None:
     """Open main menu."""
     user_id = message.from_user.id if message.from_user else None
     logger.info(f"User {user_id} opened main menu")
-
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     await state.set_state(MainMenuStates.in_main_menu)
     await message.answer(
@@ -29,13 +26,10 @@ async def cmd_menu(message: Message, state: FSMContext) -> None:
 
 
 @router.callback_query(F.data == "back_to_main")
-async def back_to_main(query: CallbackQuery, state: FSMContext) -> None:
+async def back_to_main(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Go back to main menu from any submenu."""
     user_id = query.from_user.id
     logger.debug(f"User {user_id} going back to main menu")
-
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     await state.set_state(MainMenuStates.in_main_menu)
 

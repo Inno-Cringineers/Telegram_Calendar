@@ -10,13 +10,11 @@ router = Router()
 
 
 @router.callback_query(F.data == "menu_daily_plan")
-async def get_daily_plan(query: CallbackQuery, state: FSMContext) -> None:
+async def get_daily_plan(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Send daily plan to user."""
     user_id = query.from_user.id
     logger.info(f"User {user_id} requested daily plan")
 
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     await query.answer(t("daily_plan.generating", lang=lang))
 
