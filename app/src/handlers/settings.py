@@ -1,6 +1,8 @@
+from datetime import UTC, datetime
+
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message
 
 from i18n.strings import t
 from keyboards.inline import (
@@ -17,6 +19,65 @@ from store.store import Store
 router = Router()
 
 
+def is_valid_time(time_str: str) -> bool:
+    """Validate time format HH:MM.
+
+    Args:
+        time_str: Time string to validate.
+
+    Returns:
+        True if time format is valid, False otherwise.
+    """
+    try:
+        datetime.strptime(time_str, "%H:%M")
+        return True
+    except ValueError:
+        return False
+
+
+def detect_timezone_from_time(user_time_str: str) -> str:
+    """Detect timezone from user's current time.
+
+    Compares user's local time with UTC time to determine timezone offset.
+    Always uses UTC as reference point, regardless of system timezone settings.
+
+    Args:
+        user_time_str: User's current time in HH:MM format.
+
+    Returns:
+        Timezone string in format UTC+X or UTC-X.
+    """
+    # Parse user's time
+    user_time = datetime.strptime(user_time_str, "%H:%M").time()
+
+    # Get current UTC time (always use UTC, not local time)
+    # This ensures consistent timezone detection regardless of Docker/host timezone settings
+    utc_now = datetime.now(UTC)
+    utc_time = utc_now.time()
+
+    # Calculate difference in minutes
+    user_minutes = user_time.hour * 60 + user_time.minute
+    utc_minutes = utc_time.hour * 60 + utc_time.minute
+
+    # Calculate offset (can be negative if user is behind UTC)
+    offset_minutes = user_minutes - utc_minutes
+
+    # Handle day wrap-around (e.g., user is 23:00, UTC is 01:00)
+    if offset_minutes > 12 * 60:  # More than 12 hours ahead
+        offset_minutes -= 24 * 60  # Subtract 24 hours
+    elif offset_minutes < -12 * 60:  # More than 12 hours behind
+        offset_minutes += 24 * 60  # Add 24 hours
+
+    # Convert to hours (round to nearest hour)
+    offset_hours = round(offset_minutes / 60)
+
+    # Format timezone string
+    if offset_hours >= 0:
+        return f"UTC+{offset_hours}"
+    else:
+        return f"UTC{offset_hours}"  # Negative sign is already in the number
+
+
 @router.callback_query(F.data == "menu_settings")
 async def open_settings_menu(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
     """Open settings menu."""
@@ -25,7 +86,7 @@ async def open_settings_menu(query: CallbackQuery, state: FSMContext, store: Sto
 
     await state.set_state(SettingsStates.in_settings)
 
-    if query.message and hasattr(query.message, "edit_text"):
+    if query.message and isinstance(query.message, Message):
         await query.message.edit_text(
             t("settings.title", lang=lang),
             parse_mode="HTML",
@@ -34,57 +95,65 @@ async def open_settings_menu(query: CallbackQuery, state: FSMContext, store: Sto
 
 
 @router.callback_query(F.data == "settings_timezone", SettingsStates.in_settings)
-async def settings_timezone(query: CallbackQuery, state: FSMContext, lang: str) -> None:
-    """Handle timezone setting."""
+async def settings_timezone(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
+    """Handle timezone setting - ask user for current time."""
     user_id = query.from_user.id
     logger.info(f"User {user_id} is editing timezone")
 
-    await state.set_state(SettingsStates.editing_timezone)
+    await state.set_state(SettingsStates.waiting_for_time)
     await query.answer(t("settings.timezone.selected", lang=lang))
 
-    if query.message and hasattr(query.message, "edit_text"):
-        timezone_list = (
-            "[(UTC-12:00) Baker Island](https://t.me/personal_calendar_reminder_bot?start=tz_utc-12)\n"
-            "[(UTC-11:00) American Samoa](https://t.me/personal_calendar_reminder_bot?start=tz_utc-11)\n"
-            "[(UTC-10:00) Hawaii, Tahiti](https://t.me/personal_calendar_reminder_bot?start=tz_utc-10)\n"
-            "[(UTC-09:00) Alaska (most)](https://t.me/personal_calendar_reminder_bot?start=tz_utc-9)\n"
-            "[(UTC-08:00) Pacific Time (US/Canada)](https://t.me/personal_calendar_reminder_bot?start=tz_utc-8)\n"
-            "[(UTC-07:00) Mountain Time](https://t.me/personal_calendar_reminder_bot?start=tz_utc-7)\n"
-            "[(UTC-06:00) Central Time](https://t.me/personal_calendar_reminder_bot?start=tz_utc-6)\n"
-            "[(UTC-05:00) Eastern Time](https://t.me/personal_calendar_reminder_bot?start=tz_utc-5)\n"
-            "[(UTC-04:00) Atlantic Time (Canada)](https://t.me/personal_calendar_reminder_bot?start=tz_utc-4)\n"
-            "[(UTC-03:00) Buenos Aires, Brasilia](https://t.me/personal_calendar_reminder_bot?start=tz_utc-3)\n"
-            "[(UTC-02:00) Mid-Atlantic](https://t.me/personal_calendar_reminder_bot?start=tz_utc-2)\n"
-            "[(UTC-01:00) Azores, Cape Verde](https://t.me/personal_calendar_reminder_bot?start=tz_utc-1)\n"
-            "[(UTC±00:00) London, Lisbon, Dublin](https://t.me/personal_calendar_reminder_bot?start=tz_utc-0)\n"
-            "[(UTC+01:00) Berlin, Rome, Paris](https://t.me/personal_calendar_reminder_bot?start=tz_utc1)\n"
-            "[(UTC+02:00) Cairo, Helsinki, Kyiv](https://t.me/personal_calendar_reminder_bot?start=tz_utc2)\n"
-            "[(UTC+03:00) Moscow, Istanbul](https://t.me/personal_calendar_reminder_bot?start=tz_utc3)\n"
-            "[(UTC+04:00) Dubai, Baku, Tbilisi](https://t.me/personal_calendar_reminder_bot?start=tz_utc4)\n"
-            "[(UTC+05:00) Tashkent, Astana](https://t.me/personal_calendar_reminder_bot?start=tz_utc5)\n"
-            "[(UTC+06:00) Dhaka](https://t.me/personal_calendar_reminder_bot?start=tz_utc6)\n"
-            "[(UTC+07:00) Bangkok, Jakarta](https://t.me/personal_calendar_reminder_bot?start=tz_utc7)\n"
-            "[(UTC+08:00) Beijing, Singapore](https://t.me/personal_calendar_reminder_bot?start=tz_utc8)\n"
-            "[(UTC+09:00) Tokyo, Seoul, Pyongyang](https://t.me/personal_calendar_reminder_bot?start=tz_utc9)\n"
-            "[(UTC+10:00) Sydney, Melbourne,](https://t.me/personal_calendar_reminder_bot?start=tz_utc10)\n"
-            "[(UTC+11:00) Solomon Islands, Vanuatu](https://t.me/personal_calendar_reminder_bot?start=tz_utc11)\n"
-            "[(UTC+12:00) Auckland, Fiji, Marshall](https://t.me/personal_calendar_reminder_bot?start=tz_utc12)\n"
-            "[(UTC+13:00) Samoa, Tonga, Phoenix](https://t.me/personal_calendar_reminder_bot?start=tz_utc13)\n"
-            "[(UTC+14:00) Line Islands (Kiribati)](https://t.me/personal_calendar_reminder_bot?start=tz_utc14)\n"
-        )
-        text = (
-            f"{t('settings.timezone.title', lang=lang)}\n\n"
-            f"{t('settings.timezone.current', lang=lang)}\n\n"
-            f"{t('settings.timezone.select', lang=lang)}\n"
-            f"{timezone_list}"
-            f"{t('settings.timezone.feature_dev', lang=lang)}"
-        )
+    if query.message and isinstance(query.message, Message):
+        # Get current timezone from settings
+        settings_service = store.SettingsService
+        settings = await settings_service.get_by_user_id(user_id)
+        current_timezone = settings.timezone if settings else "UTC+3"
+
+        text = t("settings.timezone.ask_time", lang=lang, timezone=current_timezone)
         await query.message.edit_text(
             text,
-            parse_mode="Markdown",
-            disable_web_page_preview=True,
+            parse_mode="HTML",
             reply_markup=get_back_button("menu_settings", lang=lang),
         )
+
+
+@router.message(SettingsStates.waiting_for_time)
+async def process_timezone_time(message: Message, state: FSMContext, store: Store, lang: str) -> None:
+    """Process user's current time and set timezone automatically."""
+    if message.from_user is None:
+        return
+
+    user_id = message.from_user.id
+
+    if message.text is None:
+        await message.answer(t("settings.timezone.time_format_error", lang=lang))
+        return
+
+    time_str = message.text.strip()
+
+    if not is_valid_time(time_str):
+        await message.answer(t("settings.timezone.time_format_error", lang=lang))
+        return
+
+    # Detect timezone from user's time
+    detected_timezone = detect_timezone_from_time(time_str)
+
+    logger.info(f"User {user_id} entered time {time_str}, detected timezone: {detected_timezone}")
+
+    # Update timezone in settings
+    settings_service = store.SettingsService
+    await settings_service.update_by_user_id(user_id, timezone=detected_timezone)
+
+    # Return to settings menu
+    await state.set_state(SettingsStates.in_settings)
+
+    # Confirm timezone update
+    success_text = t("settings.timezone.updated", lang=lang, timezone=detected_timezone)
+    await message.answer(
+        success_text,
+        parse_mode="HTML",
+        reply_markup=get_settings_menu_inline(lang=lang),
+    )
 
 
 @router.callback_query(F.data == "settings_language", SettingsStates.in_settings)
@@ -96,7 +165,7 @@ async def settings_language(query: CallbackQuery, state: FSMContext, lang: str) 
     await state.set_state(SettingsStates.editing_language)
     await query.answer(t("settings.language.selected", lang=lang))
 
-    if query.message and hasattr(query.message, "edit_text"):
+    if query.message and isinstance(query.message, Message):
         text = (
             f"{t('settings.language.title', lang=lang)}\n\n"
             f"{t('settings.language.current', lang=lang)}\n\n"
@@ -126,7 +195,7 @@ async def language_en(query: CallbackQuery, state: FSMContext, store: Store, lan
     await query.answer(t("settings.language.changed", lang="en"))
 
     # Update message with new language
-    if query.message and hasattr(query.message, "edit_text"):
+    if query.message and isinstance(query.message, Message):
         await query.message.edit_text(
             t("settings.title", lang="en"),
             parse_mode="HTML",
@@ -151,7 +220,7 @@ async def language_ru(query: CallbackQuery, state: FSMContext, store: Store, lan
     await query.answer(t("settings.language.changed", lang="ru"))
 
     # Update message with new language
-    if query.message and hasattr(query.message, "edit_text"):
+    if query.message and isinstance(query.message, Message):
         await query.message.edit_text(
             t("settings.title", lang="ru"),
             parse_mode="HTML",
@@ -168,7 +237,7 @@ async def settings_quiet_hours(query: CallbackQuery, state: FSMContext, lang: st
     await state.set_state(SettingsStates.editing_quiet_hours)
     await query.answer(t("settings.quiet_hours.selected", lang=lang))
 
-    if query.message and hasattr(query.message, "edit_text"):
+    if query.message and isinstance(query.message, Message):
         text = (
             f"{t('settings.quiet_hours.title', lang=lang)}\n\n"
             f"{t('settings.quiet_hours.current', lang=lang)}\n\n"
@@ -190,7 +259,7 @@ async def settings_daily_plans_time(query: CallbackQuery, state: FSMContext, lan
     await state.set_state(SettingsStates.editing_daily_plans_time)
     await query.answer(t("settings.daily_plans_time.selected", lang=lang))
 
-    if query.message and hasattr(query.message, "edit_text"):
+    if query.message and isinstance(query.message, Message):
         text = (
             f"{t('settings.daily_plans_time.title', lang=lang)}\n\n"
             f"{t('settings.daily_plans_time.current', lang=lang)}\n\n"

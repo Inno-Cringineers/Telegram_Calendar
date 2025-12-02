@@ -40,7 +40,7 @@ bot:
 # Default user settings
 settings:
   # Default timezone
-  timezone: UTC+2
+  timezone: UTC+3
   # Default language
   language: en
   # Quiet hours enabled by default

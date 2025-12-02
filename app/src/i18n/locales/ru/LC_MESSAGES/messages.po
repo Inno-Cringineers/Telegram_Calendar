@@ -231,10 +231,10 @@ msgid "settings_daily_plans_time_title"
 msgstr "⏰ <b>Время ежедневных планов</b>"
 
 msgid "settings_language_available"
-msgstr "Функция находится в разработке. Доступные языки: English, Русский"
+msgstr "Доступные языки: English, Русский"
 
 msgid "settings_language_current"
-msgstr "Текущий язык: Русский (Заглушка)"
+msgstr "Текущий язык: Русский"
 
 msgid "settings_language_selected"
 msgstr "✅ Настройка языка выбрана"
@@ -271,6 +271,15 @@ msgstr "✅ Настройка часового пояса выбрана"
 
 msgid "settings_timezone_title"
 msgstr "🌍 Часовой пояс"
+
+msgid "settings_timezone_ask_time"
+msgstr "🌍 <b>Настройка часового пояса</b>\n\nВаш текущий часовой пояс: {timezone}\n\nПожалуйста, введите ваше текущее местное время в формате ЧЧ:ММ (например, 14:30).\n\nЯ автоматически определю ваш часовой пояс на основе разницы между вашим местным временем и UTC."
+
+msgid "settings_timezone_time_format_error"
+msgstr "❌ Неверный формат времени. Пожалуйста, введите время в формате ЧЧ:ММ (например, 14:30)."
+
+msgid "settings_timezone_updated"
+msgstr "✅ Часовой пояс успешно обновлен на <b>{timezone}</b>"
 
 msgid "settings_title"
 msgstr "⚙️ <b>Настройки</b>\n\nВыберите настройку для изменения:"

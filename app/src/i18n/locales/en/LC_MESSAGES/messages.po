@@ -245,10 +245,10 @@ msgid "settings_daily_plans_time_title"
 msgstr "⏰ <b>Daily plans Time</b>"
 
 msgid "settings_language_available"
-msgstr "Feature is under development. Available languages: English, Русский"
+msgstr "Available languages: English, Русский"
 
 msgid "settings_language_current"
-msgstr "Current language: English (Mocked)"
+msgstr "Current language: English"
 
 msgid "settings_language_selected"
 msgstr "✅ Language setting selected"
@@ -285,6 +285,15 @@ msgstr "✅ Timezone setting selected"
 
 msgid "settings_timezone_title"
 msgstr "🌍 Timezone"
+
+msgid "settings_timezone_ask_time"
+msgstr "🌍 <b>Timezone Setting</b>\n\nYour current timezone: {timezone}\n\nPlease enter your current local time in HH:MM format (e.g., 14:30).\n\nI will automatically detect your timezone based on the difference between your local time and UTC."
+
+msgid "settings_timezone_time_format_error"
+msgstr "❌ Invalid time format. Please enter time in HH:MM format (e.g., 14:30)."
+
+msgid "settings_timezone_updated"
+msgstr "✅ Timezone updated successfully to <b>{timezone}</b>"
 
 msgid "settings_title"
 msgstr "⚙️ <b>Settings</b>\n\nChoose a setting to modify:"

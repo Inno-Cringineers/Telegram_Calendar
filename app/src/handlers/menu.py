@@ -17,9 +17,12 @@ async def cmd_menu(message: Message, state: FSMContext, lang: str) -> None:
     user_id = message.from_user.id if message.from_user else None
     logger.info(f"User {user_id} opened main menu")
 
+    user_name = message.from_user.first_name if message.from_user else "User"
+    welcome_text = t("start.welcome", lang=lang, user_name=user_name)
+
     await state.set_state(MainMenuStates.in_main_menu)
     await message.answer(
-        t("menu.main.title", lang=lang),
+        welcome_text,
         parse_mode="HTML",
         reply_markup=get_main_menu_inline(lang=lang),
     )
@@ -31,12 +34,15 @@ async def back_to_main(query: CallbackQuery, state: FSMContext, lang: str) -> No
     user_id = query.from_user.id
     logger.debug(f"User {user_id} going back to main menu")
 
+    user_name = query.from_user.first_name if query.from_user else "User"
+    welcome_text = t("start.welcome", lang=lang, user_name=user_name)
+
     await state.set_state(MainMenuStates.in_main_menu)
 
     # Get the message safely
-    if query.message and hasattr(query.message, "edit_text"):
+    if query.message and isinstance(query.message, Message):
         await query.message.edit_text(
-            t("menu.main.title", lang=lang),
+            welcome_text,
             parse_mode="HTML",
             reply_markup=get_main_menu_inline(lang=lang),
         )

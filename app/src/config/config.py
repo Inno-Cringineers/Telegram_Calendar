@@ -181,7 +181,7 @@ def load_config() -> Config:
 
     settings_config_data = yaml_config.get("settings", {})
     settings_config = SettingsConfig(
-        timezone=settings_config_data.get("timezone", "UTC+2"),
+        timezone=settings_config_data.get("timezone", "UTC+3"),
         language=settings_config_data.get("language", "en"),
         quiet_hours=str_to_bool(settings_config_data.get("quiet_hours", False)),
         quiet_hours_start=settings_config_data.get("quiet_hours_start", "00:00"),

@@ -41,6 +41,7 @@ class SettingsStates(StatesGroup):
 
     in_settings = State()
     editing_timezone = State()
+    waiting_for_time = State()
     editing_language = State()
     editing_quiet_hours = State()
     editing_daily_plans_time = State()
