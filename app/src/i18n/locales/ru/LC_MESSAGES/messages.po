@@ -1,5 +1,4 @@
 # Translation file for RU
-# Copyright (C) 2024
 msgid ""
 msgstr ""
 "Language: ru\n"
@@ -67,6 +66,9 @@ msgstr "🔇 Тихие часы"
 
 msgid "btn_quiet_hours_enter"
 msgstr "ввести тихие часы"
+
+msgid "btn_quiet_hours_enable"
+msgstr "включить/выключить"
 
 msgid "btn_reject"
 msgstr "❌ Отклонить"
@@ -246,16 +248,22 @@ msgid "settings_language_title"
 msgstr "🇬🇧 <b>Язык</b>"
 
 msgid "settings_quiet_hours_current"
-msgstr "Текущие тихие часы: 22:00 - 08:00 (Заглушка)"
+msgstr "Текущие тихие часы: <b>{quiet_hours}</b>"
 
 msgid "settings_quiet_hours_description"
-msgstr "Функция находится в разработке. Уведомления не будут отправляться в тихие часы."
+msgstr "Уведомления не будут приходить в течение тихих часов."
+
+msgid "settings_quiet_hours_enabled"
+msgstr "✅ Тихие часы включены"
+
+msgid "settings_quiet_hours_disabled"
+msgstr "❌ Тихие часы выключены"
 
 msgid "settings_quiet_hours_selected"
 msgstr "✅ Настройка тихих часов выбрана"
 
 msgid "settings_quiet_hours_title"
-msgstr "🔇 <b>Тихие часы</b>"
+msgstr "🔇 <b>Тихие часов</b>"
 
 msgid "settings_timezone_current"
 msgstr "Текущий часовой пояс: UTC+2 (Заглушка)"
@@ -273,17 +281,17 @@ msgid "settings_timezone_title"
 msgstr "🌍 Часовой пояс"
 
 msgid "settings_timezone_ask_time"
-msgstr "🌍 <b>Настройка часового пояса</b>\n\nВаш текущий часовой пояс: {timezone}\n\nПожалуйста, введите ваше текущее местное время в формате ЧЧ:ММ (например, 14:30).\n\nЯ автоматически определю ваш часовой пояс на основе разницы между вашим местным временем и UTC."
+msgstr "🌍 <b>Настройка часового пояса</b>\n\nВаш текущий часовой пояс: <b>{timezone}</b>\n\nПожалуйста, введите ваше текущее местное время в формате <b>ЧЧ:ММ</b> (например, 14:30).\n\nЯ автоматически определю ваш часовой пояс на основе разницы между вашим местным временем и UTC."
 
 msgid "settings_timezone_time_format_error"
-msgstr "❌ Неверный формат времени. Пожалуйста, введите время в формате ЧЧ:ММ (например, 14:30)."
+msgstr "🌍 <b>Настройка часового пояса</b>\n\n\n❌ Неверный формат времени.\n\nВы ввели: <b>{user_input}</b>\n\nПожалуйста, введите время в формате ЧЧ:ММ (например, 14:30)."
 
 msgid "settings_timezone_updated"
 msgstr "✅ Часовой пояс успешно обновлен на <b>{timezone}</b>"
 
 msgid "settings_title"
-msgstr "⚙️ <b>Настройки</b>\n\nВыберите настройку для изменения:"
+msgstr "⚙️ <b>Настройки</b>\n\n<u>Ваши текущие настройки:</u>\n\n🌍 Часовой пояс: <b>{timezone}</b>\n\n🇷🇺 Язык: <b>{language}</b>\n\n🔇 Период "тихого времени": <b>{quiet_hours}</b>\n\n⏰ Время ежедневного плана: <b>{daily_plan}</b>\n\n"
 
 msgid "start_welcome"
-msgstr "👋 <b>Добро пожаловать в Telegram Calendar reminder, {user_name}!</b>\n\nЯ могу помочь управлять вашими событиями и напоминаниями, даже из внешних календарей.\n\n📋 <b>Команды:</b>\n/start - Показать это диалоговое окно\n/help - Получить помощь\n/menu - Открыть главное меню\n\n🎯 <b>Основные функции:</b>\n• 📅 Просмотр событий\n• ➕ Создание событий\n• ✏️ Редактирование событий\n• 🗑️ Удаление событий\n• 🔗 Экспорт внешних календарей (google, outlook и т.д.)\n• ⏰ Напоминания о событиях\n• 📋 Ежедневные планы"
+msgstr "👋 <b>Добро пожаловать в Personal Calendar Reminder bot, {user_name}!</b>\n\nЯ могу управлять вашими событиями, отправлять вам напоминания о приближающихся событиях, синхронизироваться с внешними календарями.\n\n📋 <b>Команды:</b>\n/start - Показать это диалоговое окно\n/help - Получить помощь\n\n🎯 <b>Основные функции:</b>\n• 📅 Просмотр событий\n• ➕ Создание событий\n• ✏️ Редактирование и удаление событий\n• 🔗 Экспорт внешних календарей (google, outlook и т.д.)\n• ⏰ Напоминания о событиях\n• 📋 Ежедневные планы"
 

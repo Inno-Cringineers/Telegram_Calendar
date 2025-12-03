@@ -3,7 +3,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from i18n.strings import t
-from keyboards.inline import get_back_button, get_calendar_menu_inline
+from keyboards.inline import back_button, calendar_menu_inline
 from logger.logger import logger
 from states.states import CalendarLinkingStates
 from store.store import Store
@@ -24,7 +24,7 @@ async def open_calendar_menu(query: CallbackQuery, state: FSMContext, lang: str)
         await message.edit_text(
             t("calendar.link.title", lang=lang),
             parse_mode="HTML",
-            reply_markup=get_calendar_menu_inline(lang=lang),
+            reply_markup=calendar_menu_inline(lang=lang),
         )
 
 
@@ -50,7 +50,7 @@ async def calendar_list(query: CallbackQuery, state: FSMContext, lang: str) -> N
         await message.edit_text(
             text,
             parse_mode="HTML",
-            reply_markup=get_back_button(lang=lang),
+            reply_markup=back_button(lang=lang),
         )
 
 
@@ -72,7 +72,7 @@ async def calendar_new(query: CallbackQuery, state: FSMContext, lang: str) -> No
         await query.message.edit_text(
             text,
             parse_mode="HTML",
-            reply_markup=get_back_button(lang=lang),
+            reply_markup=back_button(lang=lang),
         )
 
 
@@ -94,7 +94,7 @@ async def process_calendar_link(message: Message, state: FSMContext, lang: str) 
     await message.answer(t("calendar.link.enter_name", lang=lang))
     await message.answer(
         t("calendar.link.enter_name", lang=lang),
-        reply_markup=get_back_button(lang=lang),
+        reply_markup=back_button(lang=lang),
     )
 
 
@@ -115,7 +115,7 @@ async def process_calendar_name(message: Message, state: FSMContext, lang: str) 
     await message.answer(t("calendar.link.confirm_link", lang=lang))
     await message.answer(
         t("calendar.link.confirm_link", lang=lang),
-        reply_markup=get_back_button("calendar_confirm", lang=lang),
+        reply_markup=back_button("calendar_confirm", lang=lang),
     )
 
 
@@ -147,7 +147,7 @@ async def calendar_confirm(query: CallbackQuery, state: FSMContext, store: Store
         await query.message.edit_text(
             t("calendar.link.success", lang=lang),
             parse_mode="HTML",
-            reply_markup=get_calendar_menu_inline(lang=lang),
+            reply_markup=calendar_menu_inline(lang=lang),
         )
     else:
         await query.answer(t("calendar.link.success", lang=lang))

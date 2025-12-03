@@ -57,7 +57,7 @@ class SettingsMiddleware(BaseMiddleware):
         # Get store from data (should be injected by StoreMiddleware)
         store: Store | None = data.get("store")
         if store is None:
-            logger.warning("SettingsMiddleware: Store not found in data, skipping settings check")
+            logger.error("SettingsMiddleware: Store not found in data, skipping settings check")
             data["lang"] = "en"
             return await handler(event, data)
 
@@ -86,6 +86,9 @@ class SettingsMiddleware(BaseMiddleware):
         # Inject language into data dict for handlers (similar to how store is injected)
         # Handlers can access it via parameter: lang: str or via data.get("lang")
         data["lang"] = settings.language if settings else "en"
+
+        # add settings to data
+        data["timezone"] = settings.timezone
 
         # Call the handler
         return await handler(event, data)

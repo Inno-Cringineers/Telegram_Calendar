@@ -43,8 +43,11 @@ class SettingsStates(StatesGroup):
     editing_timezone = State()
     waiting_for_time = State()
     editing_language = State()
+    in_quiet_hours_menu = State()
     editing_quiet_hours = State()
     editing_daily_plans_time = State()
+    waiting_for_quiet_hours_start = State()
+    waiting_for_quiet_hours_end = State()
 
 
 class CalendarLinkingStates(StatesGroup):

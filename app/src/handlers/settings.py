@@ -1,120 +1,98 @@
-from datetime import UTC, datetime
-
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from i18n.strings import t
 from keyboards.inline import (
-    get_back_button,
-    get_daily_plan_time_menu_inline,
-    get_language_menu_inline,
-    get_quiet_hours_menu_inline,
-    get_settings_menu_inline,
+    back_button,
+    daily_plan_time_menu_inline,
+    language_menu_inline,
+    quiet_hours_accept_reject_inline,
+    quiet_hours_menu_inline,
+    settings_menu_inline,
 )
 from logger.logger import logger
 from states.states import SettingsStates
 from store.store import Store
+from utils.handlers import (
+    detect_timezone_from_local_time,
+    edit_message,
+    get_last_message,
+    is_valid_time_hhmm,
+    log_action,
+)
 
 router = Router()
 
 
-def is_valid_time(time_str: str) -> bool:
-    """Validate time format HH:MM.
+async def get_settings_title(user_id: int, store: Store, lang: str) -> str:
+    settings = await store.SettingsService.get_by_user_id(user_id)
+    if settings is None:
+        return t("settings.title", lang=lang)
 
-    Args:
-        time_str: Time string to validate.
-
-    Returns:
-        True if time format is valid, False otherwise.
-    """
-    try:
-        datetime.strptime(time_str, "%H:%M")
-        return True
-    except ValueError:
-        return False
-
-
-def detect_timezone_from_time(user_time_str: str) -> str:
-    """Detect timezone from user's current time.
-
-    Compares user's local time with UTC time to determine timezone offset.
-    Always uses UTC as reference point, regardless of system timezone settings.
-
-    Args:
-        user_time_str: User's current time in HH:MM format.
-
-    Returns:
-        Timezone string in format UTC+X or UTC-X.
-    """
-    # Parse user's time
-    user_time = datetime.strptime(user_time_str, "%H:%M").time()
-
-    # Get current UTC time (always use UTC, not local time)
-    # This ensures consistent timezone detection regardless of Docker/host timezone settings
-    utc_now = datetime.now(UTC)
-    utc_time = utc_now.time()
-
-    # Calculate difference in minutes
-    user_minutes = user_time.hour * 60 + user_time.minute
-    utc_minutes = utc_time.hour * 60 + utc_time.minute
-
-    # Calculate offset (can be negative if user is behind UTC)
-    offset_minutes = user_minutes - utc_minutes
-
-    # Handle day wrap-around (e.g., user is 23:00, UTC is 01:00)
-    if offset_minutes > 12 * 60:  # More than 12 hours ahead
-        offset_minutes -= 24 * 60  # Subtract 24 hours
-    elif offset_minutes < -12 * 60:  # More than 12 hours behind
-        offset_minutes += 24 * 60  # Add 24 hours
-
-    # Convert to hours (round to nearest hour)
-    offset_hours = round(offset_minutes / 60)
-
-    # Format timezone string
-    if offset_hours >= 0:
-        return f"UTC+{offset_hours}"
+    language = "English" if settings.language == "en" else "Русский"
+    quiet_hours = None
+    if settings.quiet_hours:
+        quiet_hours = f"{settings.quiet_hours_start.strftime('%H:%M')} - {settings.quiet_hours_end.strftime('%H:%M')}"
     else:
-        return f"UTC{offset_hours}"  # Negative sign is already in the number
+        quiet_hours = "Disabled" if lang == "en" else "Отключено"
+
+    daily_plan = None
+    if settings.daily_plans_time:
+        daily_plan = f"{settings.daily_plans_time.strftime('%H:%M')}"
+    else:
+        daily_plan = "Disabled" if lang == "en" else "Отключено"
+
+    return t(
+        "settings.title",
+        timezone=settings.timezone,
+        language=language,
+        quiet_hours=quiet_hours,
+        daily_plan=daily_plan,
+        lang=lang,
+    )
+
+
+async def get_quiet_hours(user_id: int, store: Store, lang: str) -> str:
+    settings = await store.SettingsService.get_by_user_id(user_id)
+    if settings is None or not settings.quiet_hours:
+        return "Disabled" if lang == "en" else "Отключено"
+
+    return f"{settings.quiet_hours_start.strftime('%H:%M')} - {settings.quiet_hours_end.strftime('%H:%M')}"
 
 
 @router.callback_query(F.data == "menu_settings")
-async def open_settings_menu(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
+@log_action("User opened settings menu")
+async def open_settings_menu(query: CallbackQuery, state: FSMContext, store: Store, lang: str, **kwargs) -> None:
     """Open settings menu."""
-    user_id = query.from_user.id
-    logger.info(f"User {user_id} opened settings menu")
-
     await state.set_state(SettingsStates.in_settings)
-
     if query.message and isinstance(query.message, Message):
-        await query.message.edit_text(
-            t("settings.title", lang=lang),
+        await edit_message(
+            query.message,
+            state,
+            await get_settings_title(query.from_user.id, store, lang),
+            settings_menu_inline(lang=lang),
             parse_mode="HTML",
-            reply_markup=get_settings_menu_inline(lang=lang),
         )
 
 
 @router.callback_query(F.data == "settings_timezone", SettingsStates.in_settings)
-async def settings_timezone(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
+@log_action("User is editing timezone")
+async def settings_timezone(
+    query: CallbackQuery, state: FSMContext, store: Store, lang: str, timezone: str, **kwargs
+) -> None:
     """Handle timezone setting - ask user for current time."""
-    user_id = query.from_user.id
-    logger.info(f"User {user_id} is editing timezone")
-
+    if query.message is None or not isinstance(query.message, Message):
+        logger.error("Query message is None or not a Message", extra={"query": query})
+        return
     await state.set_state(SettingsStates.waiting_for_time)
-    await query.answer(t("settings.timezone.selected", lang=lang))
-
-    if query.message and isinstance(query.message, Message):
-        # Get current timezone from settings
-        settings_service = store.SettingsService
-        settings = await settings_service.get_by_user_id(user_id)
-        current_timezone = settings.timezone if settings else "UTC+3"
-
-        text = t("settings.timezone.ask_time", lang=lang, timezone=current_timezone)
-        await query.message.edit_text(
-            text,
-            parse_mode="HTML",
-            reply_markup=get_back_button("menu_settings", lang=lang),
-        )
+    await edit_message(
+        query.message,
+        state,
+        t("settings.timezone.ask_time", lang=lang, timezone=timezone),
+        back_button("menu_settings", lang=lang),
+        parse_mode="HTML",
+    )
 
 
 @router.message(SettingsStates.waiting_for_time)
@@ -123,67 +101,79 @@ async def process_timezone_time(message: Message, state: FSMContext, store: Stor
     if message.from_user is None:
         return
 
-    user_id = message.from_user.id
+    text = message.text
 
-    if message.text is None:
-        await message.answer(t("settings.timezone.time_format_error", lang=lang))
+    # delete user message
+    await message.delete()
+    # get last bot message from state
+    last_message = await get_last_message(state)
+
+    if text is None:
+        text = "nothing" if lang == "en" else "ничего"
+
+    # validate time format
+    if not is_valid_time_hhmm(text):
+        await edit_message(
+            last_message,
+            state,
+            t(
+                "settings.timezone.time_format_error",
+                lang=lang,
+                user_input=text,
+            ),
+            back_button("menu_settings", lang=lang),
+            parse_mode="HTML",
+        )
         return
 
-    time_str = message.text.strip()
+    # detect timezone from user's text
+    timezone = detect_timezone_from_local_time(text)
 
-    if not is_valid_time(time_str):
-        await message.answer(t("settings.timezone.time_format_error", lang=lang))
-        return
-
-    # Detect timezone from user's time
-    detected_timezone = detect_timezone_from_time(time_str)
-
-    logger.info(f"User {user_id} entered time {time_str}, detected timezone: {detected_timezone}")
-
-    # Update timezone in settings
+    # update timezone in settings
     settings_service = store.SettingsService
-    await settings_service.update_by_user_id(user_id, timezone=detected_timezone)
+    await settings_service.update_by_user_id(message.from_user.id, timezone=timezone)
 
-    # Return to settings menu
+    # show success message
     await state.set_state(SettingsStates.in_settings)
-
-    # Confirm timezone update
-    success_text = t("settings.timezone.updated", lang=lang, timezone=detected_timezone)
-    await message.answer(
-        success_text,
+    await edit_message(
+        last_message,
+        state,
+        t("settings.timezone.updated", lang=lang, timezone=timezone),
+        back_button("menu_settings", lang=lang),
         parse_mode="HTML",
-        reply_markup=get_settings_menu_inline(lang=lang),
     )
 
 
 @router.callback_query(F.data == "settings_language", SettingsStates.in_settings)
-async def settings_language(query: CallbackQuery, state: FSMContext, lang: str) -> None:
+@log_action("User is editing language")
+async def settings_language(query: CallbackQuery, state: FSMContext, lang: str, **kwargs) -> None:
     """Handle language setting."""
-    user_id = query.from_user.id
-    logger.info(f"User {user_id} is editing language")
 
     await state.set_state(SettingsStates.editing_language)
-    await query.answer(t("settings.language.selected", lang=lang))
 
-    if query.message and isinstance(query.message, Message):
-        text = (
-            f"{t('settings.language.title', lang=lang)}\n\n"
-            f"{t('settings.language.current', lang=lang)}\n\n"
-            f"<i>{t('settings.language.available', lang=lang)}</i>"
-        )
-        await query.message.edit_text(
-            text,
-            parse_mode="HTML",
-            reply_markup=get_language_menu_inline(lang=lang),
-        )
+    text = (
+        f"{t('settings.language.title', lang=lang)}\n\n"
+        f"{t('settings.language.current', lang=lang)}\n\n"
+        f"<i>{t('settings.language.available', lang=lang)}</i>"
+    )
+
+    if query.message is None or not isinstance(query.message, Message):
+        logger.error("Query message is None or not a Message", extra={"query": query})
+        return
+
+    await edit_message(
+        query.message,
+        state,
+        text,
+        language_menu_inline(lang=lang),
+        parse_mode="HTML",
+    )
 
 
 @router.callback_query(F.data == "language_en", SettingsStates.editing_language)
 async def language_en(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
     """Handle language change to English."""
     user_id = query.from_user.id
-    logger.info(f"User {user_id} is changing language to English")
-
     # Update language in settings
     settings_service = store.SettingsService
     await settings_service.update_by_user_id(user_id, language="en")
@@ -191,24 +181,23 @@ async def language_en(query: CallbackQuery, state: FSMContext, store: Store, lan
     # Return to settings menu
     await state.set_state(SettingsStates.in_settings)
 
-    # Show popup notification
-    await query.answer(t("settings.language.changed", lang="en"))
+    if query.message is None or not isinstance(query.message, Message):
+        logger.error("Query message is None or not a Message", extra={"query": query})
+        return
 
-    # Update message with new language
-    if query.message and isinstance(query.message, Message):
-        await query.message.edit_text(
-            t("settings.title", lang="en"),
-            parse_mode="HTML",
-            reply_markup=get_settings_menu_inline(lang="en"),
-        )
+    await edit_message(
+        query.message,
+        state,
+        t("settings.language.changed", lang="en"),
+        back_button("menu_settings", lang="en"),
+        parse_mode="HTML",
+    )
 
 
 @router.callback_query(F.data == "language_ru", SettingsStates.editing_language)
 async def language_ru(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
     """Handle language change to Russian."""
     user_id = query.from_user.id
-    logger.info(f"User {user_id} is changing language to Russian")
-
     # Update language in settings
     settings_service = store.SettingsService
     await settings_service.update_by_user_id(user_id, language="ru")
@@ -216,38 +205,215 @@ async def language_ru(query: CallbackQuery, state: FSMContext, store: Store, lan
     # Return to settings menu
     await state.set_state(SettingsStates.in_settings)
 
-    # Show popup notification
-    await query.answer(t("settings.language.changed", lang="ru"))
+    if query.message is None or not isinstance(query.message, Message):
+        logger.error("Query message is None or not a Message", extra={"query": query})
+        return
 
-    # Update message with new language
-    if query.message and isinstance(query.message, Message):
-        await query.message.edit_text(
-            t("settings.title", lang="ru"),
-            parse_mode="HTML",
-            reply_markup=get_settings_menu_inline(lang="ru"),
-        )
+    await edit_message(
+        query.message,
+        state,
+        t("settings.language.changed", lang="ru"),
+        back_button("menu_settings", lang="ru"),
+        parse_mode="HTML",
+    )
 
 
 @router.callback_query(F.data == "settings_quiet_hours", SettingsStates.in_settings)
-async def settings_quiet_hours(query: CallbackQuery, state: FSMContext, lang: str) -> None:
+@log_action("User is editing quiet hours")
+async def settings_quiet_hours(query: CallbackQuery, state: FSMContext, store: Store, lang: str, **kwargs) -> None:
     """Handle quiet hours setting."""
+
+    await state.set_state(SettingsStates.in_quiet_hours_menu)
+
+    if query.message is None or not isinstance(query.message, Message):
+        logger.error("Query message is None or not a Message", extra={"query": query})
+        return
+
+    quiet_hours = await get_quiet_hours(query.from_user.id, store, lang)
+    text = (
+        f"{t('settings.quiet.hours.title', lang=lang)}\n\n"
+        f"{t('settings.quiet.hours.current', lang=lang, quiet_hours=quiet_hours)}\n\n"
+        f"<i>{t('settings.quiet.hours.description', lang=lang)}</i>"
+    )
+    await edit_message(
+        query.message,
+        state,
+        text,
+        quiet_hours_menu_inline(lang=lang),
+        parse_mode="HTML",
+    )
+
+
+@router.callback_query(F.data == "enable_disable_quiet_hours", SettingsStates.in_quiet_hours_menu)
+async def enable_disable_quiet_hours(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
+    """Handle enabling/disabling quiet hours."""
     user_id = query.from_user.id
-    logger.info(f"User {user_id} is editing quiet hours")
+    if query.message is None or not isinstance(query.message, Message):
+        logger.error("Query message is None or not a Message", extra={"query": query})
+        return
 
-    await state.set_state(SettingsStates.editing_quiet_hours)
-    await query.answer(t("settings.quiet_hours.selected", lang=lang))
+    settings_service = store.SettingsService
+    settings = await settings_service.get_by_user_id(user_id)
+    if settings is None:
+        logger.error("Settings not found", extra={"user_id": user_id})
+        return
 
-    if query.message and isinstance(query.message, Message):
-        text = (
-            f"{t('settings.quiet_hours.title', lang=lang)}\n\n"
-            f"{t('settings.quiet_hours.current', lang=lang)}\n\n"
-            f"<i>{t('settings.quiet_hours.description', lang=lang)}</i>"
-        )
-        await query.message.edit_text(
+    settings = await settings_service.update_by_user_id(user_id, quiet_hours=not settings.quiet_hours)
+
+    text = None
+    if settings.quiet_hours:
+        text = t("settings.quiet.hours.enabled", lang=lang)
+    else:
+        text = t("settings.quiet.hours.disabled", lang=lang)
+
+    await edit_message(
+        query.message,
+        state,
+        text,
+        back_button("menu_settings", lang=lang),
+        parse_mode="HTML",
+    )
+
+
+@router.callback_query(F.data == "set_quite_hours", SettingsStates.in_quiet_hours_menu)
+@log_action("User is entering quiet hours")
+async def set_quite_hours(query: CallbackQuery, state: FSMContext, store: Store, lang: str, **kwargs) -> None:
+    """Handle setting quiet hours."""
+
+    await state.set_state(SettingsStates.waiting_for_quiet_hours_start)
+
+    if query.message is None or not isinstance(query.message, Message):
+        logger.error("Query message is None or not a Message", extra={"query": query})
+        return
+
+    text = f"{t('settings.quiet.hours.title', lang=lang)}\n\n{t('settings.quiet.hours.start.enter', lang=lang)}\n\n"
+
+    await edit_message(
+        query.message,
+        state,
+        text,
+        back_button("menu_settings", lang=lang),
+        parse_mode="HTML",
+    )
+
+
+@router.message(SettingsStates.waiting_for_quiet_hours_start)
+async def process_quiet_hours_start_time(message: Message, state: FSMContext, store: Store, lang: str) -> None:
+    """Process user's quiet hours start time and set quiet hours."""
+    if message.from_user is None:
+        return
+
+    quiet_hours_start_time = message.text
+
+    await message.delete()
+    last_message = await get_last_message(state)
+
+    if quiet_hours_start_time is None:
+        quiet_hours_start_time = "nothing" if lang == "en" else "ничего"
+
+    text = (
+        f"{t('settings.quiet.hours.title', lang=lang)}\n\n"
+        f"{t('settings.quiet.hours.start.enter', lang=lang)}\n\n"
+        f"<i>{t('settings.quiet.hours.format.error', lang=lang, user_input=quiet_hours_start_time)}</i>"
+    )
+    if not is_valid_time_hhmm(quiet_hours_start_time):
+        await edit_message(
+            last_message,
+            state,
             text,
+            back_button("menu_settings", lang=lang),
             parse_mode="HTML",
-            reply_markup=get_quiet_hours_menu_inline(lang=lang),
         )
+        return
+
+    await state.update_data(quiet_hours_start=quiet_hours_start_time)
+    await state.set_state(SettingsStates.waiting_for_quiet_hours_end)
+
+    text = (
+        f"{t('settings.quiet.hours.title', lang=lang)}\n\n"
+        f"{t('settings.quiet.hours.start.entered', lang=lang, quiet_start=quiet_hours_start_time)}\n\n"
+        f"{t('settings.quiet.hours.end.enter', lang=lang)}"
+    )
+    await edit_message(
+        last_message,
+        state,
+        text,
+        back_button("menu_settings", lang=lang),
+        parse_mode="HTML",
+    )
+
+
+@router.message(SettingsStates.waiting_for_quiet_hours_end)
+async def process_quiet_hours_end(message: Message, state: FSMContext, store: Store, lang: str) -> None:
+    """Process user's quiet hours end time and set quiet hours."""
+    if message.from_user is None:
+        return
+
+    quiet_hours_end = message.text
+
+    await message.delete()
+    last_message = await get_last_message(state)
+    if quiet_hours_end is None:
+        quiet_hours_end = "nothing" if lang == "en" else "ничего"
+
+    quiet_hours_start = (await state.get_data()).get("quiet_hours_start")
+    if quiet_hours_start is None:
+        logger.error("Quiet hours start time is not set", extra={"state": await state.get_data()})
+        return
+
+    text = (
+        f"{t('settings.quiet.hours.title', lang=lang)}\n\n"
+        f"{t('settings.quiet.hours.start.entered', lang=lang, quiet_start=quiet_hours_start)}\n\n"
+        f"{t('settings.quiet.hours.end.enter', lang=lang)}\n\n"
+        f"<i>{t('settings.quiet.hours.format.error', lang=lang, user_input=quiet_hours_end)}</i>"
+    )
+    if not is_valid_time_hhmm(quiet_hours_end):
+        await edit_message(
+            last_message,
+            state,
+            text,
+            back_button("menu_settings", lang=lang),
+            parse_mode="HTML",
+        )
+        return
+
+    await state.update_data(quiet_hours_end=quiet_hours_end)
+    await state.set_state(SettingsStates.in_settings)
+    text = (
+        f"{t('settings.quiet.hours.title', lang=lang)}\n\n"
+        f"<i>{t('settings.quiet.hours.accept.reject', lang=lang, quiet_start=quiet_hours_start, quiet_end=quiet_hours_end)}</i>"  # noqa: E501
+    )
+    await edit_message(
+        last_message,
+        state,
+        text,
+        quiet_hours_accept_reject_inline(lang=lang),
+        parse_mode="HTML",
+    )
+
+
+@router.callback_query(F.data == "accept_quiet_hours", SettingsStates.in_settings)
+async def accept_quiet_hours(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
+    """Handle accepting quiet hours."""
+    user_id = query.from_user.id
+    if query.message is None or not isinstance(query.message, Message):
+        logger.error("Query message is None or not a Message", extra={"query": query})
+        return
+
+    quiet_hours_start = (await state.get_data()).get("quiet_hours_start")
+    quiet_hours_end = (await state.get_data()).get("quiet_hours_end")
+
+    settings_service = store.SettingsService
+    await settings_service.update_by_user_id(
+        user_id, quiet_hours=True, quiet_hours_start=quiet_hours_start, quiet_hours_end=quiet_hours_end
+    )
+    await state.set_state(SettingsStates.in_settings)
+    await edit_message(
+        query.message,
+        state,
+        t("settings.quiet.hours.accepted", lang=lang),
+        back_button("menu_settings", lang=lang),
+    )
 
 
 @router.callback_query(F.data == "settings_daily_plans_time", SettingsStates.in_settings)
@@ -268,5 +434,5 @@ async def settings_daily_plans_time(query: CallbackQuery, state: FSMContext, lan
         await query.message.edit_text(
             text,
             parse_mode="HTML",
-            reply_markup=get_daily_plan_time_menu_inline(lang=lang),
+            reply_markup=daily_plan_time_menu_inline(lang=lang),
         )

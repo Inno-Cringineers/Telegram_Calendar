@@ -4,10 +4,10 @@ from aiogram.types import CallbackQuery
 
 from i18n.strings import t
 from keyboards.inline import (
+    back_button,
     create_calendar,
-    get_back_button,
-    get_events_create_inline,
-    get_events_menu_inline,
+    events_create_inline,
+    events_menu_inline,
 )
 from logger.logger import logger
 from states.states import EventsMenuStates
@@ -27,7 +27,7 @@ async def open_events_menu(query: CallbackQuery, state: FSMContext, lang: str) -
         await query.message.edit_text(
             t("events.title", lang=lang),
             parse_mode="HTML",
-            reply_markup=get_events_menu_inline(lang=lang),
+            reply_markup=events_menu_inline(lang=lang),
         )
 
 
@@ -49,7 +49,7 @@ async def events_import(query: CallbackQuery, state: FSMContext, lang: str) -> N
         await query.message.edit_text(
             text,
             parse_mode="HTML",
-            reply_markup=get_back_button("menu_events", lang=lang),
+            reply_markup=back_button("menu_events", lang=lang),
         )
 
 
@@ -71,7 +71,7 @@ async def events_export(query: CallbackQuery, state: FSMContext, lang: str) -> N
         await query.message.edit_text(
             text,
             parse_mode="HTML",
-            reply_markup=get_back_button("menu_events", lang=lang),
+            reply_markup=back_button("menu_events", lang=lang),
         )
 
 
@@ -89,7 +89,7 @@ async def events_create(query: CallbackQuery, state: FSMContext, lang: str) -> N
         await query.message.edit_text(
             text,
             parse_mode="HTML",
-            reply_markup=get_events_create_inline(lang=lang),
+            reply_markup=events_create_inline(lang=lang),
         )
 
 

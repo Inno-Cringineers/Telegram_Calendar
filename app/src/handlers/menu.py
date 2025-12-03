@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from i18n.strings import t
-from keyboards.inline import get_main_menu_inline
+from keyboards.inline import main_menu_inline
 from logger.logger import logger
 from states.states import MainMenuStates
 
@@ -24,7 +24,7 @@ async def cmd_menu(message: Message, state: FSMContext, lang: str) -> None:
     await message.answer(
         welcome_text,
         parse_mode="HTML",
-        reply_markup=get_main_menu_inline(lang=lang),
+        reply_markup=main_menu_inline(lang=lang),
     )
 
 
@@ -44,7 +44,7 @@ async def back_to_main(query: CallbackQuery, state: FSMContext, lang: str) -> No
         await query.message.edit_text(
             welcome_text,
             parse_mode="HTML",
-            reply_markup=get_main_menu_inline(lang=lang),
+            reply_markup=main_menu_inline(lang=lang),
         )
     else:
         await query.answer(t("menu.updated", lang=lang))

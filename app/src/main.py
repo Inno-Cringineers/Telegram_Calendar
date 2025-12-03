@@ -82,6 +82,7 @@ async def main() -> None:
 
     # TODO: Add graceful shutdown
     # TODO: setup sync service
+    # TODO: states in redis
 
 
 if __name__ == "__main__":

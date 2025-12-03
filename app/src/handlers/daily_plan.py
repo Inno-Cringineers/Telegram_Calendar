@@ -3,7 +3,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
 from i18n.strings import t
-from keyboards.inline import get_back_button, get_notification_inline
+from keyboards.inline import back_button, get_notification_inline
 from logger.logger import logger
 
 router = Router()
@@ -14,7 +14,6 @@ async def get_daily_plan(query: CallbackQuery, state: FSMContext, lang: str) -> 
     """Send daily plan to user."""
     user_id = query.from_user.id
     logger.info(f"User {user_id} requested daily plan")
-
 
     await query.answer(t("daily_plan.generating", lang=lang))
 
@@ -86,5 +85,5 @@ source: Personal calendar
     if query.message and hasattr(query.message, "answer"):
         await query.message.answer(
             t("daily_plan.end", lang=lang),
-            reply_markup=get_back_button("back_to_main", lang=lang),
+            reply_markup=back_button("back_to_main", lang=lang),
         )

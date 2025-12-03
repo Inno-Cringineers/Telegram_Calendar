@@ -7,10 +7,10 @@ from aiogram.types import CallbackQuery, Message
 
 from i18n.strings import t
 from keyboards.inline import (
-    get_back_button,
-    get_cancel_keyboard,
-    get_event_confirmation_inline,
-    get_skip_keyboard,
+    back_button,
+    cancel_inline,
+    event_confirmation_inline,
+    skip_inline,
 )
 from logger.logger import logger
 from states.states import CreateEventStates, EventsMenuStates
@@ -46,13 +46,12 @@ async def process_create_new_event_callback(query: CallbackQuery, state: FSMCont
     user_id = query.from_user.id
     logger.info(f"User {user_name} (ID: {user_id}) creating event")
 
-
     await state.set_state(CreateEventStates.waiting_for_title)
 
     if isinstance(query.message, Message):
         await query.message.edit_text(
             t("create_event.enter_title", lang=lang),
-            reply_markup=get_cancel_keyboard("events_cancel", lang=lang),
+            reply_markup=cancel_inline("events_cancel", lang=lang),
         )
 
 
@@ -64,7 +63,7 @@ async def cancel_event_creation(query: CallbackQuery, state: FSMContext, lang: s
     if isinstance(query.message, Message):
         await query.message.edit_text(
             t("create_event.cancelled", lang=lang),
-            reply_markup=get_back_button("menu_events", lang=lang),
+            reply_markup=back_button("menu_events", lang=lang),
         )
 
 
@@ -86,7 +85,7 @@ async def process_event_title(message: Message, state: FSMContext, lang: str) ->
 
     await message.answer(
         t("create_event.enter_description", lang=lang),
-        reply_markup=get_skip_keyboard(skip_callback="skip_description", cancel_callback="events_cancel", lang=lang),
+        reply_markup=skip_inline(skip_callback="skip_description", cancel_callback="events_cancel", lang=lang),
     )
 
 
@@ -101,7 +100,7 @@ async def process_event_description(message: Message, state: FSMContext, lang: s
     await state.set_state(CreateEventStates.waiting_for_start_date)
     await message.answer(
         t("create_event.enter_date", lang=lang),
-        reply_markup=get_cancel_keyboard("events_cancel", lang=lang),
+        reply_markup=cancel_inline("events_cancel", lang=lang),
     )
 
 
@@ -115,7 +114,7 @@ async def skip_event_description(query: CallbackQuery, state: FSMContext, lang: 
     if isinstance(query.message, Message):
         await query.message.edit_text(
             t("create_event.enter_date", lang=lang),
-            reply_markup=get_cancel_keyboard("events_cancel", lang=lang),
+            reply_markup=cancel_inline("events_cancel", lang=lang),
         )
 
 
@@ -126,7 +125,7 @@ async def process_event_date(message: Message, state: FSMContext, lang: str) -> 
     if message.text is None:
         await message.answer(
             t("create_event.date_format_error", lang=lang),
-            reply_markup=get_cancel_keyboard("events_cancel", lang=lang),
+            reply_markup=cancel_inline("events_cancel", lang=lang),
         )
         return
 
@@ -135,7 +134,7 @@ async def process_event_date(message: Message, state: FSMContext, lang: str) -> 
     if not is_valid_date(date_str):
         await message.answer(
             t("create_event.date_format_error", lang=lang),
-            reply_markup=get_cancel_keyboard("events_cancel", lang=lang),
+            reply_markup=cancel_inline("events_cancel", lang=lang),
         )
         return
 
@@ -143,7 +142,7 @@ async def process_event_date(message: Message, state: FSMContext, lang: str) -> 
     await state.set_state(CreateEventStates.waiting_for_start_time)
     await message.answer(
         t("create_event.enter_time", lang=lang),
-        reply_markup=get_cancel_keyboard("events_cancel", lang=lang),
+        reply_markup=cancel_inline("events_cancel", lang=lang),
     )
 
 
@@ -181,7 +180,7 @@ async def process_event_time(message: Message, state: FSMContext, lang: str) -> 
     await message.answer(
         preview_text,
         parse_mode="HTML",
-        reply_markup=get_event_confirmation_inline(lang=lang),
+        reply_markup=event_confirmation_inline(lang=lang),
     )
 
 
@@ -206,6 +205,6 @@ async def confirm_event(query: CallbackQuery, state: FSMContext, lang: str) -> N
         await query.message.edit_text(
             t("create_event.success", lang=lang),
             parse_mode="HTML",
-            reply_markup=get_back_button("menu_events", lang=lang),
+            reply_markup=back_button("menu_events", lang=lang),
         )
     await state.clear()

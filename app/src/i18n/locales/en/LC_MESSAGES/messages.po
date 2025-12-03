@@ -1,5 +1,4 @@
 # Translation file for EN
-# Copyright (C) 2024
 msgid ""
 msgstr ""
 "Language: en\n"
@@ -67,6 +66,9 @@ msgstr "🔇 Quiet Hours"
 
 msgid "btn_quiet_hours_enter"
 msgstr "enter quiet hours"
+
+msgid "btn_quiet_hours_enable"
+msgstr "enable/disable"
 
 msgid "btn_reject"
 msgstr "❌ Reject"
@@ -260,16 +262,43 @@ msgid "settings_language_title"
 msgstr "🇬🇧 <b>Language</b>"
 
 msgid "settings_quiet_hours_current"
-msgstr "Current quiet hours: 22:00 - 08:00 (Mocked)"
+msgstr "Current quiet hours: <b>{quiet_hours}</b>"
 
 msgid "settings_quiet_hours_description"
-msgstr "Feature is under development. No notifications will be sent during quiet hours."
+msgstr "No notifications will be sent during quiet hours."
 
 msgid "settings_quiet_hours_selected"
 msgstr "✅ Quiet hours setting selected"
 
 msgid "settings_quiet_hours_title"
 msgstr "🔇 <b>Quiet Hours</b>"
+
+msgid "settings_quiet_hours_enabled"
+msgstr "✅ Quiet hours enabled"
+
+msgid "settings_quiet_hours_disabled"
+msgstr "❌ Quiet hours disabled"
+
+msgid "settings_quiet_hours_start_enter"
+msgstr "Enter quiet hours start time in HH:MM format (e.g., 02:30)"
+
+msgid "settings_quiet_hours_format_error"
+msgstr "❌ Invalid time format.\n\nYou entered: <b>{user_input}</b>\n"
+
+msgid "settings_quiet_hours_start_entered"
+msgstr "You entered quiet hours start time:\n<b>{quiet_start}</b>"
+
+msgid "settings_quiet_hours_end_entered"
+msgstr "You entered quiet hours end time:\n<b>{quiet_end}</b>"
+
+msgid "settings_quiet_hours_end_enter"
+msgstr "Enter quiet hours end time in HH:MM format (e.g., 06:30)"
+
+msgid "settings_quiet_hours_accept_reject"
+msgstr "Quiet hours time will be changed to:\n<b>{quiet_start} - {quiet_end}</b>"
+
+msgid "settings_quiet_hours_accepted"
+msgstr "✅ Quiet hours changed"
 
 msgid "settings_timezone_current"
 msgstr "Current timezone: UTC+2 (Mocked)"
@@ -287,17 +316,17 @@ msgid "settings_timezone_title"
 msgstr "🌍 Timezone"
 
 msgid "settings_timezone_ask_time"
-msgstr "🌍 <b>Timezone Setting</b>\n\nYour current timezone: {timezone}\n\nPlease enter your current local time in HH:MM format (e.g., 14:30).\n\nI will automatically detect your timezone based on the difference between your local time and UTC."
+msgstr "🌍 <b>Timezone Setting</b>\n\nYour current timezone: <b>{timezone}</b>\n\nPlease enter your current local time in <b>HH:MM</b> format (e.g., 14:30).\n\nI will automatically detect your timezone based on the difference between your local time and UTC."
 
 msgid "settings_timezone_time_format_error"
-msgstr "❌ Invalid time format. Please enter time in HH:MM format (e.g., 14:30)."
+msgstr "🌍 <b>Timezone Setting</b>\n\n\n❌ Invalid time format.\n\nYou entered: <b>{user_input}</b>\n\nPlease enter time in HH:MM format (e.g., 14:30)."
 
 msgid "settings_timezone_updated"
 msgstr "✅ Timezone updated successfully to <b>{timezone}</b>"
 
 msgid "settings_title"
-msgstr "⚙️ <b>Settings</b>\n\nChoose a setting to modify:"
+msgstr "⚙️ <b>Settings</b>\n\n<u>Your current settings:</u>\n\n🌍 Timezone: <b>{timezone}</b>\n\n🇬🇧 Language: <b>{language}</b>\n\n🔇 Quiet hours: <b>{quiet_hours}</b>\n\n⏰ Daily plan time: <b>{daily_plan}</b>\n\n"
 
 msgid "start_welcome"
-msgstr "👋 <b>Welcome to the Telegram Calendar reminder, {user_name}!</b>\n\nI can help you manage your events and reminders, including from external calendars.\n\n📋 <b>Commands:</b>\n/start - Show this dialog\n/help - Get help\n/menu - Open main menu\n\n🎯 <b>Main functions:</b>\n• 📅 Viewing events\n• ➕ Creating events\n• ✏️ Editing events\n• 🗑️ Deleting events\n• 🔗 Importing external calendars (google, outlook, etc.)\n• 📤 Exporting events\n• ⏰ Reminders for events\n• 📋 Daily plans"
+msgstr "👋 <b>Welcome to the Personal Calendar Reminder bot, {user_name}!</b>\n\nI can manage your events, send reminders about upcoming ones, and synchronize with external calendars.\n\n📋 <b>Commands:</b>\n/start - Show this dialog\n/help - Get help\n\n🎯 <b>Main features:</b>\n• 📅 View events\n• ➕ Create events\n• ✏️ Edit and delete events\n• 🔗 Import external calendars (Google, Outlook, etc.)\n• ⏰ Event reminders\n• 📋 Daily plans"
 
