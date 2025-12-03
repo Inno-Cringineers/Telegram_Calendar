@@ -235,16 +235,22 @@ msgid "menu_updated"
 msgstr "Menu updated"
 
 msgid "settings_daily_plans_time_current"
-msgstr "Current time: 09:00 (Mocked)"
+msgstr "Current daily plan time: {daily_plan}"
 
 msgid "settings_daily_plans_time_description"
-msgstr "Feature is under development. Daily plan will be sent at this time every day."
+msgstr "Daily plan will be sent at this time every day."
 
 msgid "settings_daily_plans_time_selected"
 msgstr "✅ Daily plans time setting selected"
 
 msgid "settings_daily_plans_time_title"
 msgstr "⏰ <b>Daily plans Time</b>"
+
+msgid "settings_daily_plans_time_enter"
+msgstr "Enter daily plans time in HH:MM format (e.g., 09:30)"
+
+msgid "settings_daily_plans_time_format_error"
+msgstr "❌ Invalid time format.\n\nYou entered: <b>{user_input}</b>\n"
 
 msgid "settings_language_available"
 msgstr "Available languages: English, Русский"
@@ -299,6 +305,15 @@ msgstr "Quiet hours time will be changed to:\n<b>{quiet_start} - {quiet_end}</b>
 
 msgid "settings_quiet_hours_accepted"
 msgstr "✅ Quiet hours changed"
+
+msgid "settings_quiet_hours_equal_error"
+msgstr "❌ Start time and end time must not be equal"
+
+msgid "settings_daily_plans_time_accept_reject"
+msgstr "Daily plan time will be changed to:\n<b>{daily_plan}</b>"
+
+msgid "settings_daily_plans_time_accepted"
+msgstr "✅ Daily plan time changed"
 
 msgid "settings_timezone_current"
 msgstr "Current timezone: UTC+2 (Mocked)"

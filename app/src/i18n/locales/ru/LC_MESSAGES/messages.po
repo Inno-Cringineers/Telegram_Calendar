@@ -232,6 +232,13 @@ msgstr "✅ Настройка времени ежедневных планов 
 msgid "settings_daily_plans_time_title"
 msgstr "⏰ <b>Время ежедневных планов</b>"
 
+msgid "settings_daily_plans_time_enter"
+msgstr "Введите время ежедневных планов в HH:MM формате (например, 09:30)"
+
+msgid "settings_daily_plans_time_format_error"
+msgstr "❌ Неверный формат времени.\n\nВы ввели: <b>{user_input}</b>\n"
+
+
 msgid "settings_language_available"
 msgstr "Доступные языки: English, Русский"
 
@@ -259,11 +266,41 @@ msgstr "✅ Тихие часы включены"
 msgid "settings_quiet_hours_disabled"
 msgstr "❌ Тихие часы выключены"
 
+msgid "settings_quiet_hours_start_enter"
+msgstr "Введите время начала тихих часов в HH:MM формате (например, 02:30)"
+
+msgid "settings_quiet_hours_format_error"
+msgstr "❌ Неверный формат времени.\n\nВы ввели: <b>{user_input}</b>\n"
+
+msgid "settings_quiet_hours_start_entered"
+msgstr "Вы ввели время начала тихих часов:\n<b>{quiet_start}</b>"
+
+msgid "settings_quiet_hours_end_entered"
+msgstr "Вы ввели время окончания тихих часов:\n<b>{quiet_end}</b>"
+
+msgid "settings_quiet_hours_end_enter"
+msgstr "Введите время окончания тихих часов в HH:MM формате (например, 06:30)"
+
+msgid "settings_quiet_hours_accept_reject"
+msgstr "Тихие часы будут изменены на:\n<b>{quiet_start} - {quiet_end}</b>"
+
+msgid "settings_quiet_hours_accepted"
+msgstr "✅ Тихие часы изменены"
+
 msgid "settings_quiet_hours_selected"
 msgstr "✅ Настройка тихих часов выбрана"
 
 msgid "settings_quiet_hours_title"
 msgstr "🔇 <b>Тихие часов</b>"
+
+msgid "settings_quiet_hours_equal_error"
+msgstr "❌ Время начала и время окончания не могут быть равны"
+
+msgid "settings_daily_plans_time_accept_reject"
+msgstr "Время ежедневных планов будет изменено на:\n<b>{daily_plan}</b>"
+
+msgid "settings_daily_plans_time_accepted"
+msgstr "✅ Время ежедневных планов изменено"
 
 msgid "settings_timezone_current"
 msgstr "Текущий часовой пояс: UTC+2 (Заглушка)"
@@ -290,7 +327,7 @@ msgid "settings_timezone_updated"
 msgstr "✅ Часовой пояс успешно обновлен на <b>{timezone}</b>"
 
 msgid "settings_title"
-msgstr "⚙️ <b>Настройки</b>\n\n<u>Ваши текущие настройки:</u>\n\n🌍 Часовой пояс: <b>{timezone}</b>\n\n🇷🇺 Язык: <b>{language}</b>\n\n🔇 Период "тихого времени": <b>{quiet_hours}</b>\n\n⏰ Время ежедневного плана: <b>{daily_plan}</b>\n\n"
+msgstr "⚙️ <b>Настройки</b>\n\n<u>Ваши текущие настройки:</u>\n\n🌍 Часовой пояс: <b>{timezone}</b>\n\n🇷🇺 Язык: <b>{language}</b>\n\n🔇 Тихие часы: <b>{quiet_hours}</b>\n\n⏰ Время ежедневного плана: <b>{daily_plan}</b>\n\n"
 
 msgid "start_welcome"
 msgstr "👋 <b>Добро пожаловать в Personal Calendar Reminder bot, {user_name}!</b>\n\nЯ могу управлять вашими событиями, отправлять вам напоминания о приближающихся событиях, синхронизироваться с внешними календарями.\n\n📋 <b>Команды:</b>\n/start - Показать это диалоговое окно\n/help - Получить помощь\n\n🎯 <b>Основные функции:</b>\n• 📅 Просмотр событий\n• ➕ Создание событий\n• ✏️ Редактирование и удаление событий\n• 🔗 Экспорт внешних календарей (google, outlook и т.д.)\n• ⏰ Напоминания о событиях\n• 📋 Ежедневные планы"

@@ -5,7 +5,7 @@ from aiogram.types import CallbackQuery, Message
 from i18n.strings import t
 from keyboards.inline import (
     back_button,
-    daily_plan_time_menu_inline,
+    daily_plans_time_accept_reject_inline,
     language_menu_inline,
     quiet_hours_accept_reject_inline,
     quiet_hours_menu_inline,
@@ -377,6 +377,22 @@ async def process_quiet_hours_end(message: Message, state: FSMContext, store: St
         )
         return
 
+    if quiet_hours_start == quiet_hours_end:
+        text = (
+            f"{t('settings.quiet.hours.title', lang=lang)}\n\n"
+            f"{t('settings.quiet.hours.start.entered', lang=lang, quiet_start=quiet_hours_start)}\n\n"
+            f"{t('settings.quiet.hours.end.enter', lang=lang, quiet_end=quiet_hours_end)}\n\n"
+            f"<i>{t('settings.quiet.hours.equal.error', lang=lang)}</i>"
+        )
+        await edit_message(
+            last_message,
+            state,
+            text,
+            back_button("menu_settings", lang=lang),
+            parse_mode="HTML",
+        )
+        return
+
     await state.update_data(quiet_hours_end=quiet_hours_end)
     await state.set_state(SettingsStates.in_settings)
     text = (
@@ -416,23 +432,101 @@ async def accept_quiet_hours(query: CallbackQuery, state: FSMContext, store: Sto
     )
 
 
+async def get_daily_plan_time(user_id: int, store: Store, lang: str) -> str:
+    settings = await store.SettingsService.get_by_user_id(user_id)
+    if settings is None or settings.daily_plans_time is None:
+        return "Disabled" if lang == "en" else "Отключено"
+
+    return settings.daily_plans_time.strftime("%H:%M")
+
+
 @router.callback_query(F.data == "settings_daily_plans_time", SettingsStates.in_settings)
-async def settings_daily_plans_time(query: CallbackQuery, state: FSMContext, lang: str) -> None:
+@log_action("User is editing daily plans time")
+async def settings_daily_plans_time(query: CallbackQuery, state: FSMContext, store: Store, lang: str, **kwargs) -> None:
     """Handle daily plans time setting."""
-    user_id = query.from_user.id
-    logger.info(f"User {user_id} is editing daily plans time")
-
     await state.set_state(SettingsStates.editing_daily_plans_time)
-    await query.answer(t("settings.daily_plans_time.selected", lang=lang))
 
-    if query.message and isinstance(query.message, Message):
-        text = (
-            f"{t('settings.daily_plans_time.title', lang=lang)}\n\n"
-            f"{t('settings.daily_plans_time.current', lang=lang)}\n\n"
-            f"<i>{t('settings.daily_plans_time.description', lang=lang)}</i>"
-        )
-        await query.message.edit_text(
+    if query.message is None or not isinstance(query.message, Message):
+        logger.error("Query message is None or not a Message", extra={"query": query})
+        return
+
+    daily_plan_time = await get_daily_plan_time(query.from_user.id, store, lang)
+
+    text = (
+        f"{t('settings.daily.plans.time.title', lang=lang)}\n\n"
+        f"{t('settings.daily.plans.time.current', lang=lang, daily_plan=daily_plan_time)}\n\n"
+        f"{t('settings.daily.plans.time.enter', lang=lang)}"
+    )
+
+    await edit_message(
+        query.message,
+        state,
+        text,
+        back_button("menu_settings", lang=lang),
+        parse_mode="HTML",
+    )
+
+
+@router.message(SettingsStates.editing_daily_plans_time)
+async def process_daily_plans_time(message: Message, state: FSMContext, store: Store, lang: str) -> None:
+    """Process user's daily plans time and set daily plans time."""
+    if message.from_user is None:
+        return
+
+    daily_plans_time = message.text
+
+    await message.delete()
+    last_message = await get_last_message(state)
+
+    if daily_plans_time is None:
+        daily_plans_time = "nothing" if lang == "en" else "ничего"
+
+    text = (
+        f"{t('settings.daily.plans.time.title', lang=lang)}\n\n"
+        f"{t('settings.daily.plans.time.enter', lang=lang)}\n\n"
+        f"<i>{t('settings.daily.plans.time.format.error', lang=lang, user_input=daily_plans_time)}</i>"
+    )
+    if not is_valid_time_hhmm(daily_plans_time):
+        await edit_message(
+            last_message,
+            state,
             text,
+            back_button("menu_settings", lang=lang),
             parse_mode="HTML",
-            reply_markup=daily_plan_time_menu_inline(lang=lang),
         )
+        return
+
+    await state.update_data(daily_plans_time=daily_plans_time)
+    await state.set_state(SettingsStates.in_settings)
+    text = (
+        f"{t('settings.daily.plans.time.title', lang=lang)}\n\n"
+        f"<i>{t('settings.daily.plans.time.accept.reject', lang=lang, daily_plan=daily_plans_time)}</i>"
+    )
+    await edit_message(
+        last_message,
+        state,
+        text,
+        daily_plans_time_accept_reject_inline(lang=lang),
+        parse_mode="HTML",
+    )
+
+
+@router.callback_query(F.data == "accept_daily_plans_time", SettingsStates.in_settings)
+async def accept_daily_plans_time(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
+    """Handle accepting daily plans time."""
+    user_id = query.from_user.id
+    if query.message is None or not isinstance(query.message, Message):
+        logger.error("Query message is None or not a Message", extra={"query": query})
+        return
+
+    daily_plans_time = (await state.get_data()).get("daily_plans_time")
+    settings_service = store.SettingsService
+    await settings_service.update_by_user_id(user_id, daily_plans_time=daily_plans_time)
+    await state.set_state(SettingsStates.in_settings)
+    await edit_message(
+        query.message,
+        state,
+        t("settings.daily.plans.time.accepted", lang=lang),
+        back_button("menu_settings", lang=lang),
+        parse_mode="HTML",
+    )

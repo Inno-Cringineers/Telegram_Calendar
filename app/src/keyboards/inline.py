@@ -119,6 +119,15 @@ def daily_plan_time_menu_inline(lang: str = "ru") -> InlineKeyboardMarkup:
     return _mk_markup(buttons)
 
 
+def daily_plans_time_accept_reject_inline(lang: str = "en") -> InlineKeyboardMarkup:
+    """Create daily plans time accept reject inline keyboard."""
+    buttons = [
+        [InlineKeyboardButton(text=t("btn.accept", lang=lang), callback_data="accept_daily_plans_time")],
+        [InlineKeyboardButton(text=t("btn.reject", lang=lang), callback_data="menu_settings")],
+    ]
+    return _mk_markup(buttons)
+
+
 def skip_inline(skip_callback: str, cancel_callback: str, lang: str = "ru") -> InlineKeyboardMarkup:
     """Create skip keyboard inline keyboard."""
     buttons = [
