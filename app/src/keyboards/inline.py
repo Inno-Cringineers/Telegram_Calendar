@@ -110,6 +110,28 @@ def quiet_hours_accept_reject_inline(lang: str = "en") -> InlineKeyboardMarkup:
     return _mk_markup(buttons)
 
 
+def calendar_inline(linked: bool, calendar_id: int, lang: str = "en") -> InlineKeyboardMarkup:
+    """Create calendar inline keyboard."""
+    link_btn = (
+        InlineKeyboardButton(text=t("btn.calendar.unlink", lang=lang), callback_data=f"calendar_unlink:{calendar_id}")
+        if linked
+        else InlineKeyboardButton(text=t("btn.calendar.link", lang=lang), callback_data=f"calendar_link:{calendar_id}")
+    )
+
+    buttons = [
+        [
+            InlineKeyboardButton(
+                text=t("btn.calendar.delete", lang=lang), callback_data=f"calendar_delete:{calendar_id}"
+            ),
+            link_btn,
+            InlineKeyboardButton(
+                text=t("btn.calendar.rename", lang=lang), callback_data=f"calendar_rename:{calendar_id}"
+            ),
+        ]
+    ]
+    return _mk_markup(buttons)
+
+
 def daily_plan_time_menu_inline(lang: str = "ru") -> InlineKeyboardMarkup:
     """Create daily plan time menu inline keyboard."""
     buttons = [

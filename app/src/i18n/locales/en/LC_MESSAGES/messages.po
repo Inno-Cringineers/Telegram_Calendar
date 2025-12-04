@@ -85,8 +85,32 @@ msgstr "🌍 Timezone"
 msgid "btn_view"
 msgstr "🔍 View"
 
+msgid "btn_calendar_unlink"
+msgstr "🔗 Disable"
+
+msgid "btn_calendar_link"
+msgstr "🔗 Enable"
+
+msgid "btn_calendar_delete"
+msgstr "❌ Delete"
+
+msgid "btn_calendar_rename"
+msgstr "✏️ Rename"
+
 msgid "calendar_link_title"
-msgstr "🔗 <b>Link a Calendar</b>\n\nChoose an action:"
+msgstr "🔗 <b>Link a Calendar</b>"
+
+msgid "calendar_link_description"
+msgstr "Here you can view list of linked calendars or link external calendar (like google, outlook, etc.), using ics link"
+
+msgid "calendar_list_title"
+msgstr "📑 Your calendars"
+
+msgid "calendar_list_no_calendars"
+msgstr "❌ You have no linked calendars"
+
+msgid "calendar_message"
+msgstr "📅 Calendar name: {calendar_name}\n\n <a href=\"{link}\">link to ics</a>\n\nSync: {enabled}"
 
 msgid "calendar_list_answer"
 msgstr "📑 Your calendars"

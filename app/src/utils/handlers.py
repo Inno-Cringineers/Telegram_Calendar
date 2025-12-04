@@ -24,6 +24,18 @@ async def save_bot_message(state: FSMContext, msg: Message):
     await state.update_data(last_message=msg)
 
 
+async def delete_saved_messages(bot: Bot, state: FSMContext, chat_id: int):
+    """Delete saved messages from state."""
+    data = await state.get_data()
+    sent = data.get("sent_messages", [])
+    for msg_id in sent:
+        try:
+            await bot.delete_message(chat_id=chat_id, message_id=msg_id)
+        except Exception:
+            logger.error(f"Error deleting message: {msg_id} from chat {chat_id}")
+            continue
+
+
 async def remove_old_keyboards(bot: Bot, state: FSMContext, chat_id: int):
     """Remove old keyboards from chat. Used to clean up messages after state is cleared."""
     data = await state.get_data()
@@ -52,6 +64,16 @@ async def send_clean_message(
     await save_bot_message(state, new_msg)
 
     return new_msg
+
+
+async def send_banch_messages(
+    messages: list[Message], state: FSMContext, text: str, reply_markup=None, parse_mode: str = "HTML"
+):
+    """Send batch of messages to chat. Used to clean up messages after state is cleared."""
+    if message.bot is None:
+        raise ValueError("Bot is not set")
+
+    await remove_old_keyboards(message.bot, state, message.chat.id)
 
 
 async def get_last_message(state: FSMContext) -> Message:

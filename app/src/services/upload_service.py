@@ -55,8 +55,8 @@ class UploadService:
             raise ValueError("File name is None")
 
         # check if file is .ics file
-        if file_name[-4:] != ".ics":
-            raise ValueError("File must be .ics file")
+        # if file_name[-4:] != ".ics":
+        #     raise ValueError("File must be .ics file")
 
         # get file id
         file_id = message.document.file_id

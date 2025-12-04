@@ -59,8 +59,8 @@ class Calendar(Base):
         value = value.strip()
         if not (value.startswith("http://") or value.startswith("https://")):
             raise ValueError("Calendar URL must start with http or https.")
-        if not value.lower().endswith(".ics"):
-            raise ValueError("Calendar URL must link to the .ics file.")
+        # if not value.lower().endswith(".ics"):
+        #     raise ValueError("Calendar URL must link to the .ics file.")
         if len(value) > 255:
             raise ValueError("Calendar URL cannot exceed 255 characters.")
         return value
