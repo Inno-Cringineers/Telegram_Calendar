@@ -23,3 +23,7 @@ watchdog>=3.0.0
 
 # Telegram API client library
 telethon>=1.42.0
+
+# OpenTelemetry
+opentelemetry-distro
+opentelemetry-exporter-otlp>=1.39.0
