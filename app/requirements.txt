@@ -27,3 +27,4 @@ telethon>=1.42.0
 # OpenTelemetry
 opentelemetry-distro
 opentelemetry-exporter-otlp>=1.39.0
+opentelemetry-instrumentation-logging
