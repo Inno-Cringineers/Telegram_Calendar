@@ -3,157 +3,305 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from i18n.strings import t
-from keyboards.inline import back_button, calendar_inline, calendar_menu_inline
+from keyboards.inline import back_button, calendar_inline, calendar_menu_inline, confirm_calendar_inline
 from logger.logger import logger
-from repositories.schemas import CalendarFilter
+from middlewares.settings_middleware import SettingsData
+from repositories.schemas import CalendarUpdateSchema
 from states.states import CalendarLinkingStates
 from store.store import Store
-from utils.handlers import edit_message, log_action, send_clean_message
+from utils.handlers import clean_messages, edit_message, get_last_message_id, get_messages, send_message
 
 router = Router()
 
 
 @router.callback_query(F.data == "menu_link_calendar")
-@log_action("User opened calendar linking menu")
-async def open_calendar_menu(query: CallbackQuery, state: FSMContext, lang: str, **kwargs) -> None:
+async def open_calendar_menu(query: CallbackQuery, state: FSMContext, settings: SettingsData) -> None:
     """Open calendar linking menu."""
     await state.set_state(CalendarLinkingStates.in_calendar_menu)
 
-    if query.message is None or not isinstance(query.message, Message):
-        logger.error("Query message is None or not a Message", extra={"query": query})
-        return
+    await clean_messages(query.bot, query.message.chat.id, state)
 
     await edit_message(
-        query.message,
+        query.bot,
+        query.message.chat.id,
+        query.message.message_id,
         state,
-        f"{t('calendar_link_title', lang=lang)}\n\n{t('calendar_link_description', lang=lang)}",
-        calendar_menu_inline(lang=lang),
+        f"{t('calendar_link_title', lang=settings.lang)}\n\n{t('calendar_link_description', lang=settings.lang)}",
+        calendar_menu_inline(lang=settings.lang),
         parse_mode="HTML",
     )
 
 
 @router.callback_query(F.data == "calendar_list", CalendarLinkingStates.in_calendar_menu)
-async def calendar_list(query: CallbackQuery, state: FSMContext, store: Store, lang: str, **kwargs) -> None:
+async def calendar_list(query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData) -> None:
     """Show list of linked calendars."""
-    calendars = await store.CalendarRepository.find(CalendarFilter(user_id=query.from_user.id))  # type: ignore[call-arg]
-
-    # remove local calendars from list
-    calendars = [calendar for calendar in calendars if calendar.url is not None]
-
-    if query.message is None or not isinstance(query.message, Message):
-        logger.error("Query message is None or not a Message", extra={"query": query})
-        return
+    calendars = await store.CalendarService.get_external_calendars_by_user_id(query.from_user.id)
 
     if len(calendars) == 0:
         await edit_message(
-            query.message,
+            query.bot,
+            query.message.chat.id,
+            query.message.message_id,
             state,
-            text=f"{t('calendar_list_title', lang=lang)}\n\n{t('calendar_list_no_calendars', lang=lang)}",
+            text=f"{t('calendar_list_title', lang=settings.lang)}\n\n{t('calendar_list_no_calendars', lang=settings.lang)}",  # noqa: E501
             parse_mode="HTML",
-            reply_markup=back_button("menu_link_calendar", lang=lang),
+            reply_markup=back_button("menu_link_calendar", lang=settings.lang),
         )
         return
 
-    if query.message is None or not isinstance(query.message, Message):
-        logger.error("Query message is None or not a Message", extra={"query": query})
-        return
+    await query.message.delete()
 
-    await edit_message(
-        query.message,
+    await send_message(
+        query.bot,
+        query.message.chat.id,
         state,
-        text=t("calendar_list_title", lang=lang),
+        text=t("calendar_list_title", lang=settings.lang),
         parse_mode="HTML",
         reply_markup=None,
+        delete_keyboard=False,
+        delete_message=True,
     )
 
     for calendar in calendars:
         sync = "✅" if calendar.sync_enabled else "❌"
-        await send_clean_message(
-            query.message,
+        await send_message(
+            query.bot,
+            query.message.chat.id,
             state,
             t(
                 "calendar.message",
-                lang=lang,
+                lang=settings.lang,
                 calendar_name=calendar.name,
-                link=calendar.url,  # type: ignore[arg-type]
+                link=calendar.url,
                 enabled=sync,
             ),
             parse_mode="HTML",
-            reply_markup=calendar_inline(linked=calendar.sync_enabled, calendar_id=calendar.id, lang=lang),  # type: ignore[arg-type]
+            reply_markup=calendar_inline(linked=calendar.sync_enabled, calendar_id=calendar.id, lang=settings.lang),
+            delete_keyboard=False,
+            delete_message=True,
+            extra_data={"calendar_id": calendar.id},
         )
 
+    await send_message(
+        query.bot,
+        query.message.chat.id,
+        state,
+        text=t("calendar_list_end", lang=settings.lang),
+        parse_mode="HTML",
+        reply_markup=back_button("menu_link_calendar", lang=settings.lang),
+        delete_keyboard=True,
+        delete_message=False,
+    )
 
-# Каждое сообщение сохранять в state
-# Для каждого сообщения устанавливать флаг "delete keyboard", "delete message"
-# Затем когда нужно, пробегаться по сообщениям и удалять те, что помечены delete_message, удалять клавиатуры для тех, кто "delete_keyboard"
-#
+
+@router.callback_query(F.data.startswith("calendar_unlink:"), CalendarLinkingStates.in_calendar_menu)
+async def calendar_unlink(query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData) -> None:
+    """Unlink a calendar."""
+    if query.data is None or len(query.data) == 0:
+        logger.error("Query data is None or empty", extra={"query": query})
+        return
+
+    calendar_id = int(query.data.split(":")[1])
+
+    calendar = await store.CalendarService.get_by_id(calendar_id)
+    if calendar is None:
+        logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
+        return
+
+    calendar = await store.CalendarService.update(
+        calendar_id,
+        data=CalendarUpdateSchema(sync_enabled=not calendar.sync_enabled),
+    )
+
+    messages = await get_messages(state)
+
+    message = None
+    for msg in messages:
+        if msg.get("extra_data", {}) is None:
+            continue
+        if msg.get("extra_data", {}).get("calendar_id") == calendar_id:
+            message = msg
+            break
+
+    if message is None or message.get("message_id") is None:
+        logger.error("Message is not found", extra={"calendar_id": calendar_id})
+        return
+
+    sync = "✅" if calendar.sync_enabled else "❌"
+    await edit_message(
+        query.bot,
+        query.message.chat.id,
+        message["message_id"],
+        state,
+        text=t(
+            "calendar.message",
+            lang=settings.lang,
+            calendar_name=calendar.name,
+            link=calendar.url,
+            enabled=sync,
+        ),
+        parse_mode="HTML",
+        reply_markup=calendar_inline(linked=calendar.sync_enabled, calendar_id=calendar_id, lang=settings.lang),
+    )
+
+
+@router.callback_query(F.data.startswith("calendar_delete:"), CalendarLinkingStates.in_calendar_menu)
+async def calendar_delete(query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData) -> None:
+    """Delete a calendar."""
+    if query.data is None or len(query.data) == 0:
+        logger.error("Query data is None or empty", extra={"query": query})
+        return
+
+    calendar_id = int(query.data.split(":")[1])
+
+    messages = await get_messages(state)
+
+    message = None
+    for msg in messages:
+        if msg.get("extra_data", {}) is None:
+            continue
+        if msg.get("extra_data", {}).get("calendar_id") == calendar_id:
+            message = msg
+            break
+
+    if message is None or message.get("message_id") is None:
+        logger.error("Message is not found", extra={"calendar_id": calendar_id})
+        return
+
+    await store.CalendarService.delete(calendar_id)
+    await query.bot.delete_message(chat_id=query.message.chat.id, message_id=message["message_id"])
+
+
 @router.callback_query(F.data == "calendar_new", CalendarLinkingStates.in_calendar_menu)
-async def calendar_new(query: CallbackQuery, state: FSMContext, lang: str) -> None:
+async def calendar_new(query: CallbackQuery, state: FSMContext, settings: SettingsData) -> None:
     """Link a new calendar."""
-    user_id = query.from_user.id
-    logger.info(f"User {user_id} initiated linking new calendar")
-
     await state.set_state(CalendarLinkingStates.waiting_for_calendar_link)
-    await query.answer(t("calendar.new.answer", lang=lang))
 
-    if query.message and isinstance(query.message, Message):
-        text = (
-            f"{t('calendar.new.title', lang=lang)}\n\n"
-            f"{t('calendar.new.enter_link', lang=lang)}\n\n"
-            f"<i>{t('events.feature_dev', lang=lang)}</i>"
-        )
-        await query.message.edit_text(
-            text,
-            parse_mode="HTML",
-            reply_markup=back_button(lang=lang),
-        )
+    text = f"{t('calendar.new.title', lang=settings.lang)}\n\n{t('calendar.new.enter_link', lang=settings.lang)}\n\n"
+    await edit_message(
+        query.bot,
+        query.message.chat.id,
+        query.message.message_id,
+        state,
+        text=text,
+        parse_mode="HTML",
+        reply_markup=back_button(lang=settings.lang),
+    )
 
 
 @router.message(CalendarLinkingStates.waiting_for_calendar_link)
-async def process_calendar_link(message: Message, state: FSMContext, lang: str) -> None:
+async def process_calendar_link(message: Message, state: FSMContext, settings: SettingsData) -> None:
     """Process calendar link."""
 
-    url = message.text
-    if url is None or len(url) == 0:
-        await message.answer(t("calendar.link.url_empty", lang=lang))
+    last_message_id = await get_last_message_id(state)
+    if last_message_id is None:
+        logger.error("Last message id is not found", extra={"state": state})
         return
 
+    url = message.text
+
+    await message.delete()
+
+    if url is None or len(url) == 0:
+        await edit_message(
+            message.bot,
+            message.chat.id,
+            last_message_id,
+            state,
+            text=(
+                f"{t('calendar.new.title', lang=settings.lang)}\n\n"
+                f"{t('calendar.link.url_empty', lang=settings.lang)}\n\n"
+            ),
+            parse_mode="HTML",
+            reply_markup=back_button(lang=settings.lang),
+        )
+        return
     if len(url) > 255:
-        await message.answer(t("calendar.link.url_too_long", lang=lang))
+        await edit_message(
+            message.bot,
+            message.chat.id,
+            last_message_id,
+            state,
+            text=(
+                f"{t('calendar.new.title', lang=settings.lang)}\n\n"
+                f"{t('calendar.link.url_too_long', lang=settings.lang)}\n\n"
+            ),
+            parse_mode="HTML",
+            reply_markup=back_button(lang=settings.lang),
+        )
         return
 
     await state.update_data(url=url)
     await state.set_state(CalendarLinkingStates.waiting_for_calendar_name)
-    await message.answer(t("calendar.link.enter_name", lang=lang))
-    await message.answer(
-        t("calendar.link.enter_name", lang=lang),
-        reply_markup=back_button(lang=lang),
+    await edit_message(
+        message.bot,
+        message.chat.id,
+        last_message_id,
+        state,
+        text=(
+            f"{t('calendar.new.title', lang=settings.lang)}\n\n{t('calendar.link.enter_name', lang=settings.lang)}\n\n"
+        ),
+        parse_mode="HTML",
+        reply_markup=back_button(lang=settings.lang),
     )
 
 
 @router.message(CalendarLinkingStates.waiting_for_calendar_name)
-async def process_calendar_name(message: Message, state: FSMContext, lang: str) -> None:
+async def process_calendar_name(message: Message, state: FSMContext, settings: SettingsData) -> None:
     """Process calendar name."""
+    last_message_id = await get_last_message_id(state)
+    if last_message_id is None:
+        logger.error("Last message id is not found", extra={"state": state})
+        return
+
     name = message.text
+    await message.delete()
+
     if name is None or len(name) == 0:
-        await message.answer(t("calendar.link.name_empty", lang=lang))
+        await edit_message(
+            message.bot,
+            message.chat.id,
+            last_message_id,
+            state,
+            text=f"{t('calendar.new.title', lang=settings.lang)}\n\n{t('calendar.link.name.empty', lang=settings.lang)}\n\n",
+            parse_mode="HTML",
+            reply_markup=back_button(lang=settings.lang),
+        )
         return
 
     if len(name) > 255:
-        await message.answer(t("calendar.link.name_too_long", lang=lang))
+        await edit_message(
+            message.bot,
+            message.chat.id,
+            last_message_id,
+            state,
+            text=(
+                f"{t('calendar.new.title', lang=settings.lang)}\n\n"
+                f"{t('calendar.link.name.too.long', lang=settings.lang)}\n\n"
+            ),
+            parse_mode="HTML",
+            reply_markup=back_button(lang=settings.lang),
+        )
         return
 
     await state.update_data(name=name)
     await state.set_state(CalendarLinkingStates.waiting_for_calendar_confirmation)
-    await message.answer(t("calendar.link.confirm_link", lang=lang))
-    await message.answer(
-        t("calendar.link.confirm_link", lang=lang),
-        reply_markup=back_button("calendar_confirm", lang=lang),
+    await edit_message(
+        message.bot,
+        message.chat.id,
+        last_message_id,
+        state,
+        text=(
+            f"{t('calendar.new.title', lang=settings.lang)}\n\n"
+            f"{t('calendar.link.confirm.message', lang=settings.lang)}\n\n"
+        ),
+        parse_mode="HTML",
+        reply_markup=confirm_calendar_inline(lang=settings.lang),
     )
 
 
 @router.callback_query(F.data == "calendar_confirm", CalendarLinkingStates.waiting_for_calendar_confirmation)
-async def calendar_confirm(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
+async def calendar_confirm(query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData) -> None:
     """Confirm calendar linking."""
 
     # Get data from state
@@ -171,16 +319,27 @@ async def calendar_confirm(query: CallbackQuery, state: FSMContext, store: Store
             logger.info(f"User {user_id} successfully linked calendar: {name} ({url})")
         except Exception as e:
             logger.error(f"Error uploading calendar for user {user_id}: {e}", exc_info=e)
-            await query.answer(t("calendar.link.error", lang=lang))
+            await edit_message(
+                query.bot,
+                query.message.chat.id,
+                query.message.message_id,
+                state,
+                text=(
+                    f"{t('calendar.new.title', lang=settings.lang)}\n\n"
+                    f"{t('calendar.link.error', lang=settings.lang)}\n\n"
+                ),
+                parse_mode="HTML",
+                reply_markup=back_button("menu_link_calendar", lang=settings.lang),
+            )
             return
 
     await state.set_state(CalendarLinkingStates.in_calendar_menu)
-    await query.answer(t("calendar.link.confirmed", lang=lang))
-    if query.message and isinstance(query.message, Message):
-        await query.message.edit_text(
-            t("calendar.link.success", lang=lang),
-            parse_mode="HTML",
-            reply_markup=calendar_menu_inline(lang=lang),
-        )
-    else:
-        await query.answer(t("calendar.link.success", lang=lang))
+    await edit_message(
+        query.bot,
+        query.message.chat.id,
+        query.message.message_id,
+        state,
+        text=t("calendar.link.success", lang=settings.lang),
+        parse_mode="HTML",
+        reply_markup=back_button("menu_link_calendar", lang=settings.lang),
+    )

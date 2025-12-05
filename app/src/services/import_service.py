@@ -6,8 +6,6 @@ from typing import TYPE_CHECKING
 
 from icalendar.prop import vDuration
 
-from models.event import Event
-from models.reminder import Reminder
 from repositories.schemas import (
     CalendarCreateSchema,
     CalendarFilter,
@@ -15,10 +13,9 @@ from repositories.schemas import (
     EventCreateSchema,
     EventFilter,
     EventResponse,
-    EventUpdateSchema,
     ReminderCreateSchema,
 )
-from services.ics_parcer import ICSParser
+from services.ics_parcer import ICSParser, VAlarmSchema, VEventSchema
 from store.store import Store
 
 if TYPE_CHECKING:
@@ -52,100 +49,91 @@ class ImportService:
             file_path: Path to the icalendar file.
             user_id: telegram user id.
         """
-        # loading entities from file using ICSParser
-        entities = ICSParser(file_path).get_entities()
-
         # check if calendar already exists
-        filter = CalendarFilter(user_id=user_id, name="local calendar")  # type: ignore[call-arg]
-        calendar = await self.store.CalendarRepository.find(filter)
-        if calendar != []:
-            # updating calendar if it exists
-            await self._update_local_calendar(calendar[0], entities)
-        else:
-            # creating calendar if it does not exist
-            await self._create_local_calendar(user_id, entities)
+        calendar = await self._get_local_calendar(user_id)
+        if calendar is None:
+            # Create local calendar if it doesn't exist
+            calendar = await self.store.CalendarService.create(
+                CalendarCreateSchema(user_id=user_id, name="local calendar", url=None)
+            )
 
-    async def _create_local_calendar(self, user_id: int, entities: list[tuple[Event, list[Reminder]]]) -> None:
-        """Create a new local calendar and import all events with reminders.
+        # loading entities from file using ICSParser
+        schemas = ICSParser(file_path).get_schemas()
+
+        # updating calendar
+        await self._update_local_calendar(calendar, schemas)
+
+    async def _get_local_calendar(self, user_id: int) -> CalendarResponse | None:
+        """Get local calendar by user ID.
 
         Args:
             user_id: Telegram user ID.
-            entities: List of tuples containing (Event, list[Reminder]) to import.
         """
-        calendar_repo = self.store.CalendarRepository
+        # Get local calendar by user ID
+        calendars = await self.store.CalendarService.get_by_user_id(user_id)
+        for calendar in calendars:
+            if calendar.name == "local calendar":
+                return calendar
+        return None
 
-        # Create local calendar
-        calendar = await calendar_repo.create([CalendarCreateSchema(user_id=user_id, name="local calendar", url=None)])
-        calendar = calendar[0]
-
-        # Import each event with its reminders
-        for event, reminders in entities:
-            # Create event
-            created_event = await self._create_event(
-                user_id=user_id,
-                calendar_id=calendar.id,
-                event=event,
-            )
-
-            # Create imported reminders
-            await self._create_reminders(event_id=created_event.id, reminders=reminders)
-
-            # Create default reminder if user has default reminder offset configured
-            await self._create_default_reminder(
-                user_id=user_id,
-                event_id=created_event.id,
-                event_start=created_event.date_start,
-            )
-
-    async def _update_local_calendar(
-        self, calendar: CalendarResponse, entities: list[tuple[Event, list[Reminder]]]
-    ) -> None:
-        """Update existing local calendar with new events and reminders.
-
-        For each entity:
-        - If event with same UID exists, update it and replace all reminders
-        - If event doesn't exist, create it with reminders
+    async def _update_local_calendar(self, calendar: CalendarResponse, schemas: list[VEventSchema]) -> None:
+        """Update existing local calendar with new events.
 
         Args:
-            calendar: Calendar to update.
-            entities: List of tuples containing (Event, list[Reminder]) to import.
+            calendar: CalendarResponse to update.
+            schemas: List of VEventSchema to import.
         """
-        event_repo = self.store.EventRepository
-        reminder_repo = self.store.ReminderRepository
+        for schema in schemas:
+            await self._create_event(calendar, schema)
 
-        for new_event, new_reminders in entities:
-            # Find existing event by UID
-            filter = EventFilter(uid=new_event.uid)  # type: ignore[call-arg]
-            old_events = await event_repo.find(filter)
+    async def _create_event(self, calendar: CalendarResponse, schema: VEventSchema) -> None:
+        """Create a new event in the database.
 
-            if old_events == []:
-                # Create new event if it doesn't exist
-                created_event = await self._create_event(
-                    user_id=calendar.user_id,
-                    calendar_id=calendar.id,
-                    event=new_event,
-                )
-                event_id = created_event.id
-            else:
-                # Update existing event
-                event_id = old_events[0].id
-                await self._update_event(event_id=event_id, event=new_event)
+        Args:
+            calendar: CalendarResponse to create the event for.
+            schema: VEventSchema to create the event from.
+        """
+        event = EventCreateSchema(
+            user_id=calendar.user_id,
+            calendar_id=calendar.id,
+            uid=schema.uid if schema.uid is not None else await self._generate_uid(),
+            date_start=schema.date_start,
+            date_end=schema.date_end,
+            all_day=self._is_all_day(schema.date_start, schema.date_end),
+            need_to_remind=True,
+            rrule=schema.rrule,
+            rdate=schema.rdate,
+            exdate=schema.exdate,
+            title=schema.title,
+            description=schema.description,
+        )
+        created_event = await self.store.EventService.create(event)
+        if schema.alarms is not None:
+            for alarm in schema.alarms:
+                await self._create_reminder(created_event, alarm)
 
-                # Delete old reminders before creating new ones
-                old_reminders = await reminder_repo.find(event_id)
-                if old_reminders is not None:
-                    for reminder in old_reminders:
-                        await reminder_repo.delete(reminder.id)
+    async def _create_reminder(self, event: EventResponse, alarm: VAlarmSchema) -> None:
+        """Create a new reminder in the database.
 
-            # Create imported reminders
-            await self._create_reminders(event_id=event_id, reminders=new_reminders)
+        Args:
+            event_id: ID of the event to create the reminder for.
+            alarm: VAlarmSchema to create the reminder from.
+        """
 
-            # Create default reminder if user has default reminder offset configured
-            await self._create_default_reminder(
-                user_id=calendar.user_id,
-                event_id=event_id,
-                event_start=new_event.date_start,
-            )
+        trigger_offset = alarm.trigger_offset
+        if trigger_offset is None:
+            if alarm.trigger_datetime is None:
+                return
+            # calculate trigger offset from trigger datetime
+            trigger_offset = vDuration(alarm.trigger_datetime - event.date_start).to_ical().decode("utf-8")
+
+        reminder = ReminderCreateSchema(
+            event_id=event.id,
+            description=alarm.description,
+            trigger_offset=trigger_offset,
+            sent=False,
+        )
+        await self.store.ReminderService.create(reminder)
 
     async def import_external_calendar_from_file(
         self,
@@ -162,84 +150,31 @@ class ImportService:
             calendar_name: Name of the calendar.
             calendar_url: URL of the calendar.
         """
-
         # loading entities from file using ICSParser
-        entities = ICSParser(file_path).get_entities()
+        schemas = ICSParser(file_path).get_schemas()
 
-        calendar_repo = self.store.CalendarRepository
-
-        filter = CalendarFilter(user_id=user_id, name=calendar_name)  # type: ignore[call-arg]
-        calendar = await calendar_repo.find(filter)
-        if calendar != []:
-            if calendar[0].url != calendar_url:
-                raise ValueError("Calendar with this name already exists, but with different url")
-
-        filter = CalendarFilter(user_id=user_id, url=calendar_url)  # type: ignore[call-arg]
-        calendar = await calendar_repo.find(filter)
-        if calendar != []:
-            if calendar[0].name != calendar_name:
-                raise ValueError("Calendar with this url already exists, but with different name")
-            else:
-                await self._update_external_calendar(calendar[0], entities)
+        # checking if calendar already exists
+        calendar = await self.store.CalendarService.find(CalendarFilter(user_id=user_id, url=calendar_url))
+        if calendar == []:
+            calendar = await self.store.CalendarService.create(
+                CalendarCreateSchema(user_id=user_id, name=calendar_name, url=calendar_url)
+            )
         else:
-            await self._create_external_calendar(user_id, calendar_name, calendar_url, entities)
+            calendar = calendar[0]
 
-    async def _create_external_calendar(
-        self, user_id: int, calendar_name: str, calendar_url: str, entities: list[tuple[Event, list[Reminder]]]
-    ) -> None:
-        """Create a new external calendar and import events (without reminders).
+        # updating calendar
+        await self._update_external_calendar(calendar, schemas)
 
-        Note: Reminders are not imported from external calendars in this version.
-
-        Args:
-            user_id: Telegram user ID.
-            calendar_name: Name of the calendar.
-            calendar_url: URL of the external calendar.
-            entities: List of tuples containing (Event, list[Reminder]) to import.
-        """
-        calendar_repo = self.store.CalendarRepository
-
-        # Create external calendar
-        calendar = await calendar_repo.create(
-            [CalendarCreateSchema(user_id=user_id, name=calendar_name, url=calendar_url)]
-        )
-        calendar = calendar[0]
-
-        # Import events (reminders are not imported from external calendars)
-        for event, _reminders in entities:
-            await self._create_event(
-                user_id=user_id,
-                calendar_id=calendar.id,
-                event=event,
-            )
-
-    async def _update_external_calendar(
-        self, calendar: CalendarResponse, entities: list[tuple[Event, list[Reminder]]]
-    ) -> None:
-        """Update external calendar by deleting all existing events and importing new ones.
-
-        Note: Reminders are not imported from external calendars in this version.
-        This method performs a full replacement of all events in the calendar.
+    async def _update_external_calendar(self, calendar: CalendarResponse, schemas: list[VEventSchema]) -> None:
+        """Update existing external calendar with new events.
 
         Args:
-            calendar: Calendar to update.
-            entities: List of tuples containing (Event, list[Reminder]) to import.
+            calendar: CalendarResponse to update.
+            schemas: List of VEventSchema to import.
         """
-        event_repo = self.store.EventRepository
-
-        # Delete all existing events in the calendar
-        events = await event_repo.find(EventFilter(calendar_id=calendar.id))  # type: ignore[call-arg]
-        if events != []:
-            for event in events:
-                await event_repo.delete(event.id)
-
-        # Create new events (reminders are not imported from external calendars)
-        for event, _reminders in entities:
-            await self._create_event(
-                user_id=calendar.user_id,
-                calendar_id=calendar.id,
-                event=event,
-            )
+        for schema in schemas:
+            schema.alarms = None
+            await self._create_event(calendar, schema)
 
     async def _generate_uid(self) -> str:
         """Generate a unique UID for an event.
@@ -253,12 +188,12 @@ class ImportService:
         Raises:
             ValueError: If unable to generate a unique UID after 1000 attempts.
         """
-        event_repo = self.store.EventRepository
+        event_service = self.store.EventService
         for _ in range(1000):
             uid = str(uuid.uuid4())
-            if not await event_repo.find(EventFilter(uid=uid)):  # type: ignore[call-arg]
+            if not await event_service.find(EventFilter(uid=uid)):
                 return uid
-        raise ValueError("Failed to generate unique ID for event or reminder")
+        raise ValueError("Failed to generate unique ID for event")
 
     def _is_all_day(self, dtstart: date | datetime, dtend: date | datetime) -> bool:
         """Check if an event is an all-day event.
@@ -288,131 +223,3 @@ class ImportService:
             )
 
         return False
-
-    def _build_event_create_schema(
-        self, user_id: int, calendar_id: int, event: Event, uid: str | None
-    ) -> EventCreateSchema:
-        """Build EventCreateSchema from Event model.
-
-        Args:
-            user_id: Telegram user ID.
-            calendar_id: Calendar ID to associate the event with.
-            event: Event model to convert.
-            uid: UID for the event (generated if None).
-
-        Returns:
-            EventCreateSchema instance.
-        """
-        return EventCreateSchema(
-            user_id=user_id,
-            calendar_id=calendar_id,
-            uid=uid,
-            date_start=event.date_start,
-            date_end=event.date_end,
-            all_day=self._is_all_day(event.date_start, event.date_end),
-            need_to_remind=True,
-            rrule=event.rrule,
-            rdate=event.rdate,
-            exdate=event.exdate,
-            title=event.title,
-            description=event.description,
-        )
-
-    async def _create_event(self, user_id: int, calendar_id: int, event: Event) -> EventResponse:
-        """Create a new event in the database.
-
-        Args:
-            user_id: Telegram user ID.
-            calendar_id: Calendar ID to associate the event with.
-            event: Event model to create.
-
-        Returns:
-            Created Event instance.
-        """
-        uid = event.uid if event.uid is not None else await self._generate_uid()
-        event_schema = self._build_event_create_schema(user_id=user_id, calendar_id=calendar_id, event=event, uid=uid)
-        created_events = await self.store.EventRepository.create([event_schema])
-        return created_events[0]
-
-    def _build_event_update_schema(self, event: Event) -> EventUpdateSchema:
-        """Build EventUpdateSchema from Event model.
-
-        Args:
-            event: Event model to convert.
-
-        Returns:
-            EventUpdateSchema instance.
-        """
-        return EventUpdateSchema(
-            date_start=event.date_start,
-            date_end=event.date_end,
-            all_day=self._is_all_day(event.date_start, event.date_end),
-            need_to_remind=True,
-            rrule=event.rrule,
-            rdate=event.rdate,
-            exdate=event.exdate,
-            title=event.title,
-            description=event.description,
-        )
-
-    async def _update_event(self, event_id: int, event: Event) -> None:
-        """Update an existing event in the database.
-
-        Args:
-            event_id: ID of the event to update.
-            event: Event model with new data.
-        """
-        update_schema = self._build_event_update_schema(event)
-        await self.store.EventRepository.update(event_id, update_schema)
-
-    async def _create_reminders(self, event_id: int, reminders: list[Reminder]) -> None:
-        """Create reminders for an event.
-
-        Args:
-            event_id: ID of the event to create reminders for.
-            reminders: List of Reminder models to create.
-        """
-        for reminder in reminders:
-            await self.store.ReminderRepository.create(
-                [
-                    ReminderCreateSchema(
-                        event_id=event_id,
-                        description=reminder.description,
-                        trigger_offset=reminder.trigger_offset,
-                        trigger_datetime=reminder.trigger_datetime,
-                        repeat_count=reminder.repeat_count,
-                        repeat_interval=reminder.repeat_interval,
-                    )
-                ]
-            )
-
-    async def _create_default_reminder(self, user_id: int, event_id: int, event_start: datetime) -> None:
-        """Create a default reminder for an event based on user settings.
-
-        If the user has a default_reminder_offset configured in their settings,
-        creates a reminder using trigger_offset (RFC 5545 format).
-
-        Args:
-            user_id: Telegram user ID to get settings for.
-            event_id: ID of the event to create reminder for.
-            event_start: Start datetime of the event.
-        """
-        settings_repo = self.store.SettingsRepository
-        settings = await settings_repo.find(user_id)
-
-        if settings is not None and settings.default_reminder_offset is not None:
-            # Convert seconds to RFC 5545 duration format (e.g., "-PT15M" for 15 minutes before)
-            trigger_offset = vDuration(timedelta(seconds=-settings.default_reminder_offset)).to_ical().decode("utf-8")
-
-            await self.store.ReminderRepository.create(
-                [
-                    ReminderCreateSchema(
-                        event_id=event_id,
-                        description="Default reminder",
-                        trigger_offset=trigger_offset,
-                        trigger_datetime=None,
-                        repeat_count=None,
-                        repeat_interval=None,
-                    )
-                ]
-            )

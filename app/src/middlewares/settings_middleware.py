@@ -5,6 +5,8 @@ using the SettingsService. It works with both Message and CallbackQuery events.
 """
 
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
+from datetime import time
 from typing import Any
 
 from aiogram import BaseMiddleware
@@ -12,6 +14,18 @@ from aiogram.types import CallbackQuery, Message, TelegramObject
 
 from logger.logger import logger
 from store.store import Store
+
+
+@dataclass
+class SettingsData:
+    lang: str
+    timezone: str
+    quiet_hours_enabled: bool
+    quiet_hours_start: time
+    quiet_hours_end: time
+    daily_plans_enabled: bool
+    daily_plans_time: time
+    default_reminder_offset: int
 
 
 class SettingsMiddleware(BaseMiddleware):
@@ -85,10 +99,21 @@ class SettingsMiddleware(BaseMiddleware):
 
         # Inject language into data dict for handlers (similar to how store is injected)
         # Handlers can access it via parameter: lang: str or via data.get("lang")
-        data["lang"] = settings.language if settings else "en"
+        data["lang"] = settings.language
 
         # add settings to data
         data["timezone"] = settings.timezone
+
+        data["settings"] = SettingsData(
+            lang=settings.language,
+            timezone=settings.timezone,
+            quiet_hours_enabled=settings.quiet_hours_enabled,
+            quiet_hours_start=settings.quiet_hours_start,
+            quiet_hours_end=settings.quiet_hours_end,
+            daily_plans_enabled=settings.daily_plans_enabled,
+            daily_plans_time=settings.daily_plans_time,
+            default_reminder_offset=settings.default_reminder_offset,
+        )
 
         # Call the handler
         return await handler(event, data)

@@ -4,127 +4,111 @@ Pydantic schemas for repository operations.
 These schemas provide type-safe input validation for repository methods.
 """
 
+from dataclasses import dataclass
 from datetime import datetime, time
-
-from pydantic import BaseModel, Field
 
 from models.calendar import Calendar
 from models.event import Event
 from models.reminder import Reminder
 from models.settings import Settings
 
-# TODO: refactor repetitive code
+NOT_SET = object()
 
 # ----------------------------------------------------------------------------
 # Event schemas
 # ----------------------------------------------------------------------------
 
 
-class EventCreateSchema(BaseModel):
+@dataclass(frozen=True)
+class EventCreateSchema:
     """Schema for creating a new event.
 
     Attributes:
-        user_id: int - Telegram user ID. Required.
-        uid: str | None - Event unique identifier from icalendar. if null - then event is not imported from external calendar.
+        user_id: int - Telegram user ID.
+        uid: str - Event unique identifier from icalendar.
 
-        calendar_id: int | None - Associated calendar ID. Optional.
+        calendar_id: int - Associated calendar ID.
 
-        date_start: datetime - Event start date and time. Required.
-        date_end: datetime - Event end date and time. Required.
+        date_start: datetime - Event start date and time.
+        date_end: datetime - Event end date and time.
         all_day: bool - if True, the event is all day event (in DTSTART and DTEND are only dates, without times).
 
         need_to_remind: bool - if True, the bot will send a reminder to the user. Needed to mute reminder notifications.
 
-        rrule: str | None - Recurrence rule. Optional.
-        rdate: list[datetime] | None - Additional recurrence dates. Optional.
-        exdate: list[datetime] | None - Exception dates. Optional.
+        rrule: str | None - Recurrence rule.
+        rdate: list[datetime] | None - Additional recurrence dates.
+        exdate: list[datetime] | None - Exception dates.
 
-        title: str | None - Event title. Optional.
-        description: str | None - Event description. Optional.
+        title: str | None - Event title.
+        description: str | None - Event description.
     """  # noqa: E501
 
-    user_id: int = Field(..., description="Telegram user ID")
-    uid: str | None = Field(
-        None,
-        description="Event unique identifier from icalendar. if null - then event is not imported from external calendar.",  # noqa: E501
-    )
-    calendar_id: int | None = Field(None, description="Associated calendar ID.")
-    date_start: datetime = Field(..., description="Event start date and time.")
-    date_end: datetime = Field(..., description="Event end date and time.")
-    all_day: bool = Field(
-        False, description="If True, the event is all day event (in DTSTART and DTEND are only dates, without times)."
-    )
-    need_to_remind: bool = Field(
-        True, description="If True, the bot will send a reminder to the user. Needed to mute reminder notifications."
-    )
-    rrule: str | None = Field(None, description="Recurrence rule.")
-    rdate: list[datetime] | None = Field(None, description="Additional recurrence dates.")
-    exdate: list[datetime] | None = Field(None, description="Exception dates.")
-    title: str | None = Field(None, description="Event title.")
-    description: str | None = Field(None, description="Event description.")
+    user_id: int
+    uid: str
+    calendar_id: int
+    date_start: datetime
+    date_end: datetime
+    all_day: bool
+    need_to_remind: bool
+    rrule: str | None
+    rdate: list[datetime] | None
+    exdate: list[datetime] | None
+    title: str | None
+    description: str | None
 
 
-class EventUpdateSchema(BaseModel):
+@dataclass(frozen=True)
+class EventUpdateSchema:
     """Schema for updating an existing event.
 
     All fields are optional - only provided fields will be updated.
     Unprovided fields remain unchanged.
 
     Attributes:
-        date_start: datetime | None - Event start date and time. Optional.
-        date_end: datetime | None - Event end date and time. Optional.
-        all_day: bool | None - If True, the event is all day event (in DTSTART and DTEND are only dates, without times). Optional.
-        need_to_remind: bool | None - If True, the bot will send a reminder to the user. Needed to mute reminder notifications. Optional.
-        rrule: str | None - Recurrence rule. Optional.
-        rdate: list[datetime] | None - Additional recurrence dates. Optional.
-        exdate: list[datetime] | None - Exception dates. Optional.
-        title: str | None - Event title. Optional.
-        description: str | None - Event description. Optional.
+        date_start: datetime - Event start date and time.
+        date_end: datetime - Event end date and time.
+        all_day: bool - If True, the event is all day event.
+        need_to_remind: bool - If True, the bot will send a reminder to the user.
+        rrule: str | None - Recurrence rule.
+        rdate: list[datetime] | None - Additional recurrence dates.
+        exdate: list[datetime] | None - Exception dates.
+        title: str | None - Event title.
+        description: str | None - Event description.
     """  # noqa: E501
 
-    date_start: datetime | None = Field(None, description="Event start date and time.")
-    date_end: datetime | None = Field(None, description="Event end date and time.")
-    all_day: bool | None = Field(
-        None, description="If True, the event is all day event (in DTSTART and DTEND are only dates, without times)."
-    )
-    need_to_remind: bool | None = Field(
-        None, description="If True, the bot will send a reminder to the user. Needed to mute reminder notifications."
-    )
-    rrule: str | None = Field(None, description="Recurrence rule.")
-    rdate: list[datetime] | None = Field(None, description="Additional recurrence dates.")
-    exdate: list[datetime] | None = Field(None, description="Exception dates.")
-    title: str | None = Field(None, description="Event title.")
-    description: str | None = Field(None, description="Event description.")
+    date_start: datetime | object = NOT_SET
+    date_end: datetime | object = NOT_SET
+    all_day: bool | object = NOT_SET
+    need_to_remind: bool | object = NOT_SET
+    rrule: str | None | object = NOT_SET
+    rdate: list[datetime] | None | object = NOT_SET
+    exdate: list[datetime] | None | object = NOT_SET
+    title: str | None | object = NOT_SET
+    description: str | None | object = NOT_SET
 
 
-class EventFilter(BaseModel):
+@dataclass(frozen=True)
+class EventFilter:
     """Schema for filtering events in repository queries.
 
     All fields are optional - multiple filters can be combined using AND logic.
     Filters are applied inclusively (boundaries included).
 
     Attributes:
-        uid: str | None - Filter by event unique identifier from icalendar. if null - then event is not imported from external calendar. Optional.
-        user_id: int | None - Filter by user ID. Optional.
-        calendar_id: int | None - Filter by calendar ID. Optional.
-        start_date_from: datetime | None - Filter events starting from this date. Optional.
-        start_date_to: datetime | None - Filter events starting until this date. Optional.
-        need_to_remind: bool | None - Filter by reminder requirement. Optional.
-        limit: Maximum number of results to return. Optional, defaults to 100, range 1-1000.
-        offset: Number of results to skip (for pagination). Optional, defaults to 0, must be >= 0.
+        uid: str - Filter by event unique identifier from icalendar.
+        user_id: int - Filter by user ID.
+        calendar_id: int - Filter by calendar ID.
+        start_date_from: datetime - Filter events starting from this date.
+        start_date_to: datetime - Filter events starting until this date.
+        need_to_remind: bool - Filter by reminder requirement.
     """  # noqa: E501
 
-    uid: str | None = Field(
-        None,
-        description="Filter by event unique identifier from icalendar. if null - then event is not imported from external calendar.",  # noqa: E501
-    )
-    user_id: int | None = Field(None, description="Filter by user ID.")
-    calendar_id: int | None = Field(None, description="Filter by calendar ID.")
-    start_date_from: datetime | None = Field(None, description="Filter events starting from this date.")
-    start_date_to: datetime | None = Field(None, description="Filter events starting until this date.")
-    need_to_remind: bool | None = Field(None, description="Filter by reminder requirement.")
-    limit: int = Field(100, ge=1, le=1000, description="Maximum number of results")
-    offset: int = Field(0, ge=0, description="Number of results to skip")
+    uid: str | object = NOT_SET
+    user_id: int | object = NOT_SET
+    calendar_id: int | object = NOT_SET
+    start_date_from: datetime | object = NOT_SET
+    start_date_to: datetime | object = NOT_SET
+    need_to_remind: bool | object = NOT_SET
 
 
 # ----------------------------------------------------------------------------
@@ -132,56 +116,55 @@ class EventFilter(BaseModel):
 # ----------------------------------------------------------------------------
 
 
-class CalendarCreateSchema(BaseModel):
+@dataclass(frozen=True)
+class CalendarCreateSchema:
     """Schema for creating a new calendar.
 
     Attributes:
-        user_id: int - Telegram user ID. Required.
-        name: str - Calendar name. Required.
-        url: str - Calendar URL. Required.
+        user_id: int - Telegram user ID.
+        name: str - Calendar name.
+        url: str | None - Calendar URL.
     """
 
-    user_id: int = Field(..., description="Telegram user ID")
-    name: str = Field(..., description="Calendar name")
-    url: str | None = Field(None, description="Calendar URL")
+    user_id: int
+    name: str
+    url: str | None
 
 
-class CalendarUpdateSchema(BaseModel):
+@dataclass(frozen=True)
+class CalendarUpdateSchema:
     """Schema for updating an existing calendar.
 
     All fields are optional - only provided fields will be updated.
     Unprovided fields remain unchanged.
 
     Attributes:
-        name: str - Calendar name. Optional.
-        url: str - Calendar URL. Optional.
-        sync_enabled: bool - Whether to enable sync with the calendar. Optional.
+        name: str - Calendar name.
+        sync_enabled: bool - Whether to enable sync with the calendar.
+        last_sync: datetime - Last successful sync with the calendar.
     """
 
-    name: str | None = Field(None, description="Calendar name")
-    url: str | None = Field(None, description="Calendar URL")
-    sync_enabled: bool | None = Field(None, description="Whether to enable sync with the calendar")
+    name: str | object = NOT_SET
+    sync_enabled: bool | object = NOT_SET
+    last_sync: datetime | object = NOT_SET
 
 
-class CalendarFilter(BaseModel):
+@dataclass(frozen=True)
+class CalendarFilter:
     """Schema for filtering calendars in repository queries.
 
     All fields are optional - multiple filters can be combined using AND logic.
     Filters are applied inclusively (boundaries included).
 
     Attributes:
-        user_id: Filter by Telegram user ID. Optional.
-        name: Filter by calendar name. Optional.
-        url: Filter by calendar URL. Optional.
-        limit: Maximum number of results to return. Optional, defaults to 100, range 1-1000.
-        offset: Number of results to skip. Optional, defaults to 0, must be >= 0.
+        user_id: Filter by Telegram user ID.
+        name: Filter by calendar name.
+        url: Filter by calendar URL.
     """
 
-    user_id: int | None = Field(None, description="Filter by user ID")
-    name: str | None = Field(None, description="Filter by calendar name")
-    url: str | None = Field(None, description="Filter by calendar URL")
-    limit: int = Field(100, ge=1, le=1000, description="Maximum number of results")
-    offset: int = Field(0, ge=0, description="Number of results to skip")
+    user_id: int | object = NOT_SET
+    name: str | object = NOT_SET
+    url: str | None | object = NOT_SET
 
 
 # ----------------------------------------------------------------------------
@@ -189,7 +172,8 @@ class CalendarFilter(BaseModel):
 # ----------------------------------------------------------------------------
 
 
-class SettingsCreateSchema(BaseModel):
+@dataclass(frozen=True)
+class SettingsCreateSchema:
     """Schema for creating a new settings.
 
     Attributes:
@@ -199,50 +183,49 @@ class SettingsCreateSchema(BaseModel):
 
         language: string - The language of the user (e.g., "en", "ru", etc.). default - "en".
 
-        quiet_hours: bool - Whether the quiet hours are enabled for the user. default - False.
-        quiet_hours_start: time | None - The start time of the quiet hours for the user. default - 00:00.
-        quiet_hours_end: time | None - The end time of the quiet hours for the user. default - 06:00.
+        quiet_hours_enabled: bool - Whether the quiet hours are enabled for the user. default - False.
+        quiet_hours_start: time - The start time of the quiet hours for the user. default - 00:00.
+        quiet_hours_end: time - The end time of the quiet hours for the user. default - 06:00.
 
-        daily_plans_time: time | None - The time for daily plans for the user. If null - daily plans are disabled. default - 09:00.
+        daily_plans_enabled: bool - Whether the daily plans are enabled for the user. default - False.
+        daily_plans_time: time - The time for daily plans for the user. default - 09:00.
 
-        default_reminder_offset: int | None - The default seconds before start to send reminder. By default - 15 minutes.
-            if null - default reminder offset is not set, will not be default reminders.
+        default_reminder_offset: int - The default seconds before start to send reminder. By default - 15 minutes.
     """  # noqa: E501
 
-    user_id: int = Field(..., description="Telegram user ID")
-    timezone: str = Field("UTC+2", description="Timezone")
-    language: str = Field("en", description="Language")
-    quiet_hours: bool = Field(False, description="Whether the quiet hours are enabled for the user")
-    quiet_hours_start: time | None = Field(time(hour=0, minute=0), description="Quiet hours start time")
-    quiet_hours_end: time | None = Field(time(hour=6, minute=0), description="Quiet hours end time")
-    daily_plans_time: time | None = Field(time(hour=9, minute=0), description="Daily plans time")
-    default_reminder_offset: int | None = Field(15 * 60, description="Default reminder offset in seconds")
+    user_id: int
+    timezone: str
+    language: str
+    quiet_hours_enabled: bool
+    quiet_hours_start: time
+    quiet_hours_end: time
+    daily_plans_enabled: bool
+    daily_plans_time: time
+    default_reminder_offset: int
 
 
-class SettingsUpdateSchema(BaseModel):
+@dataclass(frozen=True)
+class SettingsUpdateSchema:
     """Schema for updating an existing settings.
 
     Attributes:
-        timezone: string | None - The timezone of the user (e.g., "UTC+2", "UTC-3", etc.). Optional.
-        language: string | None - The language of the user (e.g., "en", "ru", etc.). Optional.
-        quiet_hours: bool | None - Whether the quiet hours are enabled for the user. Optional.
-        quiet_hours_start: time | None - The start time of the quiet hours for the user. Optional.
-        quiet_hours_end: time | None - The end time of the quiet hours for the user. Optional.
-        daily_plans_time: time | None - The time for daily plans for the user. If null - daily plans are disabled. Optional.
-        default_reminder_offset: int | None - The default seconds before start to send reminder. By default - 15 minutes.
-            if null - default reminder offset is not set, will not be default reminders. Optional.
+        timezone: string - The timezone of the user (e.g., "UTC+2", "UTC-3", etc.).
+        language: string - The language of the user (e.g., "en", "ru", etc.).
+        quiet_hours_enabled: bool - Whether the quiet hours are enabled for the user.
+        quiet_hours_start: time - The start time of the quiet hours for the user.
+        quiet_hours_end: time - The end time of the quiet hours for the user.
+        daily_plans_enabled: bool - Whether the daily plans are enabled for the user.
+        daily_plans_time: time - The time for daily plans for the user.
+        default_reminder_offset: int - The default seconds before start to send reminder. By default - 15 minutes.
     """  # noqa: E501
 
-    timezone: str | None = Field(None, description="Timezone")
-    language: str | None = Field(None, description="Language")
-    quiet_hours: bool | None = Field(None, description="Whether the quiet hours are enabled for the user")
-    quiet_hours_start: time | None = Field(None, description="Quiet hours start time")
-    quiet_hours_end: time | None = Field(None, description="Quiet hours end time")
-    daily_plans_time: time | None = Field(None, description="Daily plans time")
-    default_reminder_offset: int | None = Field(
-        None,
-        description="Default seconds before start to send reminder. If null - default reminder offset is not set, will not be default reminders.",  # noqa: E501
-    )
+    timezone: str | object = NOT_SET
+    language: str | object = NOT_SET
+    quiet_hours_enabled: bool | object = NOT_SET
+    quiet_hours_start: time | object = NOT_SET
+    quiet_hours_end: time | object = NOT_SET
+    daily_plans_time: time | object = NOT_SET
+    default_reminder_offset: int | object = NOT_SET
 
 
 # ----------------------------------------------------------------------------
@@ -250,80 +233,56 @@ class SettingsUpdateSchema(BaseModel):
 # ----------------------------------------------------------------------------
 
 
-class ReminderCreateSchema(BaseModel):
+@dataclass(frozen=True)
+class ReminderCreateSchema:
     """Schema for creating a new reminder.
 
     Attributes:
         event_id: int - FK to Event, not null.
-
-        --- content section ---
         description: string | None - DESCRIPTION. RFC 5545 format. Description of the reminder. Max 1024 chars.
-
-        --- trigger section ---
-        trigger_offset: string | None - TRIGGER in RFC 5545.Sets the interval before event start to send reminder.
+        trigger_offset: string - TRIGGER in RFC 5545.Sets the interval before event start to send reminder.
             shows relative time to event start. for example: -P1D - reminder will be sent 1 day before event start.
-            if null - then trigger_datetime must be set.
-        trigger_datetime: datetime | None - TRIGGER in RFC 5545. Sets the exact datetime to send reminder.
-            if null - then trigger_offset must be set.
-            shows exact time to send reminder. for example: 2025-11-20T12:00:00Z - reminder will be sent at 2025-11-20T12:00:00Z.
-
-        --- repeat section ---
-        repeat_count: int | None - REPEAT in RFC 5545. Sets the number of times to repeat the reminder.
-            if null - then reminder will be sent only once.
-        repeat_interval: string | None - DURATION in RFC 5545. Sets the interval to repeat the reminder.
-            for example: PT10M - reminder will be sent every 10 minutes.
+        sent: bool - Whether the reminder has been sent. Defaults to False.
     """  # noqa: E501
 
-    event_id: int = Field(..., description="FK to Event, not null")
-    description: str | None = Field(
-        None, description="DESCRIPTION. RFC 5545 format. Description of the reminder. Max 1024 chars."
-    )
-    trigger_offset: str | None = Field(
-        None, description="TRIGGER in RFC 5545. Sets the interval before event start to send reminder."
-    )
-    trigger_datetime: datetime | None = Field(
-        None, description="TRIGGER in RFC 5545. Sets the exact datetime to send reminder."
-    )
-    repeat_count: int | None = Field(
-        None, description="REPEAT in RFC 5545. Sets the number of times to repeat the reminder."
-    )
-    repeat_interval: str | None = Field(
-        None, description="DURATION in RFC 5545. Sets the interval to repeat the reminder."
-    )
+    event_id: int
+    description: str | None
+    trigger_offset: str
+    sent: bool
 
 
-class ReminderUpdateSchema(BaseModel):
+@dataclass(frozen=True)
+class ReminderUpdateSchema:
     """Schema for updating an existing reminder.
 
     Attributes:
         description: str | None - DESCRIPTION. RFC 5545 format. Description of the reminder. Max 1024 chars. Optional.
-        trigger_offset: string | None - TRIGGER in RFC 5545. Sets the interval before event start to send reminder.
+        trigger_offset: string - TRIGGER in RFC 5545. Sets the interval before event start to send reminder.
             shows relative time to event start. for example: -P1D - reminder will be sent 1 day before event start.
-            if null - then trigger_datetime must be set. Optional.
-        trigger_datetime: datetime | None - TRIGGER in RFC 5545. Sets the exact datetime to send reminder.
-            if null - then trigger_offset must be set.
-            shows exact time to send reminder. for example: 2025-11-20T12:00:00Z - reminder will be sent at 2025-11-20T12:00:00Z. Optional.
-        repeat_count: int | None - REPEAT in RFC 5545. Sets the number of times to repeat the reminder.
-            if null - then reminder will be sent only once. Optional.
-        repeat_interval: string | None - DURATION in RFC 5545. Sets the interval to repeat the reminder.
-            for example: PT10M - reminder will be sent every 10 minutes. Optional.
+        sent: bool - Whether the reminder has been sent. Defaults to False.
     """  # noqa: E501
 
-    description: str | None = Field(
-        None, description="DESCRIPTION. RFC 5545 format. Description of the reminder. Max 1024 chars."
-    )
-    trigger_offset: str | None = Field(
-        None, description="TRIGGER in RFC 5545. Sets the interval before event start to send reminder."
-    )
-    trigger_datetime: datetime | None = Field(
-        None, description="TRIGGER in RFC 5545. Sets the exact datetime to send reminder."
-    )
-    repeat_count: int | None = Field(
-        None, description="REPEAT in RFC 5545. Sets the number of times to repeat the reminder."
-    )
-    repeat_interval: str | None = Field(
-        None, description="DURATION in RFC 5545. Sets the interval to repeat the reminder."
-    )
+    description: str | None | object = NOT_SET
+    trigger_offset: str | object = NOT_SET
+    sent: bool | object = NOT_SET
+
+
+@dataclass(frozen=True)
+class ReminderFilter:
+    """Schema for filtering reminders in repository queries.
+
+    All fields are optional - multiple filters can be combined using AND logic.
+    Filters are applied inclusively (boundaries included).
+
+    Attributes:
+        event_id: int - Filter by event ID.
+        user_id: int - Filter by user ID.
+        sent: bool - Filter by sent status.
+    """
+
+    event_id: int | object = NOT_SET
+    user_id: int | object = NOT_SET
+    sent: bool | object = NOT_SET
 
 
 # ----------------------------------------------------------------------------
@@ -331,27 +290,26 @@ class ReminderUpdateSchema(BaseModel):
 # ----------------------------------------------------------------------------
 
 
-class EventResponse(BaseModel):
+@dataclass(frozen=True)
+class EventResponse:
     """Response schema for Event entity.
 
-    Contains all fields from the Event model, including id and metadata.
+    Contains all fields from the Event model.
     """
 
-    id: int = Field(..., description="Primary key")
-    user_id: int = Field(..., description="Telegram user ID")
-    uid: str | None = Field(None, description="Event unique identifier from icalendar")
-    calendar_id: int | None = Field(None, description="Associated calendar ID")
-    date_start: datetime = Field(..., description="Event start date and time")
-    date_end: datetime = Field(..., description="Event end date and time")
-    all_day: bool = Field(..., description="If True, the event is all day event")
-    need_to_remind: bool = Field(..., description="If True, the bot will send a reminder")
-    rrule: str | None = Field(None, description="Recurrence rule")
-    rdate: list[datetime] | None = Field(None, description="Additional recurrence dates")
-    exdate: list[datetime] | None = Field(None, description="Exception dates")
-    title: str | None = Field(None, description="Event title")
-    description: str | None = Field(None, description="Event description")
-    created_at: datetime = Field(..., description="Creation timestamp")
-    last_modified: datetime = Field(..., description="Last modification timestamp")
+    id: int
+    user_id: int
+    uid: str
+    calendar_id: int
+    date_start: datetime
+    date_end: datetime
+    all_day: bool
+    need_to_remind: bool
+    rrule: str | None
+    rdate: list[datetime] | None
+    exdate: list[datetime] | None
+    title: str | None
+    description: str | None
 
     @classmethod
     def from_model(cls, event: Event) -> "EventResponse":
@@ -378,23 +336,22 @@ class EventResponse(BaseModel):
             exdate=event.exdate,
             title=event.title,
             description=event.description,
-            created_at=event.created_at,
-            last_modified=event.last_modified,
         )
 
 
-class CalendarResponse(BaseModel):
+@dataclass(frozen=True)
+class CalendarResponse:
     """Response schema for Calendar entity.
 
-    Contains all fields from the Calendar model, including id and metadata.
+    Contains all fields from the Calendar model.
     """
 
-    id: int = Field(..., description="Primary key")
-    user_id: int = Field(..., description="Telegram user ID")
-    name: str = Field(..., description="Calendar name")
-    url: str | None = Field(None, description="Calendar URL")
-    sync_enabled: bool = Field(..., description="Whether sync is enabled")
-    last_sync: datetime | None = Field(None, description="Last sync timestamp")
+    id: int
+    user_id: int
+    name: str
+    url: str | None
+    sync_enabled: bool
+    last_sync: datetime | None
 
     @classmethod
     def from_model(cls, calendar: Calendar) -> "CalendarResponse":
@@ -417,21 +374,23 @@ class CalendarResponse(BaseModel):
         )
 
 
-class SettingsResponse(BaseModel):
+@dataclass(frozen=True)
+class SettingsResponse:
     """Response schema for Settings entity.
 
-    Contains all fields from the Settings model, including id.
+    Contains all fields from the Settings model.
     """
 
-    id: int = Field(..., description="Primary key")
-    user_id: int = Field(..., description="Telegram user ID")
-    timezone: str = Field(..., description="User timezone")
-    language: str = Field(..., description="User language")
-    quiet_hours: bool = Field(..., description="Whether quiet hours are enabled")
-    quiet_hours_start: time = Field(..., description="Quiet hours start time")
-    quiet_hours_end: time = Field(..., description="Quiet hours end time")
-    daily_plans_time: time | None = Field(None, description="Daily plans time")
-    default_reminder_offset: int | None = Field(None, description="Default reminder offset in seconds")
+    id: int
+    user_id: int
+    timezone: str
+    language: str
+    quiet_hours_enabled: bool
+    quiet_hours_start: time
+    quiet_hours_end: time
+    daily_plans_enabled: bool
+    daily_plans_time: time
+    default_reminder_offset: int
 
     @classmethod
     def from_model(cls, settings: "Settings") -> "SettingsResponse":  # type: ignore[name-defined]
@@ -449,28 +408,27 @@ class SettingsResponse(BaseModel):
             user_id=settings.user_id,
             timezone=settings.timezone,
             language=settings.language,
-            quiet_hours=settings.quiet_hours,
+            quiet_hours_enabled=settings.quiet_hours_enabled,
             quiet_hours_start=settings.quiet_hours_start,
             quiet_hours_end=settings.quiet_hours_end,
+            daily_plans_enabled=settings.daily_plans_enabled,
             daily_plans_time=settings.daily_plans_time,
             default_reminder_offset=settings.default_reminder_offset,
         )
 
 
-class ReminderResponse(BaseModel):
+@dataclass(frozen=True)
+class ReminderResponse:
     """Response schema for Reminder entity.
 
-    Contains all fields from the Reminder model, including id and metadata.
+    Contains all fields from the Reminder model.
     """
 
-    id: int = Field(..., description="Primary key")
-    event_id: int = Field(..., description="FK to Event")
-    description: str | None = Field(None, description="Reminder description")
-    trigger_offset: str | None = Field(None, description="Trigger offset in RFC 5545 format")
-    trigger_datetime: datetime | None = Field(None, description="Trigger datetime")
-    repeat_count: int | None = Field(None, description="Repeat count")
-    repeat_interval: str | None = Field(None, description="Repeat interval in RFC 5545 format")
-    sent: bool = Field(..., description="Whether the reminder has been sent")
+    id: int
+    event_id: int
+    description: str | None
+    trigger_offset: str
+    sent: bool
 
     @classmethod
     def from_model(cls, reminder: Reminder) -> "ReminderResponse":
@@ -488,8 +446,5 @@ class ReminderResponse(BaseModel):
             event_id=reminder.event_id,
             description=reminder.description,
             trigger_offset=reminder.trigger_offset,
-            trigger_datetime=reminder.trigger_datetime,
-            repeat_count=reminder.repeat_count,
-            repeat_interval=reminder.repeat_interval,
             sent=reminder.sent,
         )

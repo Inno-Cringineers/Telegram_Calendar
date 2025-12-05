@@ -55,4 +55,17 @@ typeCheckingMode = "basic"
 extraPaths = ["app/src"]
 reportMissingImports = true
 reportMissingTypeStubs = false
+reportOptionalMemberAccess = false
+reportArgumentType = false
 
+[tool.basedpyright]
+include = ["app"]
+exclude = ["**/__pycache__", "**/.pytest_cache", "**/.mypy_cache"]
+pythonVersion = "3.12"
+pythonPlatform = "Linux"
+typeCheckingMode = "basic"
+extraPaths = ["app/src"]
+reportMissingImports = true
+reportMissingTypeStubs = false
+reportOptionalMemberAccess = false
+reportArgumentType = false

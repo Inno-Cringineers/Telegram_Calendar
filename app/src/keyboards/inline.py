@@ -91,6 +91,15 @@ def language_menu_inline(lang: str = "ru") -> InlineKeyboardMarkup:
     return _mk_markup(buttons)
 
 
+def confirm_calendar_inline(lang: str = "en") -> InlineKeyboardMarkup:
+    """Create confirm calendar inline keyboard."""
+    buttons = [
+        [InlineKeyboardButton(text=t("btn.accept", lang=lang), callback_data="calendar_confirm")],
+        [InlineKeyboardButton(text=t("btn.reject", lang=lang), callback_data="menu_link_calendar")],
+    ]
+    return _mk_markup(buttons)
+
+
 def quiet_hours_menu_inline(lang: str = "en") -> InlineKeyboardMarkup:
     """Create quiet hours menu inline keyboard."""
     buttons = [
@@ -115,7 +124,9 @@ def calendar_inline(linked: bool, calendar_id: int, lang: str = "en") -> InlineK
     link_btn = (
         InlineKeyboardButton(text=t("btn.calendar.unlink", lang=lang), callback_data=f"calendar_unlink:{calendar_id}")
         if linked
-        else InlineKeyboardButton(text=t("btn.calendar.link", lang=lang), callback_data=f"calendar_link:{calendar_id}")
+        else InlineKeyboardButton(
+            text=t("btn.calendar.link", lang=lang), callback_data=f"calendar_unlink:{calendar_id}"
+        )
     )
 
     buttons = [

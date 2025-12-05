@@ -6,6 +6,7 @@ This service provides CRUD operations for user settings using the settings repos
 from datetime import time
 from typing import TYPE_CHECKING
 
+from repositories.exceptions import SettingsNotFoundError
 from repositories.schemas import SettingsCreateSchema, SettingsResponse, SettingsUpdateSchema
 from store.store import Store
 
@@ -48,40 +49,26 @@ class SettingsService:
         Returns:
             The settings if found, None otherwise.
         """
-        return await self.store.SettingsRepository.find(user_id)
+        return await self.store.SettingsRepository.find_by_user_id(user_id)
 
-    async def create(
+    async def create_default(
         self,
         user_id: int,
-        timezone: str | None = None,
-        language: str | None = None,
-        quiet_hours: bool | None = None,
-        quiet_hours_start: time | None = None,
-        quiet_hours_end: time | None = None,
-        daily_plans_time: time | None = None,
-        default_reminder_offset: int | None = None,
     ) -> SettingsResponse:
-        """Create new settings for a user.
+        """Create default settings for a user.
 
         Args:
             user_id: Telegram user ID.
-            timezone: User timezone. If None, uses default from config.
-            language: User language. If None, uses default from config.
-            quiet_hours: Whether quiet hours are enabled. If None, uses default from config.
-            quiet_hours_start: Quiet hours start time. If None, uses default from config.
-            quiet_hours_end: Quiet hours end time. If None, uses default from config.
-            daily_plans_time: Daily plans time. If None, uses default from config.
-            default_reminder_offset: Default reminder offset in seconds. If None, uses default from config.
 
         Returns:
-            Created Settings instance.
+            Created Settings instance with default values from config.
         """
         from config.config import load_config
 
         config = load_config()
         settings_config = config.settings
 
-        def _parse_time(time_str: str | None) -> time | None:
+        def _parse_time(time_str: str) -> time:
             """Parse time string in HH:MM format to time object.
 
             Args:
@@ -90,8 +77,6 @@ class SettingsService:
             Returns:
                 time object or None if time_str is None.
             """
-            if time_str is None:
-                return None
             parts = time_str.split(":")
             if len(parts) != 2:
                 raise ValueError(f"Invalid time format: {time_str}. Expected HH:MM")
@@ -99,58 +84,24 @@ class SettingsService:
 
         create_schema = SettingsCreateSchema(
             user_id=user_id,
-            timezone=timezone if timezone is not None else settings_config.timezone,
-            language=language if language is not None else settings_config.language,
-            quiet_hours=quiet_hours if quiet_hours is not None else settings_config.quiet_hours,
-            quiet_hours_start=quiet_hours_start
-            if quiet_hours_start is not None
-            else _parse_time(settings_config.quiet_hours_start),
-            quiet_hours_end=quiet_hours_end
-            if quiet_hours_end is not None
-            else _parse_time(settings_config.quiet_hours_end),
-            daily_plans_time=daily_plans_time
-            if daily_plans_time is not None
-            else _parse_time(settings_config.daily_plans_time),
-            default_reminder_offset=default_reminder_offset
-            if default_reminder_offset is not None
-            else settings_config.default_reminder_offset,
+            timezone=settings_config.timezone,
+            language=settings_config.language,
+            quiet_hours_enabled=settings_config.quiet_hours_enabled,
+            quiet_hours_start=_parse_time(settings_config.quiet_hours_start),
+            quiet_hours_end=_parse_time(settings_config.quiet_hours_end),
+            daily_plans_enabled=settings_config.daily_plans_enabled,
+            daily_plans_time=_parse_time(settings_config.daily_plans_time),
+            default_reminder_offset=settings_config.default_reminder_offset,
         )
 
-        return await self.store.SettingsRepository.create(create_schema)
+        return await self.store.SettingsRepository.create_one(create_schema)
 
-    async def create_default(self, user_id: int) -> SettingsResponse:
-        """Create default settings for a user using config defaults.
-
-        Args:
-            user_id: Telegram user ID.
-
-        Returns:
-            Created Settings instance with default values from config.
-        """
-        return await self.create(user_id)
-
-    async def update(
-        self,
-        settings_id: int,
-        timezone: str | None = None,
-        language: str | None = None,
-        quiet_hours: bool | None = None,
-        quiet_hours_start: time | None = None,
-        quiet_hours_end: time | None = None,
-        daily_plans_time: time | None = None,
-        default_reminder_offset: int | None = None,
-    ) -> SettingsResponse:
+    async def update(self, settings_id: int, data: SettingsUpdateSchema) -> SettingsResponse:
         """Update existing settings.
 
         Args:
             settings_id: The ID of the settings to update.
-            timezone: New timezone value. If None, not updated.
-            language: New language value. If None, not updated.
-            quiet_hours: New quiet_hours value. If None, not updated.
-            quiet_hours_start: New quiet_hours_start value. If None, not updated.
-            quiet_hours_end: New quiet_hours_end value. If None, not updated.
-            daily_plans_time: New daily_plans_time value. If None, not updated.
-            default_reminder_offset: New default_reminder_offset value. If None, not updated.
+            data: SettingsUpdateSchema with fields to update.
 
         Returns:
             Updated Settings instance.
@@ -158,28 +109,12 @@ class SettingsService:
         Raises:
             SettingsNotFoundError: If settings with given ID are not found.
         """
-        update_schema = SettingsUpdateSchema(
-            timezone=timezone,
-            language=language,
-            quiet_hours=quiet_hours,
-            quiet_hours_start=quiet_hours_start,
-            quiet_hours_end=quiet_hours_end,
-            daily_plans_time=daily_plans_time,
-            default_reminder_offset=default_reminder_offset,
-        )
-
-        return await self.store.SettingsRepository.update(settings_id, update_schema)
+        return await self.store.SettingsRepository.update_by_id(settings_id, data)
 
     async def update_by_user_id(
         self,
         user_id: int,
-        timezone: str | None = None,
-        language: str | None = None,
-        quiet_hours: bool | None = None,
-        quiet_hours_start: time | None = None,
-        quiet_hours_end: time | None = None,
-        daily_plans_time: time | None = None,
-        default_reminder_offset: int | None = None,
+        data: SettingsUpdateSchema,
     ) -> SettingsResponse:
         """Update settings by user ID.
 
@@ -187,13 +122,7 @@ class SettingsService:
 
         Args:
             user_id: Telegram user ID.
-            timezone: New timezone value. If None, not updated.
-            language: New language value. If None, not updated.
-            quiet_hours: New quiet_hours value. If None, not updated.
-            quiet_hours_start: New quiet_hours_start value. If None, not updated.
-            quiet_hours_end: New quiet_hours_end value. If None, not updated.
-            daily_plans_time: New daily_plans_time value. If None, not updated.
-            default_reminder_offset: New default_reminder_offset value. If None, not updated.
+            data: SettingsUpdateSchema with fields to update.
 
         Returns:
             Updated Settings instance.
@@ -203,19 +132,28 @@ class SettingsService:
         """
         settings = await self.get_by_user_id(user_id)
         if settings is None:
-            from repositories.exceptions import SettingsNotFoundError
-
-            raise SettingsNotFoundError(settings_id=user_id)
+            raise SettingsNotFoundError(user_id=user_id)
 
         return await self.update(
             settings.id,
-            timezone=timezone,
-            language=language,
-            quiet_hours=quiet_hours,
-            quiet_hours_start=quiet_hours_start,
-            quiet_hours_end=quiet_hours_end,
-            daily_plans_time=daily_plans_time,
-            default_reminder_offset=default_reminder_offset,
+            data,
+        )
+
+    async def switch_quiet_hours(self, user_id: int) -> SettingsResponse:
+        """Switch quiet hours.
+
+        Args:
+            user_id: Telegram user ID.
+
+        Returns:
+            Updated Settings instance.
+        """
+        settings = await self.get_by_user_id(user_id)
+        if settings is None:
+            raise SettingsNotFoundError(user_id=user_id)
+
+        return await self.update(
+            settings.id, SettingsUpdateSchema(quiet_hours_enabled=not settings.quiet_hours_enabled)
         )
 
     async def delete(self, settings_id: int) -> None:
@@ -227,7 +165,7 @@ class SettingsService:
         Raises:
             SettingsNotFoundError: If settings with given ID are not found.
         """
-        await self.store.SettingsRepository.delete(settings_id)
+        await self.store.SettingsRepository.delete_by_id(settings_id)
 
     async def delete_by_user_id(self, user_id: int) -> None:
         """Delete settings by user ID.
@@ -242,8 +180,6 @@ class SettingsService:
         """
         settings = await self.get_by_user_id(user_id)
         if settings is None:
-            from repositories.exceptions import SettingsNotFoundError
-
-            raise SettingsNotFoundError(settings_id=user_id)
+            raise SettingsNotFoundError(user_id=user_id)
 
         await self.delete(settings.id)

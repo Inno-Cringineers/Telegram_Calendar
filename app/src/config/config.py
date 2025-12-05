@@ -39,20 +39,22 @@ class SettingsConfig:
     Attributes:
         timezone: Default timezone string (e.g., "UTC+2").
         language: Default language code (e.g., "en").
-        quiet_hours: Whether quiet hours are enabled by default.
+        quiet_hours_enabled: Whether quiet hours are enabled by default.
         quiet_hours_start: Default quiet hours start time as "HH:MM" string.
         quiet_hours_end: Default quiet hours end time as "HH:MM" string.
-        daily_plans_time: Default daily plans time as "HH:MM" string, or None to disable.
+        daily_plans_enabled: Whether daily plans are enabled by default.
+        daily_plans_time: Default daily plans time as "HH:MM" string.
         default_reminder_offset: Default reminder offset in seconds.
     """
 
     timezone: str
     language: str
-    quiet_hours: bool
+    quiet_hours_enabled: bool
     quiet_hours_start: str
     quiet_hours_end: str
-    daily_plans_time: str | None
-    default_reminder_offset: int | None
+    daily_plans_enabled: bool
+    daily_plans_time: str
+    default_reminder_offset: int
 
 
 @dataclass
@@ -183,9 +185,10 @@ def load_config() -> Config:
     settings_config = SettingsConfig(
         timezone=settings_config_data.get("timezone", "UTC+3"),
         language=settings_config_data.get("language", "en"),
-        quiet_hours=str_to_bool(settings_config_data.get("quiet_hours", False)),
+        quiet_hours_enabled=str_to_bool(settings_config_data.get("quiet_hours_enabled", False)),
         quiet_hours_start=settings_config_data.get("quiet_hours_start", "00:00"),
         quiet_hours_end=settings_config_data.get("quiet_hours_end", "06:00"),
+        daily_plans_enabled=str_to_bool(settings_config_data.get("daily_plans_enabled", True)),
         daily_plans_time=settings_config_data.get("daily_plans_time", "09:00"),
         default_reminder_offset=settings_config_data.get("default_reminder_offset", 900),
     )

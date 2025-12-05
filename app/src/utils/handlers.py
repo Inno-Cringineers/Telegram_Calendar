@@ -3,97 +3,135 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import UTC, datetime, time
 
-from aiogram import Bot
+from aiogram.client.bot import Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from logger.logger import logger
 
 
-async def save_bot_message(state: FSMContext, msg: Message):
-    """Save bot message to state. Used to clean up messages after state is cleared.
+def is_valid_query(query: CallbackQuery) -> bool:
+    if query.message is None or not isinstance(query.message, Message):
+        logger.error("Query message is None or not a Message", extra={"query": query})
+        return False
 
-    Args:
-        state: FSMContext instance.
-        msg: Message instance.
-    """
+    if query.bot is None:
+        logger.error("Query bot is None", extra={"query": query})
+        return False
+
+    return True
+
+
+async def send_message(
+    bot: Bot,
+    chat_id: int,
+    state: FSMContext,
+    text: str,
+    reply_markup=None,
+    parse_mode: str = "HTML",
+    delete_keyboard: bool = False,
+    delete_message: bool = False,
+    extra_data: dict | None = None,
+):
+    """Send message to chat. Used to clean up messages after state is cleared."""
+
+    new_message = await bot.send_message(chat_id=chat_id, text=text, parse_mode=parse_mode, reply_markup=reply_markup)
+    if not isinstance(new_message, Message):
+        raise ValueError(f"New message is not a Message, bot returned {new_message}")
+
     data = await state.get_data()
     sent = data.get("sent_messages", [])
-    sent.append(msg.message_id)
+    sent.append(
+        {
+            "message_id": new_message.message_id,
+            "delete_keyboard": delete_keyboard,
+            "delete_message": delete_message,
+            "extra_data": extra_data,
+            "text": text,
+        }
+    )
     await state.update_data(sent_messages=sent)
-    await state.update_data(last_message=msg)
+
+    await state.update_data(last_message=new_message.message_id)
+    logger.debug(f"Sent message {new_message.message_id} to {chat_id}")
+    logger.debug(f"Sent messages: {sent}")
 
 
-async def delete_saved_messages(bot: Bot, state: FSMContext, chat_id: int):
-    """Delete saved messages from state."""
+async def get_last_message_id(state: FSMContext) -> int | None:
+    """Get last message from state. Used to clean up messages after state is cleared."""
     data = await state.get_data()
-    sent = data.get("sent_messages", [])
-    for msg_id in sent:
-        try:
-            await bot.delete_message(chat_id=chat_id, message_id=msg_id)
-        except Exception:
-            logger.error(f"Error deleting message: {msg_id} from chat {chat_id}")
-            continue
-
-
-async def remove_old_keyboards(bot: Bot, state: FSMContext, chat_id: int):
-    """Remove old keyboards from chat. Used to clean up messages after state is cleared."""
-    data = await state.get_data()
-    sent = data.get("sent_messages", [])
-
-    for msg_id in sent:
-        try:
-            await bot.edit_message_reply_markup(chat_id=chat_id, message_id=msg_id, reply_markup=None)
-        except Exception:
-            logger.error(f"Error removing message reply markup: {msg_id} from chat {chat_id}")
-            continue
-
-    await state.update_data(sent_messages=[])
-
-
-async def send_clean_message(
-    message: Message, state: FSMContext, text: str, reply_markup=None, parse_mode: str = "HTML"
-):
-    """Send clean message to chat. Used to clean up messages after state is cleared."""
-    if message.bot is None:
-        raise ValueError("Bot is not set")
-
-    await remove_old_keyboards(message.bot, state, message.chat.id)
-
-    new_msg = await message.answer(text, parse_mode=parse_mode, reply_markup=reply_markup)
-    await save_bot_message(state, new_msg)
-
-    return new_msg
-
-
-async def send_banch_messages(
-    messages: list[Message], state: FSMContext, text: str, reply_markup=None, parse_mode: str = "HTML"
-):
-    """Send batch of messages to chat. Used to clean up messages after state is cleared."""
-    if message.bot is None:
-        raise ValueError("Bot is not set")
-
-    await remove_old_keyboards(message.bot, state, message.chat.id)
-
-
-async def get_last_message(state: FSMContext) -> Message:
-    """Get last bot message from state."""
-    data = await state.get_data()
-    last_message = data.get("last_message")
-    if not last_message:
-        raise ValueError("No messages sent")
-
-    return last_message
+    return data.get("last_message", None)
 
 
 async def edit_message(
-    message: Message, state: FSMContext, text: str, reply_markup=None, parse_mode: str = "HTML"
-) -> None:
-    """Edit last bot message in chat."""
-    if message.bot is None:
-        raise ValueError("Bot is not set")
-    await message.edit_text(text, parse_mode=parse_mode, reply_markup=reply_markup)
-    await save_bot_message(state, message)
+    bot: Bot,
+    chat_id: int,
+    message_id: int,
+    state: FSMContext,
+    text: str,
+    reply_markup=None,
+    parse_mode: str = "HTML",
+    delete_keyboard: bool | None = None,
+    delete_message: bool | None = None,
+    extra_data: dict | None = None,
+):
+    """Edit message in chat. Used to clean up messages after state is cleared."""
+
+    new_message = await bot.edit_message_text(
+        chat_id=chat_id, message_id=message_id, text=text, parse_mode=parse_mode, reply_markup=reply_markup
+    )
+    if not isinstance(new_message, Message):
+        raise ValueError(f"New message is not a Message, bot returned {new_message}")
+
+    data = await state.get_data()
+    sent = data.get("sent_messages", [])
+    for msg in sent:
+        if msg["message_id"] == message_id:
+            msg["message_id"] = new_message.message_id
+            msg["delete_keyboard"] = delete_keyboard if delete_keyboard is not None else msg["delete_keyboard"]
+            msg["delete_message"] = delete_message if delete_message is not None else msg["delete_message"]
+            msg["extra_data"] = extra_data if extra_data is not None else msg["extra_data"]
+            msg["text"] = text
+            await state.update_data(sent_messages=sent)
+
+    await state.update_data(last_message=new_message.message_id)
+    logger.debug(f"Edited message {new_message.message_id} to {text}")
+    logger.debug(f"Edited messages: {sent}")
+
+
+async def clean_messages(bot: Bot, chat_id: int, state: FSMContext):
+    """Clean up messages from chat. Used to clean up messages after state is cleared."""
+    data = await state.get_data()
+    sent = data.get("sent_messages", [])
+    removed = []
+    for msg in sent:
+        logger.debug(f"Cleaning message {msg['message_id']}")
+        if msg["delete_message"] is True:
+            try:
+                await bot.delete_message(chat_id=chat_id, message_id=msg["message_id"])
+                logger.debug(f"Deleted message {msg['message_id']}")
+                removed.append(msg)
+            except Exception as e:
+                logger.error(f"Error deleting message {msg['message_id']}: {e}")
+            continue
+        if msg["delete_keyboard"] is True:
+            try:
+                await bot.edit_message_reply_markup(chat_id=chat_id, message_id=msg["message_id"], reply_markup=None)
+                logger.debug(f"Deleted keyboard for message {msg['message_id']}")
+                removed.append(msg)
+            except Exception as e:
+                logger.error(f"Error deleting keyboard for message {msg['message_id']}: {e}")
+
+    for msg in removed:
+        sent.remove(msg)
+
+    await state.update_data(sent_messages=sent)
+
+
+async def get_messages(state: FSMContext) -> list[dict]:
+    """Get messages from state."""
+    data = await state.get_data()
+    return data.get("sent_messages", [])
 
 
 def log_action(action: str) -> Callable:

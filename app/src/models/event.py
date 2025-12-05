@@ -2,7 +2,7 @@
 This module defines the `Event` class, which represents calendar events in the application.
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Literal
 
 from sqlalchemy import ARRAY, Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String
@@ -26,11 +26,11 @@ class Event(Base):
 
         id: int - Primary key.
         user_id: int - Telegram ID of the user.
-        uid: str - UID, event unique identifier from icalendar. if null - then event is not imported from external calendar.
+        uid: str - UID, event unique identifier from icalendar.
 
         --- foreign keys section ---
 
-        calendar_id: int | None - FK to Calendar entity, nullable.
+        calendar_id: int - FK to Calendar entity, not null.
 
         --- date section ---
 
@@ -63,22 +63,15 @@ class Event(Base):
         title: string | None - SUMMARY. RFC 5545 format. Event title, max 255 chars. Not empty.
         description: string | None - DESCRIPTION, max 1024 chars.
 
-        --- metadata section ---
-
-        created_at: datetime - CREATED, auto-set if not provided.
-        last_modified: datetime - LAST-MODIFIED, auto-updates on change.
-
     """  # noqa: E501
 
     # --- id section ---
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    uid: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    uid: Mapped[str] = mapped_column(String(255), nullable=False)
 
     # --- foreign keys section ---
-    calendar_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("calendar.id", ondelete="CASCADE"), nullable=True
-    )
+    calendar_id: Mapped[int] = mapped_column(Integer, ForeignKey("calendar.id", ondelete="CASCADE"), nullable=False)
     calendar: Mapped[Calendar] = relationship(
         "Calendar",
         backref="events",
@@ -103,17 +96,8 @@ class Event(Base):
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     description: Mapped[str | None] = mapped_column(String(1024), nullable=True)
 
-    # --- metadata section ---
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.now(UTC))
-    last_modified: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=datetime.now(UTC), onupdate=datetime.now(UTC)
-    )
-
     # --- SQL-level constraints ---
-    __table_args__ = (
-        CheckConstraint("date_end >= date_start", name="end_after_start"),
-        CheckConstraint("last_modified >= created_at", name="last_modified_after_created"),
-    )
+    __table_args__ = (CheckConstraint("date_end >= date_start", name="end_after_start"),)
 
     # --- ORM-level validation ---
     @validates("title")
