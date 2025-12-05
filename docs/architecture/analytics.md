@@ -37,32 +37,6 @@ Number of reminders that arrive more than 1 minute delay;
 
 ### Metric tree
 
-Top-level **NSM**:
-
-- **On-time reminders per active day**
-
-L1 **input metrics**:
-
-1. **Reminder Quality**
-2. **User Activity**
-3. **Number of events**
-
-L2 :
-
-For Reminder Quality:
-
-- **On-time delivery rate**
-- **Delayed reminders**
-
-For User activity:
-
-- **Active days/week**
-
-For Number of events:
-
-- **Created events/day**
-- **Imported events/day**
-
 ![Metric Tree](/images/metric_tree.png)
 
 ## Plan measurements
