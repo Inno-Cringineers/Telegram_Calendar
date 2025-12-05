@@ -16,7 +16,7 @@ database:
 # Logger settings
 logger:
   # Console output level
-  level: DEBUG
+  level: ${LOG_LEVEL:-DEBUG}
   # Format: 'simple' or 'detailed'
   format: detailed
   # Show in console
@@ -36,6 +36,10 @@ bot:
   single_user: ${SINGLE_USER:-false}
   # Telegram token
   telegram_token: ${TELEGRAM_TOKEN}
+  # Sync workers
+  sync_workers: ${SYNC_WORKERS:-2}
+  # Sync interval in seconds
+  sync_interval: ${SYNC_INTERVAL:-10}
 
 # Default user settings
 settings:

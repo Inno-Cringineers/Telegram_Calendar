@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from repositories.schemas import (
     EventCreateSchema,
+    EventDurationFilter,
     EventFilter,
     EventResponse,
     EventUpdateSchema,
@@ -72,6 +73,14 @@ class EventService:
             filter: EventFilter with filtering criteria.
         """
         return await self.store.EventRepository.find(filter)
+
+    async def get_events_in_range(self, filter: EventDurationFilter) -> list[EventResponse]:
+        """Get events that durates in this range.
+
+        Args:
+            filter: EventDurationFilter with filtering criteria.
+        """
+        return await self.store.EventRepository.find_by_duration(filter)
 
     async def create(
         self,

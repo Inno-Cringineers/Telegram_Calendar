@@ -74,6 +74,21 @@ class CalendarService:
         calendars = await self.store.CalendarRepository.find(CalendarFilter(user_id=user_id))
         return [calendar for calendar in calendars if calendar.url is not None]
 
+    async def unlink_calendar(self, calendar_id: int) -> CalendarResponse | None:
+        """Unlink a calendar.
+
+        Args:
+            calendar_id: The ID of the calendar to unlink.
+        """
+        calendar = await self.get_by_id(calendar_id)
+        if calendar is None:
+            return None
+        # delete events and reminders associated with the calendar
+        await self.store.EventService.delete_by_calendar_id(calendar_id)
+        return await self.store.CalendarRepository.update_by_id(
+            calendar_id, CalendarUpdateSchema(sync_enabled=not calendar.sync_enabled)
+        )
+
     async def find(self, filter: CalendarFilter) -> list[CalendarResponse]:
         """Find calendars matching the provided filter.
 

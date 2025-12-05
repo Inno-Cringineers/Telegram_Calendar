@@ -13,6 +13,7 @@ from repositories.schemas import (
     EventCreateSchema,
     EventFilter,
     EventResponse,
+    EventUpdateSchema,
     ReminderCreateSchema,
 )
 from services.ics_parcer import ICSParser, VAlarmSchema, VEventSchema
@@ -93,6 +94,31 @@ class ImportService:
             calendar: CalendarResponse to create the event for.
             schema: VEventSchema to create the event from.
         """
+        # check if event already exists - then update it
+        event = await self.store.EventService.find(EventFilter(uid=schema.uid))
+        if event != []:
+            await self.store.EventService.update_by_id(
+                event[0].id,
+                EventUpdateSchema(
+                    date_start=schema.date_start,
+                    date_end=schema.date_end,
+                    all_day=self._is_all_day(schema.date_start, schema.date_end),
+                    need_to_remind=True,
+                    rrule=schema.rrule,
+                    rdate=schema.rdate,
+                    exdate=schema.exdate,
+                    title=schema.title,
+                    description=schema.description,
+                ),
+            )
+            # delete reminders associated with the event
+            await self.store.ReminderService.delete_by_event_id(event[0].id)
+            # create reminders
+            if schema.alarms is not None:
+                for alarm in schema.alarms:
+                    await self._create_reminder(event[0], alarm)
+            return
+
         event = EventCreateSchema(
             user_id=calendar.user_id,
             calendar_id=calendar.id,

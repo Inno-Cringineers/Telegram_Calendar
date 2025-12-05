@@ -98,17 +98,29 @@ class EventFilter:
         uid: str - Filter by event unique identifier from icalendar.
         user_id: int - Filter by user ID.
         calendar_id: int - Filter by calendar ID.
-        start_date_from: datetime - Filter events starting from this date.
-        start_date_to: datetime - Filter events starting until this date.
+        duration_from: datetime.
+        duration_to: datetime - finds events that duration intersects with this range.
         need_to_remind: bool - Filter by reminder requirement.
     """  # noqa: E501
 
     uid: str | object = NOT_SET
     user_id: int | object = NOT_SET
     calendar_id: int | object = NOT_SET
-    start_date_from: datetime | object = NOT_SET
-    start_date_to: datetime | object = NOT_SET
     need_to_remind: bool | object = NOT_SET
+
+
+@dataclass(frozen=True)
+class EventDurationFilter:
+    """Schema for filtering events by duration.
+
+    Attributes:
+        duration_from: datetime - Filter by duration from.
+        duration_to: datetime - Filter by duration to.
+    """
+
+    user_id: int
+    duration_from: datetime
+    duration_to: datetime
 
 
 # ----------------------------------------------------------------------------

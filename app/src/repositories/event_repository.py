@@ -4,12 +4,24 @@ EventRepository implementation for Event entity.
 Provides CRUD operations and query methods for Event model.
 """
 
+from collections.abc import Iterable
+from datetime import datetime
+
+from dateutil.rrule import rrulestr
+from icalendar import Event as ICalEvent
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.event import Event
 from repositories.exceptions import EventNotFoundError
-from repositories.schemas import NOT_SET, EventCreateSchema, EventFilter, EventResponse, EventUpdateSchema
+from repositories.schemas import (
+    NOT_SET,
+    EventCreateSchema,
+    EventDurationFilter,
+    EventFilter,
+    EventResponse,
+    EventUpdateSchema,
+)
 
 
 class EventRepository:
@@ -154,13 +166,84 @@ class EventRepository:
 
         stmt = stmt.where(*conditions)
 
-        if filter.start_date_from is not NOT_SET:
-            stmt = stmt.where(Event.date_start >= filter.start_date_from)
-        if filter.start_date_to is not NOT_SET:
-            stmt = stmt.where(Event.date_start <= filter.start_date_to)
-
         # Ordering (by date_start, then by id for stability)
         stmt = stmt.order_by(Event.date_start, Event.id)
 
         result = await self.session.execute(stmt)
         return [EventResponse.from_model(event) for event in result.scalars().all()]
+
+    async def find_by_duration(self, filter: EventDurationFilter) -> list[EventResponse]:
+        """
+        Find events that intersect with given duration [filter.duration_from, filter.duration_to].
+        Handles RRULE, RDATE, EXDATE.
+        """
+
+        # Step 1: get all events for user (matching your domain logic)
+        events = await self.find(EventFilter(user_id=filter.user_id))
+
+        matched = []
+
+        for event_resp in events:
+            # Convert EventResponse back to model-like simple object
+            # (или можно получить Event модель заново, если нужно)
+            event_model = await self.session.get(Event, event_resp.id)
+
+            for occ_start, occ_end in _event_occurrences(event_model, filter.duration_from, filter.duration_to):
+                if _intersects(occ_start, occ_end, filter.duration_from, filter.duration_to):
+                    matched.append(event_resp)
+                    break  # event matches at least one occurrence — include only once
+
+        return matched
+
+
+def _event_occurrences(event: Event, from_dt: datetime, to_dt: datetime) -> Iterable[tuple[datetime, datetime]]:
+    """
+    Generate all occurrences (start, end) of event between from_dt and to_dt inclusive,
+    taking into account RRULE, RDATE, and EXDATE.
+    """
+
+    duration = event.date_end - event.date_start
+
+    # --------------------------------------
+    # Build iCalendar VEVENT for recurrence
+    # --------------------------------------
+    vevent = ICalEvent()
+
+    vevent.add("dtstart", event.date_start)
+    vevent.add("dtend", event.date_end)
+
+    if event.rrule:
+        vevent.add("rrule", event.rrule)
+
+    if event.rdate:
+        for rd in event.rdate:
+            vevent.add("rdate", rd)
+
+    if event.exdate:
+        for ex in event.exdate:
+            vevent.add("exdate", ex)
+
+    # 1) RRULE occurrences
+    if event.rrule:
+        rule = rrulestr(event.rrule, dtstart=event.date_start)
+        for dt_start in rule.between(from_dt - duration, to_dt, inc=True):
+            if event.exdate and dt_start in event.exdate:
+                continue
+            yield dt_start, dt_start + duration
+
+    # 2) RDATE occurrences
+    if event.rdate:
+        for dt_start in event.rdate:
+            if from_dt <= dt_start <= to_dt and (not event.exdate or dt_start not in event.exdate):
+                yield dt_start, dt_start + duration
+
+    # 3) Base event (single event)
+    if event.rrule is None and not event.rdate:
+        if not event.exdate:
+            if not (event.date_end < from_dt or event.date_start > to_dt):
+                yield event.date_start, event.date_end
+
+
+def _intersects(start1, end1, start2, end2) -> bool:
+    """Return True if two intervals intersect."""
+    return not (end1 < start2 or end2 < start1)

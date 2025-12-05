@@ -142,8 +142,50 @@ msgstr "<<"
 msgid "calendar_weekdays"
 msgstr "Mon,Tue,Wed,Thu,Fri,Sat,Sun"
 
+msgid "calendar_list_end"
+msgstr "end of list"
+
+msgid "calendar_link_enter_name"
+msgstr "enter name of calendar"
+
+msgid "calendar_link_confirm_message"
+msgstr "will be created calendar with:\nname: <b>{name}</b>\n<a href=\"{link}\">link</a>"
+
+msgid "calendar_link_url_empty"
+msgstr "❌ url is empty"
+
+msgid "calendar_link_name_empty"
+msgstr "❌ name is empty"
+
+msgid "calendar_link_name_too_long"
+msgstr "❌ name is too long"
+
+msgid "calendar_link_error"
+msgstr "❌ linking error, may be url is incorrect"
+
+msgid "calendar_link_url_exists"
+msgstr "❌ calendar with this url already exists"
+
+msgid "calendar_link_url_invalid"
+msgstr "❌ url is invalid"
+
 msgid "create_event_cancelled"
 msgstr "❌ Event creation cancelled"
+
+msgid "calendar_link_success"
+msgstr "✅ calendar successfully linked"
+
+msgid "calendar_rename_title"
+msgstr "✏️ Rename calendar: <b>{old_name}</b>"
+
+msgid "calendar_rename_enter_new_name"
+msgstr "Enter new calendar name"
+
+msgid "calendar_rename_confirm_message"
+msgstr "Name will be changed to: <b>{name}</b>"
+
+msgid "calendar_rename_success"
+msgstr "✅ Calendar successfully renamed"
 
 msgid "create_event_confirmed"
 msgstr "✅ Event created!"

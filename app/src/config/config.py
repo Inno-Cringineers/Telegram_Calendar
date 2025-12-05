@@ -1,7 +1,7 @@
 import os
 import re
 from dataclasses import dataclass
-from datetime import time
+from datetime import time, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -30,6 +30,8 @@ class BotConfig:
     timeout: int
     single_user: bool
     telegram_token: str
+    sync_workers: int
+    sync_interval: timedelta
 
 
 @dataclass
@@ -179,6 +181,8 @@ def load_config() -> Config:
         timeout=yaml_config.get("bot", {}).get("timeout", 30),
         single_user=str_to_bool(yaml_config.get("bot", {}).get("single_user", False)),
         telegram_token=yaml_config.get("bot", {}).get("telegram_token"),
+        sync_workers=int(yaml_config.get("bot", {}).get("sync_workers", 2)),
+        sync_interval=timedelta(seconds=int(yaml_config.get("bot", {}).get("sync_interval", 60))),
     )
 
     settings_config_data = yaml_config.get("settings", {})

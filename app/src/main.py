@@ -2,6 +2,7 @@ import asyncio
 
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from config.config import load_config
 from database.database import create_engine, create_session_maker, create_tables
@@ -13,9 +14,10 @@ from middlewares.logging_middleware import (
 from middlewares.settings_middleware import SettingsMiddleware
 from middlewares.store_middlware import StoreMiddleware
 from router.router import router
+from services.sync_service import SyncService
 
 
-async def setup_database_and_store(dp: Dispatcher, db_url: str) -> None:
+async def setup_database_and_store(dp: Dispatcher, db_url: str) -> async_sessionmaker[AsyncSession]:
     """Setup database and create store middleware.
 
     Args:
@@ -32,6 +34,8 @@ async def setup_database_and_store(dp: Dispatcher, db_url: str) -> None:
     # Middleware to inject Store (must be after DatabaseMiddleware)
     dp.message.middleware(StoreMiddleware(session_maker))
     dp.callback_query.middleware(StoreMiddleware(session_maker))
+
+    return session_maker
 
 
 def setup_middlewares(dp: Dispatcher) -> None:
@@ -71,7 +75,13 @@ async def main() -> None:
     dp = Dispatcher(storage=MemoryStorage())
     # TODO: Add Redis storage for FSM
     # Setup database
-    await setup_database_and_store(dp, cfg.database.url)
+    session_maker = await setup_database_and_store(dp, cfg.database.url)
+    # Setup sync service
+    sync_service = SyncService(session_maker, sync_interval=cfg.bot.sync_interval, sync_workers=cfg.bot.sync_workers)
+
+    # Start sync service
+    sync_task = asyncio.create_task(sync_service.start_sync_service())
+
     # Setup middlewares
     setup_middlewares(dp)
     # Include router
@@ -80,9 +90,9 @@ async def main() -> None:
     logger.info("Bot is running in polling mode...")
     await dp.start_polling(bot, timeout=cfg.bot.timeout)
 
-    # TODO: Add graceful shutdown
-    # TODO: setup sync service
-    # TODO: states in redis
+    # Wait for sync service to finish
+    stop_task = asyncio.create_task(sync_service.stop())
+    await asyncio.gather(sync_task, stop_task)
 
 
 if __name__ == "__main__":

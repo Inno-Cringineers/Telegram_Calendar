@@ -3,10 +3,16 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from i18n.strings import t
-from keyboards.inline import back_button, calendar_inline, calendar_menu_inline, confirm_calendar_inline
+from keyboards.inline import (
+    back_button,
+    calendar_inline,
+    calendar_menu_inline,
+    confirm_calendar_inline,
+    confirm_calendar_rename_inline,
+)
 from logger.logger import logger
 from middlewares.settings_middleware import SettingsData
-from repositories.schemas import CalendarUpdateSchema
+from repositories.schemas import CalendarFilter, CalendarUpdateSchema
 from states.states import CalendarLinkingStates
 from store.store import Store
 from utils.handlers import clean_messages, edit_message, get_last_message_id, get_messages, send_message
@@ -108,10 +114,10 @@ async def calendar_unlink(query: CallbackQuery, state: FSMContext, store: Store,
         logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
         return
 
-    calendar = await store.CalendarService.update(
-        calendar_id,
-        data=CalendarUpdateSchema(sync_enabled=not calendar.sync_enabled),
-    )
+    calendar = await store.CalendarService.unlink_calendar(calendar_id)
+    if calendar is None:
+        logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
+        return
 
     messages = await get_messages(state)
 
@@ -190,7 +196,7 @@ async def calendar_new(query: CallbackQuery, state: FSMContext, settings: Settin
 
 
 @router.message(CalendarLinkingStates.waiting_for_calendar_link)
-async def process_calendar_link(message: Message, state: FSMContext, settings: SettingsData) -> None:
+async def process_calendar_link(message: Message, state: FSMContext, settings: SettingsData, store: Store) -> None:
     """Process calendar link."""
 
     last_message_id = await get_last_message_id(state)
@@ -210,7 +216,7 @@ async def process_calendar_link(message: Message, state: FSMContext, settings: S
             state,
             text=(
                 f"{t('calendar.new.title', lang=settings.lang)}\n\n"
-                f"{t('calendar.link.url_empty', lang=settings.lang)}\n\n"
+                f"{t('calendar.link.url.empty', lang=settings.lang)}\n\n"
             ),
             parse_mode="HTML",
             reply_markup=back_button(lang=settings.lang),
@@ -225,6 +231,38 @@ async def process_calendar_link(message: Message, state: FSMContext, settings: S
             text=(
                 f"{t('calendar.new.title', lang=settings.lang)}\n\n"
                 f"{t('calendar.link.url_too_long', lang=settings.lang)}\n\n"
+            ),
+            parse_mode="HTML",
+            reply_markup=back_button(lang=settings.lang),
+        )
+        return
+
+    if not url.startswith("http://") and not url.startswith("https://"):
+        await edit_message(
+            message.bot,
+            message.chat.id,
+            last_message_id,
+            state,
+            text=(
+                f"{t('calendar.new.title', lang=settings.lang)}\n\n"
+                f"{t('calendar.link.url.invalid', lang=settings.lang)}\n\n"
+            ),
+            parse_mode="HTML",
+            reply_markup=back_button(lang=settings.lang),
+        )
+        return
+
+    # check if url is not exists in database for this user
+    calendars = await store.CalendarService.find(CalendarFilter(url=url, user_id=message.from_user.id))
+    if calendars != []:
+        await edit_message(
+            message.bot,
+            message.chat.id,
+            last_message_id,
+            state,
+            text=(
+                f"{t('calendar.new.title', lang=settings.lang)}\n\n"
+                f"{t('calendar.link.url.exists', lang=settings.lang)}\n\n"
             ),
             parse_mode="HTML",
             reply_markup=back_button(lang=settings.lang),
@@ -263,7 +301,10 @@ async def process_calendar_name(message: Message, state: FSMContext, settings: S
             message.chat.id,
             last_message_id,
             state,
-            text=f"{t('calendar.new.title', lang=settings.lang)}\n\n{t('calendar.link.name.empty', lang=settings.lang)}\n\n",
+            text=(
+                f"{t('calendar.new.title', lang=settings.lang)}\n\n"
+                f"{t('calendar.link.name.empty', lang=settings.lang)}\n\n"
+            ),
             parse_mode="HTML",
             reply_markup=back_button(lang=settings.lang),
         )
@@ -286,6 +327,8 @@ async def process_calendar_name(message: Message, state: FSMContext, settings: S
 
     await state.update_data(name=name)
     await state.set_state(CalendarLinkingStates.waiting_for_calendar_confirmation)
+    data = await state.get_data()
+    url: str | None = data.get("url")
     await edit_message(
         message.bot,
         message.chat.id,
@@ -293,7 +336,7 @@ async def process_calendar_name(message: Message, state: FSMContext, settings: S
         state,
         text=(
             f"{t('calendar.new.title', lang=settings.lang)}\n\n"
-            f"{t('calendar.link.confirm.message', lang=settings.lang)}\n\n"
+            f"{t('calendar.link.confirm.message', lang=settings.lang, name=name, link=url)}\n\n"
         ),
         parse_mode="HTML",
         reply_markup=confirm_calendar_inline(lang=settings.lang),
@@ -340,6 +383,144 @@ async def calendar_confirm(query: CallbackQuery, state: FSMContext, store: Store
         query.message.message_id,
         state,
         text=t("calendar.link.success", lang=settings.lang),
+        parse_mode="HTML",
+        reply_markup=back_button("menu_link_calendar", lang=settings.lang),
+    )
+
+
+@router.callback_query(F.data.startswith("calendar_rename:"), CalendarLinkingStates.in_calendar_menu)
+async def calendar_rename(query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData) -> None:
+    """Rename a calendar."""
+    if query.data is None or len(query.data) == 0:
+        logger.error("Query data is None or empty", extra={"query": query})
+        return
+
+    calendar_id = int(query.data.split(":")[1])
+
+    calendar = await store.CalendarService.get_by_id(calendar_id)
+    if calendar is None:
+        logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
+        return
+
+    await clean_messages(query.bot, query.message.chat.id, state)
+
+    await state.set_state(CalendarLinkingStates.waiting_for_calendar_name_rename)
+
+    last_message_id = await get_last_message_id(state)
+    if last_message_id is None:
+        logger.error("Last message id is not found", extra={"state": state})
+        return
+
+    text = (
+        f"{t('calendar.rename.title', old_name=calendar.name, lang=settings.lang)}\n\n"
+        f"{t('calendar.rename.enter.new.name', lang=settings.lang)}\n\n"
+    )
+
+    await state.update_data(calendar_id=calendar_id)
+
+    await edit_message(
+        query.bot,
+        calendar.user_id,
+        last_message_id,
+        state,
+        text=text,
+        parse_mode="HTML",
+        reply_markup=back_button(lang=settings.lang),
+    )
+
+
+@router.message(CalendarLinkingStates.waiting_for_calendar_name_rename)
+async def process_calendar_name_rename(
+    message: Message, state: FSMContext, store: Store, settings: SettingsData
+) -> None:
+    """Process calendar name rename."""
+    last_message_id = await get_last_message_id(state)
+    if last_message_id is None:
+        logger.error("Last message id is not found", extra={"state": state})
+        return
+
+    data = await state.get_data()
+    calendar_id = data.get("calendar_id")
+    if calendar_id is None:
+        logger.error("Calendar id is not found", extra={"state": state})
+        return
+    calendar = await store.CalendarService.get_by_id(calendar_id)
+    if calendar is None:
+        logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
+        return
+
+    name = message.text
+    await message.delete()
+
+    if name is None or len(name) == 0:
+        await edit_message(
+            message.bot,
+            calendar.user_id,
+            last_message_id,
+            state,
+            text=(
+                f"{t('calendar.rename.title', old_name=calendar.name, lang=settings.lang)}\n\n"
+                f"{t('calendar.rename.name.empty', lang=settings.lang)}\n\n"
+            ),
+            parse_mode="HTML",
+            reply_markup=back_button(lang=settings.lang),
+        )
+        return
+
+    if len(name) > 255:
+        await edit_message(
+            message.bot,
+            calendar.user_id,
+            last_message_id,
+            state,
+            text=(
+                f"{t('calendar.new.title', lang=settings.lang)}\n\n"
+                f"{t('calendar.link.name.too.long', lang=settings.lang)}\n\n"
+            ),
+            parse_mode="HTML",
+            reply_markup=back_button(lang=settings.lang),
+        )
+        return
+
+    await state.update_data(name=name)
+    await state.set_state(CalendarLinkingStates.waiting_for_calendar_confirmation)
+    await edit_message(
+        message.bot,
+        calendar.user_id,
+        last_message_id,
+        state,
+        text=(
+            f"{t('calendar.rename.title', old_name=calendar.name, lang=settings.lang)}\n\n"
+            f"{t('calendar.rename.confirm.message', lang=settings.lang, name=name)}\n\n"
+        ),
+        parse_mode="HTML",
+        reply_markup=confirm_calendar_rename_inline(lang=settings.lang),
+        extra_data={"calendar_id": calendar_id, "new_name": name},
+    )
+
+
+@router.callback_query(F.data == "calendar_rename_confirm", CalendarLinkingStates.waiting_for_calendar_confirmation)
+async def calendar_rename_confirm(
+    query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData
+) -> None:
+    """Confirm calendar rename."""
+    data = await state.get_data()
+    calendar_id = data.get("calendar_id")
+    if calendar_id is None:
+        logger.error("Calendar id is not found", extra={"state": state})
+        return
+    name = data.get("name")
+    if name is None:
+        logger.error("New name is not found", extra={"state": state})
+        return
+    await store.CalendarService.update(calendar_id, CalendarUpdateSchema(name=name))
+    await state.set_state(CalendarLinkingStates.in_calendar_menu)
+    await edit_message(
+        query.bot,
+        query.message.chat.id,
+        query.message.message_id,
+        state,
+        text=t("calendar.rename.success", lang=settings.lang),
         parse_mode="HTML",
         reply_markup=back_button("menu_link_calendar", lang=settings.lang),
     )

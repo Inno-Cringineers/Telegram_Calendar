@@ -143,6 +143,15 @@ def calendar_inline(linked: bool, calendar_id: int, lang: str = "en") -> InlineK
     return _mk_markup(buttons)
 
 
+def confirm_calendar_rename_inline(lang: str = "en") -> InlineKeyboardMarkup:
+    """Create confirm calendar rename inline keyboard."""
+    buttons = [
+        [InlineKeyboardButton(text=t("btn.accept", lang=lang), callback_data="calendar_rename_confirm")],
+        [InlineKeyboardButton(text=t("btn.reject", lang=lang), callback_data="menu_link_calendar")],
+    ]
+    return _mk_markup(buttons)
+
+
 def daily_plan_time_menu_inline(lang: str = "ru") -> InlineKeyboardMarkup:
     """Create daily plan time menu inline keyboard."""
     buttons = [
