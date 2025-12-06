@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.0] - 2025-12-06
+### Added
+- settings implementation.
+- calendar syncronization implementation.
+
+### Changed
+- Refactored codebase to use settings.
+- Refactored codebase to use calendar syncronization.
+
+### Fixed
+- Fixed unimportant bugs in codebase.
+
+### Security
+
 ## [0.0.2] - 2025-11-22
 ### Added
 - Pydantic schemas.
