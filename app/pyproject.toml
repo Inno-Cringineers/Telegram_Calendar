@@ -41,6 +41,9 @@ module = [
     "sqlalchemy.*",
     "yaml.*",
     "dateutil.rrule.*",
+    "icalendar.*",
+    "watchdog.*",
+    "opentelemetry.*",
 ]
 ignore_missing_imports = true
 

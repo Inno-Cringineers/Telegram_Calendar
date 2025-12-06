@@ -120,10 +120,7 @@ class MetricsService:
         Returns:
             Iterable of observations for each language.
         """
-        return [
-            Observation(count, {"language": language})
-            for language, count in self._language_counts.items()
-        ]
+        return [Observation(count, {"language": language}) for language, count in self._language_counts.items()]
 
     async def _collect_user_languages(self, session: AsyncSession) -> None:
         """Collect user language distribution from settings table.
@@ -206,4 +203,3 @@ class MetricsService:
         """Stop the metrics service gracefully."""
         logger.info("Stopping metrics service")
         self._running = False
-

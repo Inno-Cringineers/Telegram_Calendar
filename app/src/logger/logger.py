@@ -106,19 +106,11 @@ def _setup_otel_logging(logger: logging.Logger, logger_config: LoggerConfig) -> 
         # Create and add OpenTelemetry handler
         otel_handler = LoggingHandler(logger_provider=logger_provider)
         # Use the same level as console handler
-        otel_handler.setLevel(
-            getattr(logging, logger_config.level.upper(), logging.INFO)
-        )
+        otel_handler.setLevel(getattr(logging, logger_config.level.upper(), logging.INFO))
         logger.addHandler(otel_handler)
 
         logger.debug("OpenTelemetry logging handler configured successfully")
     except ImportError as e:
-        logger.warning(
-            f"OpenTelemetry logging packages not available: {e}. "
-            "Logs will not be sent to Grafana Cloud."
-        )
+        logger.warning(f"OpenTelemetry logging packages not available: {e}. Logs will not be sent to Grafana Cloud.")
     except Exception as e:
-        logger.warning(
-            f"Failed to setup OpenTelemetry logging: {e}. "
-            "Logs will not be sent to Grafana Cloud."
-        )
+        logger.warning(f"Failed to setup OpenTelemetry logging: {e}. Logs will not be sent to Grafana Cloud.")
