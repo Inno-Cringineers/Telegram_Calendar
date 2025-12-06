@@ -1,22 +1,22 @@
-name: Deploy
+# name: Deploy
 
-on:
-  schedule:
-    - cron: "0 8 * * 0" # every sunday at 8:00 UTC
+# on:
+#   schedule:
+#     - cron: "0 8 * * 0" # every sunday at 8:00 UTC
 
-jobs:
-  lint:
-    uses: ./.github/workflows/jobs/lint.yml
+# jobs:
+#   lint:
+#     uses: ./.github/workflows/jobs/lint.yml
 
-  test:
-    uses: ./.github/workflows/jobs/test.yml
+#   test:
+#     uses: ./.github/workflows/jobs/test.yml
 
-  deploy:
-    needs: [lint, test]
-    uses: ./.github/workflows/jobs/deploy.yml
-    with:
-      compose_file: docker-compose.yml
-      environment_name: production
-      directory: prod
-      bot_link: https://t.me/calendar_collection_bot
-      environment_display_name: Production
+#   deploy:
+#     needs: [lint, test]
+#     uses: ./.github/workflows/jobs/deploy.yml
+#     with:
+#       compose_file: docker-compose.yml
+#       environment_name: production
+#       directory: prod
+#       bot_link: https://t.me/calendar_collection_bot
+#       environment_display_name: Production

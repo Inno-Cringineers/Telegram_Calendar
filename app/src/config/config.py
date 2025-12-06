@@ -1,6 +1,7 @@
 import os
 import re
 from dataclasses import dataclass
+from datetime import time, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +30,34 @@ class BotConfig:
     timeout: int
     single_user: bool
     telegram_token: str
+    sync_workers: int
+    sync_interval: timedelta
+    metrics_interval: timedelta
+
+
+@dataclass
+class SettingsConfig:
+    """Default user settings configuration.
+
+    Attributes:
+        timezone: Default timezone string (e.g., "UTC+2").
+        language: Default language code (e.g., "en").
+        quiet_hours_enabled: Whether quiet hours are enabled by default.
+        quiet_hours_start: Default quiet hours start time as "HH:MM" string.
+        quiet_hours_end: Default quiet hours end time as "HH:MM" string.
+        daily_plans_enabled: Whether daily plans are enabled by default.
+        daily_plans_time: Default daily plans time as "HH:MM" string.
+        default_reminder_offset: Default reminder offset in seconds.
+    """
+
+    timezone: str
+    language: str
+    quiet_hours_enabled: bool
+    quiet_hours_start: str
+    quiet_hours_end: str
+    daily_plans_enabled: bool
+    daily_plans_time: str
+    default_reminder_offset: int
 
 
 @dataclass
@@ -36,6 +65,7 @@ class Config:
     logger: LoggerConfig
     database: DatabaseConfig
     bot: BotConfig
+    settings: SettingsConfig
 
 
 def substitute_env_vars(value: Any) -> Any:
@@ -117,6 +147,23 @@ def str_to_bool(value: Any) -> bool:
     return bool(value)
 
 
+def parse_time(time_str: str | None) -> time | None:
+    """Parse time string in HH:MM format to time object.
+
+    Args:
+        time_str: Time string in "HH:MM" format, or None.
+
+    Returns:
+        time object or None if time_str is None.
+    """
+    if time_str is None:
+        return None
+    parts = time_str.split(":")
+    if len(parts) != 2:
+        raise ValueError(f"Invalid time format: {time_str}. Expected HH:MM")
+    return time(hour=int(parts[0]), minute=int(parts[1]))
+
+
 def load_config() -> Config:
     """Load and validate configuration from environment and YAML."""
     # Load YAML config
@@ -135,5 +182,21 @@ def load_config() -> Config:
         timeout=yaml_config.get("bot", {}).get("timeout", 30),
         single_user=str_to_bool(yaml_config.get("bot", {}).get("single_user", False)),
         telegram_token=yaml_config.get("bot", {}).get("telegram_token"),
+        sync_workers=int(yaml_config.get("bot", {}).get("sync_workers", 2)),
+        sync_interval=timedelta(seconds=int(yaml_config.get("bot", {}).get("sync_interval", 60))),
+        metrics_interval=timedelta(seconds=int(yaml_config.get("bot", {}).get("metrics_interval", 300))),
     )
-    return Config(logger=logger_config, database=database_config, bot=bot_config)
+
+    settings_config_data = yaml_config.get("settings", {})
+    settings_config = SettingsConfig(
+        timezone=settings_config_data.get("timezone", "UTC+3"),
+        language=settings_config_data.get("language", "en"),
+        quiet_hours_enabled=str_to_bool(settings_config_data.get("quiet_hours_enabled", False)),
+        quiet_hours_start=settings_config_data.get("quiet_hours_start", "00:00"),
+        quiet_hours_end=settings_config_data.get("quiet_hours_end", "06:00"),
+        daily_plans_enabled=str_to_bool(settings_config_data.get("daily_plans_enabled", True)),
+        daily_plans_time=settings_config_data.get("daily_plans_time", "09:00"),
+        default_reminder_offset=settings_config_data.get("default_reminder_offset", 900),
+    )
+
+    return Config(logger=logger_config, database=database_config, bot=bot_config, settings=settings_config)

@@ -1,5 +1,7 @@
 import logging
 import logging.handlers
+import os
+import time
 from pathlib import Path
 
 from config.config import LoggerConfig
@@ -33,10 +35,17 @@ def setup_logger(logger_config: LoggerConfig) -> logging.Logger:
     else:
         format_string = "%(asctime)s - %(levelname)s - %(message)s"
 
+    # Use local timezone for logging
+    # When Docker volumes /etc/localtime and /etc/timezone are mounted,
+    # time.localtime will use the host machine's timezone
     formatter = logging.Formatter(
         format_string,
         datefmt="%Y-%m-%d %H:%M:%S",
     )
+    # Explicitly set converter to use local time (not UTC)
+    # This ensures logs show time according to host machine's timezone
+    # when /etc/localtime is mounted in Docker
+    formatter.converter = time.localtime
 
     # Console handler - always enabled
     if logger_config.console:
@@ -60,4 +69,48 @@ def setup_logger(logger_config: LoggerConfig) -> logging.Logger:
     logging.getLogger("aiogram").setLevel(logging.WARNING)
     logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
 
+    # Setup OpenTelemetry logging handler for Grafana Cloud
+    _setup_otel_logging(logger, logger_config)
+
     return logger
+
+
+def _setup_otel_logging(logger: logging.Logger, logger_config: LoggerConfig) -> None:
+    """
+    Setup OpenTelemetry logging handler to send logs to Grafana Cloud.
+
+    Args:
+        logger: Logger instance to add OpenTelemetry handler to.
+        logger_config: Logger configuration.
+    """
+    # Only setup if OTLP endpoint is configured
+    otlp_endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+    if not otlp_endpoint:
+        logger.debug("OpenTelemetry OTLP endpoint not configured, skipping log export")
+        return
+
+    try:
+        from opentelemetry._logs import set_logger_provider
+        from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
+        from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
+        from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
+
+        # Create logger provider
+        logger_provider = LoggerProvider()
+        set_logger_provider(logger_provider)
+
+        # Create OTLP exporter
+        otlp_exporter = OTLPLogExporter()
+        logger_provider.add_log_record_processor(BatchLogRecordProcessor(otlp_exporter))
+
+        # Create and add OpenTelemetry handler
+        otel_handler = LoggingHandler(logger_provider=logger_provider)
+        # Use the same level as console handler
+        otel_handler.setLevel(getattr(logging, logger_config.level.upper(), logging.INFO))
+        logger.addHandler(otel_handler)
+
+        logger.debug("OpenTelemetry logging handler configured successfully")
+    except ImportError as e:
+        logger.warning(f"OpenTelemetry logging packages not available: {e}. Logs will not be sent to Grafana Cloud.")
+    except Exception as e:
+        logger.warning(f"Failed to setup OpenTelemetry logging: {e}. Logs will not be sent to Grafana Cloud.")

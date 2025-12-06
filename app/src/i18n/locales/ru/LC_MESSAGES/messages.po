@@ -1,0 +1,334 @@
+# Translation file for RU
+msgid ""
+msgstr ""
+"Language: ru\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "btn_accept"
+msgstr "✅ Принять"
+
+msgid "btn_add"
+msgstr "➕ Добавить"
+
+msgid "btn_back"
+msgstr "« Назад"
+
+msgid "btn_calendar_list"
+msgstr "📑 Список календарей"
+
+msgid "btn_cancel"
+msgstr "❌ Отмена"
+
+msgid "btn_create_by_dialog"
+msgstr "📅 Создать через диалог"
+
+msgid "btn_daily_plan"
+msgstr "📋 Получить ежедневный план"
+
+msgid "btn_daily_plan_time_enter"
+msgstr "ввести время ежедневных планов"
+
+msgid "btn_daily_plans_time"
+msgstr "⏰ Время ежедневных планов"
+
+msgid "btn_delete"
+msgstr "❌ удалить"
+
+msgid "btn_edit"
+msgstr "✎ редактировать"
+
+msgid "btn_events"
+msgstr "📅 События"
+
+msgid "btn_export"
+msgstr "📤 Экспорт"
+
+msgid "btn_external_calendars"
+msgstr "🔗 Внешние календари"
+
+msgid "btn_import"
+msgstr "📥 Импорт"
+
+msgid "btn_language"
+msgstr "🇬🇧 Язык"
+
+msgid "btn_language_en"
+msgstr "English"
+
+msgid "btn_language_ru"
+msgstr "Русский"
+
+msgid "btn_link_calendar"
+msgstr "🔗 Связать новый календарь"
+
+msgid "btn_quiet_hours"
+msgstr "🔇 Тихие часы"
+
+msgid "btn_quiet_hours_enter"
+msgstr "ввести тихие часы"
+
+msgid "btn_quiet_hours_enable"
+msgstr "включить/выключить"
+
+msgid "btn_reject"
+msgstr "❌ Отклонить"
+
+msgid "btn_settings"
+msgstr "⚙️ Настройки"
+
+msgid "btn_skip"
+msgstr "⏭ Пропустить"
+
+msgid "btn_timezone"
+msgstr "🌍 Часовой пояс"
+
+msgid "btn_view"
+msgstr "🔍 Просмотр"
+
+msgid "calendar_link_title"
+msgstr "🔗 <b>Связать календарь</b>\n\nВыберите действие:"
+
+msgid "calendar_list_answer"
+msgstr "📑 Ваши календари"
+
+msgid "calendar_list_feature_dev"
+msgstr "Функция находится в разработке. Здесь вы можете отвязать календари."
+
+msgid "calendar_list_linked"
+msgstr "<b>Связанные календари:</b>"
+
+msgid "calendar_list_title"
+msgstr "📑 <b>Ваши календари</b>"
+
+msgid "calendar_new_answer"
+msgstr "🔗 Связать новый календарь"
+
+msgid "calendar_new_enter_link"
+msgstr "<b>Введите ссылку на ical:</b>"
+
+msgid "calendar_new_title"
+msgstr "🔗 <b>Связать новый календарь</b>"
+
+msgid "calendar_next_month"
+msgstr ">>"
+
+msgid "calendar_prev_month"
+msgstr "<<"
+
+msgid "calendar_weekdays"
+msgstr "Пн,Вт,Ср,Чт,Пт,Сб,Вс"
+
+msgid "create_event_cancelled"
+msgstr "❌ Создание события отменено"
+
+msgid "create_event_confirmed"
+msgstr "✅ Событие создано!"
+
+msgid "create_event_date_format_error"
+msgstr "❌ Неверный формат даты\n\nФормат: ДД.ММ.ГГГГ (пример: 25.12.2025)"
+
+msgid "create_event_enter_date"
+msgstr "📅 Введите дату начала:\n\nФормат: ДД.ММ.ГГГГ (пример: 25.12.2025)"
+
+msgid "create_event_enter_description"
+msgstr "📄 Введите описание:\n\n"
+
+msgid "create_event_enter_time"
+msgstr "⏰ Введите время начала:\n\nФормат: ЧЧ:ММ (пример: 14:30)"
+
+msgid "create_event_enter_title"
+msgstr "📝 Введите название события:\n\n"
+
+msgid "create_event_preview_confirm"
+msgstr "✅ Всё правильно?"
+
+msgid "create_event_preview_date_label"
+msgstr "📅 <b>Дата начала:</b> {date}"
+
+msgid "create_event_preview_description_label"
+msgstr "📄 <b>описание:</b> {description}"
+
+msgid "create_event_preview_description_none"
+msgstr "(Нет)"
+
+msgid "create_event_preview_time_label"
+msgstr "⏰ <b>Время начала:</b> {time}"
+
+msgid "create_event_preview_title"
+msgstr "📋 Проверьте данные события:"
+
+msgid "create_event_preview_title_label"
+msgstr "📝 <b>Название:</b> {title}"
+
+msgid "create_event_success"
+msgstr "✅ <b>Событие успешно создано</b>"
+
+msgid "create_event_time_format_error"
+msgstr "❌ Неверный формат времени\n\nИспользуйте формат: ЧЧ:ММ (пример: 14:30)"
+
+msgid "create_event_title_empty"
+msgstr "❌ Название не должно быть пустым"
+
+msgid "create_event_title_too_long"
+msgstr "❌ Название слишком длинное (максимум 100 символов)"
+
+msgid "daily_plan_end"
+msgstr "Конец ежедневного плана"
+
+msgid "daily_plan_generating"
+msgstr "📋 Генерация ежедневного плана..."
+
+msgid "events_create_selected"
+msgstr "➕ Создание события выбрано"
+
+msgid "events_create_title"
+msgstr "➕ <b>Создание событий</b>"
+
+msgid "events_export_description"
+msgstr "Это ваши события в формате .ics (только внутренние события)"
+
+msgid "events_export_selected"
+msgstr "📥 Экспорт событий выбран"
+
+msgid "events_export_title"
+msgstr "📥 <b>Экспорт событий</b>"
+
+msgid "events_feature_dev"
+msgstr "Функция находится в разработке."
+
+msgid "events_import_description"
+msgstr "Пожалуйста, загрузите файл в формате .ics в чат"
+
+msgid "events_import_selected"
+msgstr "📥 Импорт событий выбран"
+
+msgid "events_import_title"
+msgstr "📥 <b>Импорт событий</b>"
+
+msgid "events_title"
+msgstr "📅 <b>События</b>\n\nВыберите опцию событий:"
+
+msgid "events_view_selected"
+msgstr "🔍 Просмотр событий выбран"
+
+msgid "events_view_title"
+msgstr "🔍 <b>Просмотр событий</b>"
+
+msgid "menu_main_title"
+msgstr "🏠 <b>Главное меню</b>\n\nВыберите опцию:"
+
+msgid "menu_updated"
+msgstr "Меню обновлено"
+
+msgid "settings_daily_plans_time_current"
+msgstr "Текущее время: 09:00 (Заглушка)"
+
+msgid "settings_daily_plans_time_description"
+msgstr "Функция находится в разработке. Ежедневный план будет отправляться в это время каждый день."
+
+msgid "settings_daily_plans_time_selected"
+msgstr "✅ Настройка времени ежедневных планов выбрана"
+
+msgid "settings_daily_plans_time_title"
+msgstr "⏰ <b>Время ежедневных планов</b>"
+
+msgid "settings_daily_plans_time_enter"
+msgstr "Введите время ежедневных планов в HH:MM формате (например, 09:30)"
+
+msgid "settings_daily_plans_time_format_error"
+msgstr "❌ Неверный формат времени.\n\nВы ввели: <b>{user_input}</b>\n"
+
+
+msgid "settings_language_available"
+msgstr "Доступные языки: English, Русский"
+
+msgid "settings_language_current"
+msgstr "Текущий язык: Русский"
+
+msgid "settings_language_selected"
+msgstr "✅ Настройка языка выбрана"
+
+msgid "settings_language_changed"
+msgstr "✅ Язык успешно изменен"
+
+msgid "settings_language_title"
+msgstr "🇬🇧 <b>Язык</b>"
+
+msgid "settings_quiet_hours_current"
+msgstr "Текущие тихие часы: <b>{quiet_hours}</b>"
+
+msgid "settings_quiet_hours_description"
+msgstr "Уведомления не будут приходить в течение тихих часов."
+
+msgid "settings_quiet_hours_enabled"
+msgstr "✅ Тихие часы включены"
+
+msgid "settings_quiet_hours_disabled"
+msgstr "❌ Тихие часы выключены"
+
+msgid "settings_quiet_hours_start_enter"
+msgstr "Введите время начала тихих часов в HH:MM формате (например, 02:30)"
+
+msgid "settings_quiet_hours_format_error"
+msgstr "❌ Неверный формат времени.\n\nВы ввели: <b>{user_input}</b>\n"
+
+msgid "settings_quiet_hours_start_entered"
+msgstr "Вы ввели время начала тихих часов:\n<b>{quiet_start}</b>"
+
+msgid "settings_quiet_hours_end_entered"
+msgstr "Вы ввели время окончания тихих часов:\n<b>{quiet_end}</b>"
+
+msgid "settings_quiet_hours_end_enter"
+msgstr "Введите время окончания тихих часов в HH:MM формате (например, 06:30)"
+
+msgid "settings_quiet_hours_accept_reject"
+msgstr "Тихие часы будут изменены на:\n<b>{quiet_start} - {quiet_end}</b>"
+
+msgid "settings_quiet_hours_accepted"
+msgstr "✅ Тихие часы изменены"
+
+msgid "settings_quiet_hours_selected"
+msgstr "✅ Настройка тихих часов выбрана"
+
+msgid "settings_quiet_hours_title"
+msgstr "🔇 <b>Тихие часов</b>"
+
+msgid "settings_quiet_hours_equal_error"
+msgstr "❌ Время начала и время окончания не могут быть равны"
+
+msgid "settings_daily_plans_time_accept_reject"
+msgstr "Время ежедневных планов будет изменено на:\n<b>{daily_plan}</b>"
+
+msgid "settings_daily_plans_time_accepted"
+msgstr "✅ Время ежедневных планов изменено"
+
+msgid "settings_timezone_current"
+msgstr "Текущий часовой пояс: UTC+2 (Заглушка)"
+
+msgid "settings_timezone_feature_dev"
+msgstr "Функция находится в разработке."
+
+msgid "settings_timezone_select"
+msgstr "Выберите часовой пояс:"
+
+msgid "settings_timezone_selected"
+msgstr "✅ Настройка часового пояса выбрана"
+
+msgid "settings_timezone_title"
+msgstr "🌍 Часовой пояс"
+
+msgid "settings_timezone_ask_time"
+msgstr "🌍 <b>Настройка часового пояса</b>\n\nВаш текущий часовой пояс: <b>{timezone}</b>\n\nПожалуйста, введите ваше текущее местное время в формате <b>ЧЧ:ММ</b> (например, 14:30).\n\nЯ автоматически определю ваш часовой пояс на основе разницы между вашим местным временем и UTC."
+
+msgid "settings_timezone_time_format_error"
+msgstr "🌍 <b>Настройка часового пояса</b>\n\n\n❌ Неверный формат времени.\n\nВы ввели: <b>{user_input}</b>\n\nПожалуйста, введите время в формате ЧЧ:ММ (например, 14:30)."
+
+msgid "settings_timezone_updated"
+msgstr "✅ Часовой пояс успешно обновлен на <b>{timezone}</b>"
+
+msgid "settings_title"
+msgstr "⚙️ <b>Настройки</b>\n\n<u>Ваши текущие настройки:</u>\n\n🌍 Часовой пояс: <b>{timezone}</b>\n\n🇷🇺 Язык: <b>{language}</b>\n\n🔇 Тихие часы: <b>{quiet_hours}</b>\n\n⏰ Время ежедневного плана: <b>{daily_plan}</b>\n\n"
+
+msgid "start_welcome"
+msgstr "👋 <b>Добро пожаловать в Personal Calendar Reminder bot, {user_name}!</b>\n\nЯ могу управлять вашими событиями, отправлять вам напоминания о приближающихся событиях, синхронизироваться с внешними календарями.\n\n📋 <b>Команды:</b>\n/start - Показать это диалоговое окно\n/help - Получить помощь\n\n🎯 <b>Основные функции:</b>\n• 📅 Просмотр событий\n• ➕ Создание событий\n• ✏️ Редактирование и удаление событий\n• 🔗 Экспорт внешних календарей (google, outlook и т.д.)\n• ⏰ Напоминания о событиях\n• 📋 Ежедневные планы"
+
