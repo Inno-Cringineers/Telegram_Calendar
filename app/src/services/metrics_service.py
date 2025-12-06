@@ -8,8 +8,8 @@ This service periodically collects metrics from the database:
 """
 
 import asyncio
+from collections.abc import Iterable
 from datetime import timedelta
-from typing import Iterable
 
 from opentelemetry import metrics
 from opentelemetry.metrics import CallbackOptions, Observation

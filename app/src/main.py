@@ -1,5 +1,4 @@
 import asyncio
-from datetime import timedelta
 
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage

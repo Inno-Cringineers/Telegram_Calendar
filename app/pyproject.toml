@@ -40,6 +40,7 @@ module = [
     "aiosqlite.*",
     "sqlalchemy.*",
     "yaml.*",
+    "dateutil.rrule.*",
 ]
 ignore_missing_imports = true
 

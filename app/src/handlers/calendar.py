@@ -344,7 +344,9 @@ async def process_calendar_name(message: Message, state: FSMContext, settings: S
     )
 
 
-@router.callback_query(F.data == "calendar_confirm", StateFilter(CalendarLinkingStates.waiting_for_calendar_confirmation))
+@router.callback_query(
+    F.data == "calendar_confirm", StateFilter(CalendarLinkingStates.waiting_for_calendar_confirmation)
+)
 async def calendar_confirm(query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData) -> None:
     """Confirm calendar linking."""
 
@@ -500,7 +502,9 @@ async def process_calendar_name_rename(
     )
 
 
-@router.callback_query(F.data == "calendar_rename_confirm", StateFilter(CalendarLinkingStates.waiting_for_calendar_confirmation))
+@router.callback_query(
+    F.data == "calendar_rename_confirm", StateFilter(CalendarLinkingStates.waiting_for_calendar_confirmation)
+)
 async def calendar_rename_confirm(
     query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData
 ) -> None:
