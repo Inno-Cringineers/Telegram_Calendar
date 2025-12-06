@@ -102,3 +102,10 @@ In logs we can see information about that.
 Person who host the bot get allerts.
 
 if an alert is received, you need to open the logs, view the system logs, and check the system's actions. if the docker has crashed, restart docker and double-check everything.
+
+## Visualize data
+
+[Grafana](https://cringineers.grafana.net/dashboard/snapshot/xbQ6YJo9NVBmeF99jloIMMdq7waAjdCL)
+
+![Grafana DashBoard](/images/grafana_dashboard.png)
+

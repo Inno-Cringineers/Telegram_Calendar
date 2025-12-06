@@ -77,3 +77,9 @@ we will collect data from logs and databases.
 ### How should you change your code so that you can collect this data
 
 We don't need to change our code because we already have logs in our system.
+
+## Visualize data
+
+[Grafana](https://cringineers.grafana.net/dashboard/snapshot/xbQ6YJo9NVBmeF99jloIMMdq7waAjdCL)
+
+![Grafana DashBoard](/images/grafana_dashboard.png)
