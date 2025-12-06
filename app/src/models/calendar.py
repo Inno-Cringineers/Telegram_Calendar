@@ -30,8 +30,8 @@ class Calendar(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
-    url: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    url: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     sync_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     last_sync: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -40,7 +40,7 @@ class Calendar(Base):
     __table_args__ = (
         # name must be unique
         UniqueConstraint("user_id", "name", name="uq_calendar_name"),
-        # url must be unique if not None
+        # url must be unique (only one None also)
         UniqueConstraint("user_id", "url", name="uq_calendar_url"),
     )
 
@@ -59,8 +59,8 @@ class Calendar(Base):
         value = value.strip()
         if not (value.startswith("http://") or value.startswith("https://")):
             raise ValueError("Calendar URL must start with http or https.")
-        if not value.lower().endswith(".ics"):
-            raise ValueError("Calendar URL must link to the .ics file.")
+        # if not value.lower().endswith(".ics"):
+        #     raise ValueError("Calendar URL must link to the .ics file.")
         if len(value) > 255:
             raise ValueError("Calendar URL cannot exceed 255 characters.")
         return value

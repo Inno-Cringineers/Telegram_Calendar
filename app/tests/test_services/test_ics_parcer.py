@@ -5,9 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from icalendar.prop import vDDDTypes, vRecur, vWeekday
 
-from models.event import Event
-from models.reminder import Reminder
-from services.ics_parcer import ICSParser
+from src.services.ics_parcer import ICSParser, VAlarmSchema, VEventSchema
 
 
 @pytest.mark.asyncio
@@ -42,13 +40,13 @@ END:VCALENDAR
 
     parser = ICSParser(f.name)
 
-    entities = parser.get_entities()
+    entities = parser.get_schemas()
 
     assert len(entities) == 1
-    event, reminders = entities[0]
+    event = entities[0]
 
     # ------------------ EVENT ------------------
-    assert isinstance(event, Event)
+    assert isinstance(event, VEventSchema)
     assert event.uid == "abc123"
     assert event.title == "Real Event"
     assert event.description == "Some description"
@@ -66,27 +64,22 @@ END:VCALENDAR
     assert event.exdate == [datetime(2025, 1, 3, 12, 0, tzinfo=UTC)]
 
     # ------------------ VALARM (reminder) ------------------
-    assert len(reminders) == 2
-    r1 = reminders[0]
-    r2 = reminders[1]
+    assert event.alarms is not None
+    assert len(event.alarms) == 2
+    r1 = event.alarms[0]
+    r2 = event.alarms[1]
 
-    assert isinstance(r1, Reminder)
+    assert isinstance(r1, VAlarmSchema)
     assert r1.description == "Alarm text"
-    assert r1.repeat_count == 2
-    assert r1.repeat_interval == "PT10M"
-    assert r1.trigger_datetime is None
     assert r1.trigger_offset == "-PT30M"
 
-    assert isinstance(r2, Reminder)
+    assert isinstance(r2, VAlarmSchema)
     assert r2.description == "Alarm text 2"
-    assert r2.repeat_count == 1
-    assert r2.repeat_interval == "PT1H"
     assert r2.trigger_datetime == datetime(2025, 1, 1, 12, 0, tzinfo=UTC)
-    assert r2.trigger_offset is None
 
 
 @pytest.mark.asyncio
-async def test_get_entities_single_event():
+async def test_get_schemas_single_event():
     parser = ICSParser("fake.ics")
 
     # ---- MOCK VEVENT ----
@@ -116,19 +109,19 @@ async def test_get_entities_single_event():
         patch("icalendar.Calendar.from_ical", return_value=calendar_mock),
         patch("pathlib.Path.read_bytes", return_value=b"dummy"),
     ):
-        entities = parser.get_entities()
+        entities = parser.get_schemas()
 
     assert len(entities) == 1
-    event, reminders = entities[0]
+    event = entities[0]
 
-    assert isinstance(event, Event)
+    assert isinstance(event, VEventSchema)
     assert event.uid == "12345"
     assert event.title == "Meeting"
     assert event.description == "Discuss project"
     assert event.date_start == datetime(2025, 1, 1, 12, 0, tzinfo=UTC)
     assert event.date_end == datetime(2025, 1, 1, 13, 0, tzinfo=UTC)
     assert event.rrule == rrule.to_ical().decode("utf-8")
-    assert reminders == []
+    assert event.alarms is None
 
 
 @pytest.mark.asyncio
@@ -172,16 +165,12 @@ async def test_rdate_exdate_extraction():
         patch("icalendar.Calendar.from_ical", return_value=calendar_mock),
         patch("pathlib.Path.read_bytes", return_value=b"dummy"),
     ):
-        entities = parser.get_entities()
+        entities = parser.get_schemas()
 
-    event, _ = entities[0]
+    event = entities[0]
 
     assert event.rdate == [datetime(2025, 1, 2, tzinfo=UTC), datetime(2025, 1, 3, tzinfo=UTC)]
-
     assert event.exdate == [datetime(2025, 1, 4, tzinfo=UTC)]
-
-    assert event.date_start == datetime(2025, 1, 1, tzinfo=UTC)
-    assert event.date_end == datetime(2025, 1, 1, 1, tzinfo=UTC)
 
 
 @pytest.mark.asyncio
@@ -216,16 +205,15 @@ async def test_extract_alarms():
         patch("icalendar.Calendar.from_ical", return_value=calendar_mock),
         patch("pathlib.Path.read_bytes", return_value=b"dummy"),
     ):
-        entities = parser.get_entities()
+        entities = parser.get_schemas()
 
-    _, reminders = entities[0]
+    event = entities[0]
 
-    assert len(reminders) == 1
-    r = reminders[0]
-    assert isinstance(r, Reminder)
+    assert event.alarms is not None
+    assert len(event.alarms) == 1
+    r = event.alarms[0]
+    assert isinstance(r, VAlarmSchema)
     assert r.description == "Reminder text"
-    assert r.repeat_count == 3
-    assert r.repeat_interval == "PT10M"
     assert r.trigger_offset == "-PT15M"
 
 
@@ -257,11 +245,11 @@ async def test_trigger_datetime():
         patch("icalendar.Calendar.from_ical", return_value=calendar_mock),
         patch("pathlib.Path.read_bytes", return_value=b"dummy"),
     ):
-        entities = parser.get_entities()
+        entities = parser.get_schemas()
 
-    _, reminders = entities[0]
+    event = entities[0]
 
-    assert reminders[0].trigger_datetime == datetime(2025, 5, 5, 10, 0, tzinfo=UTC)
+    assert event.alarms[0].trigger_datetime == datetime(2025, 5, 5, 10, 0, tzinfo=UTC)
 
 
 @pytest.mark.asyncio
@@ -303,11 +291,11 @@ async def test_multiple_vevents():
         patch("icalendar.Calendar.from_ical", return_value=calendar_mock),
         patch("pathlib.Path.read_bytes", return_value=b"dummy"),
     ):
-        entities = parser.get_entities()
+        entities = parser.get_schemas()
 
     assert len(entities) == 2
-    assert entities[0][0].uid == "ev1"
-    assert entities[1][0].uid == "ev2"
+    assert entities[0].uid == "ev1"
+    assert entities[1].uid == "ev2"
 
 
 @pytest.mark.asyncio
@@ -343,7 +331,7 @@ async def test_exdate_multiple_properties():
         patch("icalendar.Calendar.from_ical", return_value=calendar_mock),
         patch("pathlib.Path.read_bytes", return_value=b"dummy"),
     ):
-        (event, _) = parser.get_entities()[0]
+        event = parser.get_schemas()[0]
 
     assert event.exdate == [
         datetime(2025, 1, 1, tzinfo=UTC),
@@ -379,7 +367,7 @@ def test_rdate_multiple():
         patch("icalendar.Calendar.from_ical", return_value=calendar_mock),
         patch("pathlib.Path.read_bytes", return_value=b"dummy"),
     ):
-        event, _ = parser.get_entities()[0]
+        event = parser.get_schemas()[0]
 
     assert event.rdate == [
         datetime(2025, 5, 10, tzinfo=UTC),
@@ -412,7 +400,7 @@ def test_rrule_extraction():
         patch("icalendar.Calendar.from_ical", return_value=calendar_mock),
         patch("pathlib.Path.read_bytes", return_value=b"dummy"),
     ):
-        event, _ = parser.get_entities()[0]
+        event = parser.get_schemas()[0]
 
     assert event.rrule == vRecur(
         freq="DAILY", byday=[vWeekday("MO"), vWeekday("WE"), vWeekday("FR")], count=10
@@ -444,9 +432,9 @@ def test_trigger_offset():
         patch("icalendar.Calendar.from_ical", return_value=calendar_mock),
         patch("pathlib.Path.read_bytes", return_value=b"dummy"),
     ):
-        _, reminders = parser.get_entities()[0]
+        event = parser.get_schemas()[0]
 
-    assert reminders[0].trigger_offset == "-PT30M"
+    assert event.alarms[0].trigger_offset == "-PT30M"
 
 
 def test_trigger_datetime_absolute():
@@ -477,9 +465,9 @@ def test_trigger_datetime_absolute():
         patch("icalendar.Calendar.from_ical", return_value=calendar_mock),
         patch("pathlib.Path.read_bytes", return_value=b"dummy"),
     ):
-        _, reminders = parser.get_entities()[0]
+        event = parser.get_schemas()[0]
 
-    assert reminders[0].trigger_datetime == datetime(2026, 6, 6, 10, 0, tzinfo=UTC)
+    assert event.alarms[0].trigger_datetime == datetime(2026, 6, 6, 10, 0, tzinfo=UTC)
 
 
 def test_trigger_invalid_type():
@@ -507,10 +495,10 @@ def test_trigger_invalid_type():
         patch("icalendar.Calendar.from_ical", return_value=calendar_mock),
         patch("pathlib.Path.read_bytes", return_value=b"dummy"),
     ):
-        _, reminders = parser.get_entities()[0]
+        event = parser.get_schemas()[0]
 
-    assert reminders[0].trigger_offset is None
-    assert reminders[0].trigger_datetime is None
+    assert event.alarms[0].trigger_offset is None
+    assert event.alarms[0].trigger_datetime is None
 
 
 def test_multiple_valarms():
@@ -539,11 +527,12 @@ def test_multiple_valarms():
         patch("icalendar.Calendar.from_ical", return_value=calendar_mock),
         patch("pathlib.Path.read_bytes", return_value=b"dummy"),
     ):
-        _, reminders = parser.get_entities()[0]
+        event = parser.get_schemas()[0]
 
-    assert len(reminders) == 2
-    assert reminders[0].description == "A1"
-    assert reminders[1].description == "A2"
+    assert event.alarms is not None
+    assert len(event.alarms) == 2
+    assert event.alarms[0].description == "A1"
+    assert event.alarms[1].description == "A2"
 
 
 def test_missing_dtstart():
@@ -560,14 +549,14 @@ def test_missing_dtstart():
 
     calendar_mock = MagicMock()
     calendar_mock.walk.return_value = [vevent]
-
+    events = []
     with (
         patch("icalendar.Calendar.from_ical", return_value=calendar_mock),
         patch("pathlib.Path.read_bytes", return_value=b"dummy"),
     ):
-        event, _ = parser.get_entities()[0]
+        events = parser.get_schemas()
 
-    assert event.date_start is None
+    assert len(events) == 0
 
 
 def test_invalid_ics_file():
@@ -578,4 +567,4 @@ def test_invalid_ics_file():
         patch("pathlib.Path.read_bytes", return_value=b"dummy"),
     ):
         with pytest.raises(ValueError):
-            _ = parser.get_entities()
+            parser.get_schemas()

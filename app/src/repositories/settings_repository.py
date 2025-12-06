@@ -8,91 +8,107 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.settings import Settings
-from repositories.base_repository import BaseRepository
 from repositories.exceptions import SettingsNotFoundError
-from repositories.schemas import SettingsCreateSchema, SettingsUpdateSchema
+from repositories.schemas import NOT_SET, SettingsCreateSchema, SettingsResponse, SettingsUpdateSchema
 
 
-class SettingsRepository(BaseRepository[Settings]):
+class SettingsRepository:
     def __init__(self, session: AsyncSession) -> None:
         """Initialize SettingsRepository with a database session.
 
         Args:
             session: SQLAlchemy async session to use for database operations.
         """
-        super().__init__(session)
+        self.session = session
 
-    async def get_by_id(self, entity_id: int) -> Settings | None:
+    async def get_by_id(self, settings_id: int) -> SettingsResponse | None:
         """Retrieve a settings by its ID.
 
         Args:
-            entity_id: The ID of the settings to retrieve.
+            settings_id: The ID of the settings to retrieve.
 
         Returns:
-            The settings if found, None otherwise.
+            The settings response if found, None otherwise.
         """
-        result = await self.session.get(Settings, entity_id)
-        return result
+        result = await self.session.get(Settings, settings_id)
+        if result is None:
+            return None
+        return SettingsResponse.from_model(result)
 
-    async def create(self, data: SettingsCreateSchema, *args, **kwargs) -> Settings:
+    async def create_one(self, data: SettingsCreateSchema) -> SettingsResponse:
         """Create a new settings.
 
         Args:
             data: SettingsCreateSchema with settings data.
+
+        Returns:
+            Created settings response.
         """
         settings = Settings(
             user_id=data.user_id,
             timezone=data.timezone,
             language=data.language,
-            quiet_hours=data.quiet_hours,
+            quiet_hours_enabled=data.quiet_hours_enabled,
             quiet_hours_start=data.quiet_hours_start,
             quiet_hours_end=data.quiet_hours_end,
+            daily_plans_enabled=data.daily_plans_enabled,
             daily_plans_time=data.daily_plans_time,
             default_reminder_offset=data.default_reminder_offset,
         )
         self.session.add(settings)
         await self.session.flush()
-        return settings
+        await self.session.refresh(settings)
+        return SettingsResponse.from_model(settings)
 
-    async def update(self, entity_id: int, data: SettingsUpdateSchema, *args, **kwargs) -> Settings:
+    async def update_by_id(self, settings_id: int, data: SettingsUpdateSchema) -> SettingsResponse:
         """Update an existing settings.
 
         Args:
-            entity_id: The ID of the settings to update.
+            settings_id: The ID of the settings to update.
             data: The data to update the settings with.
-        """
-        settings = await self.get_by_id(entity_id)
-        if settings is None:
-            raise SettingsNotFoundError(settings_id=entity_id)
 
-        update_data = data.model_dump(exclude_unset=True)
-        for key, value in update_data.items():
-            setattr(settings, key, value)
+        Returns:
+            Updated settings response.
+        """
+        settings_model = await self.session.get(Settings, settings_id)
+        if settings_model is None:
+            raise SettingsNotFoundError(settings_id=settings_id)
+
+        return await self._update_model(settings_model, data)
+
+    async def _update_model(self, settings_model: Settings, data: SettingsUpdateSchema) -> SettingsResponse:
+        for field in data.__dataclass_fields__:
+            value = getattr(data, field)
+            if value is not NOT_SET:
+                setattr(settings_model, field, value)
 
         await self.session.flush()
-        await self.session.refresh(settings)
-        return settings
+        await self.session.refresh(settings_model)
+        return SettingsResponse.from_model(settings_model)
 
-    async def find(self, user_id: int) -> Settings | None:
+    async def find_by_user_id(self, user_id: int) -> SettingsResponse | None:
         """Find settings by user ID.
 
         Args:
             user_id: The ID of the user to find settings for.
 
         Returns:
-            The settings if found, None otherwise.
+            The settings response if found, None otherwise.
         """
         result = await self.session.execute(select(Settings).where(Settings.user_id == user_id))
-        return result.scalar()
+        settings_model = result.scalar()
+        if settings_model is None:
+            return None
+        return SettingsResponse.from_model(settings_model)
 
-    async def delete(self, entity_id: int, *args, **kwargs) -> None:
+    async def delete_by_id(self, settings_id: int) -> None:
         """Delete a settings by ID.
 
         Args:
-            entity_id: The ID of the settings to delete.
+            settings_id: The ID of the settings to delete.
         """
-        settings = await self.get_by_id(entity_id)
-        if settings is None:
-            raise SettingsNotFoundError(settings_id=entity_id)
-        await self.session.delete(settings)
+        settings_model = await self.session.get(Settings, settings_id)
+        if settings_model is None:
+            raise SettingsNotFoundError(settings_id=settings_id)
+        await self.session.delete(settings_model)
         await self.session.flush()
