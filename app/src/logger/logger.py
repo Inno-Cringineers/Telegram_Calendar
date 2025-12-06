@@ -1,6 +1,7 @@
 import logging
 import logging.handlers
 import os
+import time
 from pathlib import Path
 
 from config.config import LoggerConfig
@@ -34,10 +35,17 @@ def setup_logger(logger_config: LoggerConfig) -> logging.Logger:
     else:
         format_string = "%(asctime)s - %(levelname)s - %(message)s"
 
+    # Use local timezone for logging
+    # When Docker volumes /etc/localtime and /etc/timezone are mounted,
+    # time.localtime will use the host machine's timezone
     formatter = logging.Formatter(
         format_string,
         datefmt="%Y-%m-%d %H:%M:%S",
     )
+    # Explicitly set converter to use local time (not UTC)
+    # This ensures logs show time according to host machine's timezone
+    # when /etc/localtime is mounted in Docker
+    formatter.converter = time.localtime
 
     # Console handler - always enabled
     if logger_config.console:

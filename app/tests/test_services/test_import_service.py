@@ -11,6 +11,7 @@ import pytest
 
 from models.event import Event
 from models.reminder import Reminder
+from services.ics_parcer import VAlarmSchema, VEventSchema
 from services.import_service import ImportService
 
 if TYPE_CHECKING:
@@ -52,8 +53,8 @@ def mock_store(
     mock_event_repo: AsyncMock,
     mock_reminder_repo: AsyncMock,
     mock_settings_repo: AsyncMock,
-) -> MagicMock:
-    """Create a mock store with all repositories configured.
+) -> AsyncMock:
+    """Create a mock store with all repositories and services configured.
 
     Args:
         mock_calendar_repo: Mock calendar repository.
@@ -62,13 +63,20 @@ def mock_store(
         mock_settings_repo: Mock settings repository.
 
     Returns:
-        Mock store instance with all repositories configured.
+        Mock store instance with all repositories and services configured.
     """
-    store = MagicMock()
+    store = AsyncMock()
     store.CalendarRepository = mock_calendar_repo
     store.EventRepository = mock_event_repo
     store.ReminderRepository = mock_reminder_repo
     store.SettingsRepository = mock_settings_repo
+
+    # Mock services (ImportService uses services, not repositories directly)
+    store.CalendarService = AsyncMock()
+    store.EventService = AsyncMock()
+    store.ReminderService = AsyncMock()
+    store.SettingsService = AsyncMock()
+
     return store
 
 
@@ -98,14 +106,11 @@ def sample_reminder() -> Reminder:
     return Reminder(
         description="Test reminder",
         trigger_offset="-PT30M",
-        trigger_datetime=None,
-        repeat_count=None,
-        repeat_interval=None,
     )
 
 
 @pytest.fixture
-def import_service(mock_store: MagicMock) -> ImportService:
+def import_service(mock_store: AsyncMock) -> ImportService:
     """Create an ImportService instance with mocked store.
 
     Args:
@@ -158,18 +163,12 @@ def create_event(
 def create_reminder(
     description: str = "Test reminder",
     trigger_offset: str | None = "-PT30M",
-    trigger_datetime: datetime | None = None,
-    repeat_count: int | None = None,
-    repeat_interval: str | None = None,
 ) -> Reminder:
     """Create a Reminder instance with custom values.
 
     Args:
         description: Reminder description. Defaults to "Test reminder".
         trigger_offset: Trigger offset in RFC 5545 format. Defaults to "-PT30M".
-        trigger_datetime: Trigger datetime. Defaults to None.
-        repeat_count: Repeat count. Defaults to None.
-        repeat_interval: Repeat interval. Defaults to None.
 
     Returns:
         Reminder instance.
@@ -177,9 +176,6 @@ def create_reminder(
     return Reminder(
         description=description,
         trigger_offset=trigger_offset,
-        trigger_datetime=trigger_datetime,
-        repeat_count=repeat_count,
-        repeat_interval=repeat_interval,
     )
 
 
@@ -190,7 +186,7 @@ def create_reminder(
 
 @pytest.mark.asyncio
 async def test_import_external_calendar_from_real_ics_file(
-    mock_store: MagicMock, mock_calendar_repo: AsyncMock, mock_event_repo: AsyncMock
+    mock_store: AsyncMock, mock_calendar_repo: AsyncMock, mock_event_repo: AsyncMock
 ) -> None:
     """Test importing external calendar from a real ICS file.
 
@@ -218,9 +214,12 @@ async def test_import_external_calendar_from_real_ics_file(
         tmp_path = f.name
 
     # Configure mocks
-    mock_calendar_repo.find = AsyncMock(return_value=[])
-    mock_calendar_repo.create = AsyncMock(return_value=[MagicMock(id=1, user_id=42)])
-    mock_event_repo.create = AsyncMock(return_value=[MagicMock(id=10)])
+    mock_store.CalendarService.find = AsyncMock(return_value=[])
+    created_calendar = MagicMock(id=1, user_id=42)
+    mock_store.CalendarService.create = AsyncMock(return_value=created_calendar)
+    mock_store.EventService.find = AsyncMock(return_value=[])  # Event doesn't exist yet
+    created_event = MagicMock(id=10, title="Test Event", uid="uid1")
+    mock_store.EventService.create = AsyncMock(return_value=created_event)
 
     service = ImportService(store=mock_store)
 
@@ -233,17 +232,17 @@ async def test_import_external_calendar_from_real_ics_file(
     )
 
     # Assert
-    mock_calendar_repo.create.assert_awaited_once()
-    mock_event_repo.create.assert_awaited_once()
+    mock_store.CalendarService.create.assert_awaited_once()
+    mock_store.EventService.create.assert_awaited_once()
 
-    created_event = mock_event_repo.create.call_args[0][0][0]
-    assert created_event.title == "Test Event"
-    assert created_event.uid == "uid1"
+    created_event_call = mock_store.EventService.create.call_args[0][0]
+    assert created_event_call.title == "Test Event"
+    assert created_event_call.uid == "uid1"
 
 
 @pytest.mark.asyncio
 async def test_import_external_calendar_creates_new_calendar(
-    mock_store: MagicMock, mock_calendar_repo: AsyncMock, mock_event_repo: AsyncMock, sample_event: Event
+    mock_store: AsyncMock, mock_calendar_repo: AsyncMock, mock_event_repo: AsyncMock, sample_event: Event
 ) -> None:
     """Test creating a new external calendar when it doesn't exist.
 
@@ -253,14 +252,27 @@ async def test_import_external_calendar_creates_new_calendar(
         mock_event_repo: Mock event repository.
         sample_event: Sample event fixture.
     """
-    mock_calendar_repo.find = AsyncMock(return_value=[])
-    mock_calendar_repo.create = AsyncMock(return_value=[MagicMock(id=1, user_id=42)])
-    mock_event_repo.create = AsyncMock(return_value=[MagicMock(id=10)])
+    mock_store.CalendarService.find = AsyncMock(return_value=[])
+    created_calendar = MagicMock(id=1, user_id=42)
+    mock_store.CalendarService.create = AsyncMock(return_value=created_calendar)
+    mock_store.EventService.find = AsyncMock(return_value=[])  # Event doesn't exist yet
+    created_event = MagicMock(id=10)
+    mock_store.EventService.create = AsyncMock(return_value=created_event)
 
-    event = create_event(uid="uid1", title="Event 1", description="desc")
+    event_schema = VEventSchema(
+        uid="uid1",
+        title="Event 1",
+        description="desc",
+        date_start=datetime(2025, 1, 1, 12, 0, tzinfo=UTC),
+        date_end=datetime(2025, 1, 1, 13, 0, tzinfo=UTC),
+        rrule=None,
+        rdate=None,
+        exdate=None,
+        alarms=None,
+    )
 
     with patch("services.import_service.ICSParser") as MockParser:
-        MockParser.return_value.get_entities.return_value = [(event, [])]
+        MockParser.return_value.get_schemas.return_value = [event_schema]
 
         service = ImportService(store=mock_store)
 
@@ -271,13 +283,13 @@ async def test_import_external_calendar_creates_new_calendar(
             calendar_url="http://example.com",
         )
 
-        mock_calendar_repo.create.assert_awaited_once()
-        mock_event_repo.create.assert_awaited_once()
+        mock_store.CalendarService.create.assert_awaited_once()
+        mock_store.EventService.create.assert_awaited_once()
 
 
 @pytest.mark.asyncio
 async def test_import_external_calendar_updates_existing_calendar(
-    mock_store: MagicMock, mock_calendar_repo: AsyncMock, mock_event_repo: AsyncMock
+    mock_store: AsyncMock, mock_calendar_repo: AsyncMock, mock_event_repo: AsyncMock
 ) -> None:
     """Test updating an existing external calendar.
 
@@ -290,15 +302,27 @@ async def test_import_external_calendar_updates_existing_calendar(
     existing_calendar.url = "http://example.com"
     existing_calendar.name = "Calendar"
 
-    event = create_event(uid="uid1", title="Event 1", description="desc")
+    event_schema = VEventSchema(
+        uid="uid1",
+        title="Event 1",
+        description="desc",
+        date_start=datetime(2025, 1, 1, 12, 0, tzinfo=UTC),
+        date_end=datetime(2025, 1, 1, 13, 0, tzinfo=UTC),
+        rrule=None,
+        rdate=None,
+        exdate=None,
+        alarms=None,
+    )
 
     with patch("services.import_service.ICSParser") as MockParser:
-        MockParser.return_value.get_entities.return_value = [(event, [])]
+        MockParser.return_value.get_schemas.return_value = [event_schema]
 
-        mock_calendar_repo.find = AsyncMock(return_value=[existing_calendar])
-        mock_event_repo.find = AsyncMock(return_value=[MagicMock(id=10)])
-        mock_event_repo.delete = AsyncMock()
-        mock_event_repo.create = AsyncMock(return_value=[MagicMock(id=20)])
+        mock_store.CalendarService.find = AsyncMock(return_value=[existing_calendar])
+        existing_event = MagicMock(id=10)
+        mock_store.EventService.find = AsyncMock(return_value=[existing_event])
+        mock_store.EventService.update_by_id = AsyncMock(return_value=existing_event)
+        created_event = MagicMock(id=20)
+        mock_store.EventService.create = AsyncMock(return_value=created_event)
 
         service = ImportService(store=mock_store)
 
@@ -309,16 +333,15 @@ async def test_import_external_calendar_updates_existing_calendar(
             calendar_url="http://example.com",
         )
 
-        # Existing events deleted
-        mock_event_repo.delete.assert_awaited()
-
-        # New events created
-        mock_event_repo.create.assert_awaited()
+        # For external calendars, alarms are set to None, so no reminders are created
+        # Event exists, so it should be updated, not created
+        mock_store.EventService.update_by_id.assert_awaited_once()
+        mock_store.EventService.create.assert_not_awaited()
 
 
 @pytest.mark.asyncio
 async def test_import_local_calendar_creates_new_calendar(
-    mock_store: MagicMock,
+    mock_store: AsyncMock,
     mock_calendar_repo: AsyncMock,
     mock_event_repo: AsyncMock,
     mock_reminder_repo: AsyncMock,
@@ -333,35 +356,48 @@ async def test_import_local_calendar_creates_new_calendar(
         mock_reminder_repo: Mock reminder repository.
         mock_settings_repo: Mock settings repository.
     """
-    mock_calendar_repo.find = AsyncMock(return_value=[])
-    mock_calendar_repo.create = AsyncMock(return_value=[MagicMock(id=1, user_id=42)])
-    mock_event_repo.create = AsyncMock(return_value=[MagicMock(id=100)])
-    mock_reminder_repo.create = AsyncMock()
-    mock_settings_repo.get_by_id = AsyncMock(return_value=MagicMock(id=1, user_id=42, default_reminder_offset=15 * 60))
+    mock_store.CalendarService.get_by_user_id = AsyncMock(return_value=[])
+    created_calendar = MagicMock(id=1, user_id=42)
+    mock_store.CalendarService.create = AsyncMock(return_value=created_calendar)
+    mock_store.EventService.find = AsyncMock(return_value=[])  # Event doesn't exist yet
+    created_event = MagicMock(id=100, title="Local Event", uid="1")
+    mock_store.EventService.create = AsyncMock(return_value=created_event)
+    mock_store.ReminderService.create = AsyncMock()
+    mock_settings = MagicMock(id=1, user_id=42, default_reminder_offset=15 * 60)
+    mock_store.SettingsService.get_by_id = AsyncMock(return_value=mock_settings)
 
-    event = create_event(uid="1", title="Local Event", description=None)
-    reminder = create_reminder(description="Test reminder", trigger_offset="-PT30M")
+    alarm = VAlarmSchema(description="Test reminder", trigger_offset="-PT30M", trigger_datetime=None)
+    event_schema = VEventSchema(
+        uid="1",
+        title="Local Event",
+        description=None,
+        date_start=datetime(2025, 1, 1, 12, 0, tzinfo=UTC),
+        date_end=datetime(2025, 1, 1, 13, 0, tzinfo=UTC),
+        rrule=None,
+        rdate=None,
+        exdate=None,
+        alarms=[alarm],
+    )
 
     with patch("services.import_service.ICSParser") as MP:
-        MP.return_value.get_entities.return_value = [(event, [reminder])]
+        MP.return_value.get_schemas.return_value = [event_schema]
 
         service = ImportService(store=mock_store)
 
         await service.import_local_calendar_from_file("dummy.ics", user_id=42)
 
-        mock_calendar_repo.create.assert_awaited_once()
-        mock_event_repo.create.assert_awaited_once()
-        mock_reminder_repo.create.assert_awaited()
-        mock_settings_repo.get_by_id.assert_awaited_once()
+        mock_store.CalendarService.create.assert_awaited_once()
+        mock_store.EventService.create.assert_awaited_once()
+        mock_store.ReminderService.create.assert_awaited()
 
-        created_event = mock_event_repo.create.call_args[0][0][0]
-        assert created_event.title == "Local Event"
-        assert created_event.uid == "1"
+        created_event_call = mock_store.EventService.create.call_args[0][0]
+        assert created_event_call.title == "Local Event"
+        assert created_event_call.uid == "1"
 
 
 @pytest.mark.asyncio
 async def test_import_local_calendar_updates_existing_event(
-    mock_store: MagicMock,
+    mock_store: AsyncMock,
     mock_calendar_repo: AsyncMock,
     mock_event_repo: AsyncMock,
     mock_reminder_repo: AsyncMock,
@@ -377,35 +413,38 @@ async def test_import_local_calendar_updates_existing_event(
         mock_settings_repo: Mock settings repository.
     """
     calendar = MagicMock(id=1, user_id=42)
-    mock_calendar_repo.find = AsyncMock(return_value=[calendar])
+    mock_store.CalendarService.get_by_user_id = AsyncMock(return_value=[calendar])
 
     existing_event = MagicMock(id=10)
-    mock_event_repo.find = AsyncMock(return_value=[existing_event])
-    mock_event_repo.update = AsyncMock(return_value=existing_event)
-    mock_reminder_repo.find = AsyncMock(return_value=[MagicMock(id=1), MagicMock(id=2)])
-    mock_reminder_repo.delete = AsyncMock()
-    mock_reminder_repo.create = AsyncMock()
-    mock_settings_repo.get_by_id = AsyncMock(return_value=None)  # No settings, so no default reminder
+    mock_store.EventService.find = AsyncMock(return_value=[existing_event])
+    mock_store.EventService.update_by_id = AsyncMock(return_value=existing_event)
+    mock_store.ReminderService.delete_by_event_id = AsyncMock()
+    mock_store.ReminderService.create = AsyncMock()
+    mock_store.SettingsService.get_by_id = AsyncMock(return_value=None)  # No settings, so no default reminder
 
-    event = create_event(
+    alarm = VAlarmSchema(description="R", trigger_offset="-PT15M", trigger_datetime=None)
+    event_schema = VEventSchema(
         uid="x1",
         title="Updated Title",
         description="New Desc",
         date_start=datetime(2025, 5, 5, 10, 0, tzinfo=UTC),
         date_end=datetime(2025, 5, 5, 12, 0, tzinfo=UTC),
+        rrule=None,
+        rdate=None,
+        exdate=None,
+        alarms=[alarm],
     )
-    reminder = create_reminder(description="R", trigger_offset="-PT15M")
 
     with patch("services.import_service.ICSParser") as MP:
-        MP.return_value.get_entities.return_value = [(event, [reminder])]
+        MP.return_value.get_schemas.return_value = [event_schema]
 
         service = ImportService(store=mock_store)
 
         await service.import_local_calendar_from_file("dummy.ics", user_id=42)
 
-        mock_event_repo.update.assert_awaited_once()
+        mock_store.EventService.update_by_id.assert_awaited_once()
 
-        updated_call = mock_event_repo.update.call_args[0]
+        updated_call = mock_store.EventService.update_by_id.call_args[0]
         assert updated_call[0] == 10  # event.id
         update_schema = updated_call[1]
         assert update_schema.title == "Updated Title"
@@ -413,7 +452,7 @@ async def test_import_local_calendar_updates_existing_event(
 
 @pytest.mark.asyncio
 async def test_import_local_calendar_generates_uid_if_missing(
-    mock_store: MagicMock,
+    mock_store: AsyncMock,
     mock_calendar_repo: AsyncMock,
     mock_event_repo: AsyncMock,
     mock_reminder_repo: AsyncMock,
@@ -430,40 +469,49 @@ async def test_import_local_calendar_generates_uid_if_missing(
         mock_settings_repo: Mock settings repository.
         monkeypatch: Pytest monkeypatch fixture.
     """
-    mock_calendar_repo.find = AsyncMock(return_value=[])
-    mock_calendar_repo.create = AsyncMock(return_value=[MagicMock(id=1)])
-    created_event_mock = MagicMock(id=10, date_start=datetime(2025, 2, 1, 10, 0, tzinfo=UTC))
-    mock_event_repo.create = AsyncMock(return_value=[created_event_mock])
-    mock_event_repo.find = AsyncMock(return_value=[])
-    mock_reminder_repo.create = AsyncMock()
+    mock_store.CalendarService.get_by_user_id = AsyncMock(return_value=[])
+    created_calendar = MagicMock(id=1)
+    mock_store.CalendarService.create = AsyncMock(return_value=created_calendar)
+    created_event_mock = MagicMock(id=10, date_start=datetime(2025, 2, 1, 10, 0, tzinfo=UTC), uid="GENERATED-UID")
+    mock_store.EventService.create = AsyncMock(return_value=created_event_mock)
+    mock_store.EventService.find = AsyncMock(return_value=[])
+    mock_store.ReminderService.create = AsyncMock()
     # No settings, so no default reminder
-    mock_settings_repo.get_by_id = AsyncMock(return_value=None)
+    mock_store.SettingsService.get_by_id = AsyncMock(return_value=None)
 
-    monkeypatch.setattr("uuid.uuid4", lambda: "GENERATED-UID")
+    def mock_uuid4() -> str:
+        """Mock uuid4 that returns a fixed value."""
+        return "GENERATED-UID"
 
-    event = create_event(
+    monkeypatch.setattr("uuid.uuid4", mock_uuid4)
+
+    alarm = VAlarmSchema(description="R", trigger_offset=None, trigger_datetime=None)
+    event_schema = VEventSchema(
         uid=None,
         title="E",
         description=None,
         date_start=datetime(2025, 2, 1, 10, 0, tzinfo=UTC),
         date_end=datetime(2025, 2, 1, 11, 0, tzinfo=UTC),
+        rrule=None,
+        rdate=None,
+        exdate=None,
+        alarms=[alarm],
     )
-    reminder = create_reminder(description="R")
 
     with patch("services.import_service.ICSParser") as MP:
-        MP.return_value.get_entities.return_value = [(event, [reminder])]
+        MP.return_value.get_schemas.return_value = [event_schema]
 
         service = ImportService(store=mock_store)
 
         await service.import_local_calendar_from_file("dummy.ics", user_id=1)
 
-        created_event = mock_event_repo.create.call_args[0][0][0]
-        assert created_event.uid == "GENERATED-UID"
+        created_event_call = mock_store.EventService.create.call_args[0][0]
+        assert created_event_call.uid == "GENERATED-UID"
 
 
 @pytest.mark.asyncio
 async def test_import_local_calendar_replaces_reminders(
-    mock_store: MagicMock,
+    mock_store: AsyncMock,
     mock_calendar_repo: AsyncMock,
     mock_event_repo: AsyncMock,
     mock_reminder_repo: AsyncMock,
@@ -479,43 +527,46 @@ async def test_import_local_calendar_replaces_reminders(
         mock_settings_repo: Mock settings repository.
     """
     calendar = MagicMock(id=1, user_id=42)
-    mock_calendar_repo.find = AsyncMock(return_value=[calendar])
+    mock_store.CalendarService.get_by_user_id = AsyncMock(return_value=[calendar])
 
     existing_event = MagicMock(id=10)
-    mock_event_repo.find = AsyncMock(return_value=[existing_event])
-    mock_event_repo.update = AsyncMock(return_value=existing_event)
+    mock_store.EventService.find = AsyncMock(return_value=[existing_event])
+    mock_store.EventService.update_by_id = AsyncMock(return_value=existing_event)
 
     # Existing reminders (before update)
-    mock_reminder_repo.find = AsyncMock(return_value=[MagicMock(id=1), MagicMock(id=2)])
-    mock_reminder_repo.delete = AsyncMock()
-    mock_reminder_repo.create = AsyncMock()
-    mock_settings_repo.get_by_id = AsyncMock(return_value=None)  # No settings, so no default reminder
+    mock_store.ReminderService.delete_by_event_id = AsyncMock()
+    mock_store.ReminderService.create = AsyncMock()
+    mock_store.SettingsService.get_by_id = AsyncMock(return_value=None)  # No settings, so no default reminder
 
-    event = create_event(
+    alarm_new = VAlarmSchema(description="NEW", trigger_offset="-PT10M", trigger_datetime=None)
+    event_schema = VEventSchema(
         uid="1",
         title="A",
         description=None,
         date_start=datetime(2025, 3, 1, 12, 0, tzinfo=UTC),
         date_end=datetime(2025, 3, 1, 13, 0, tzinfo=UTC),
+        rrule=None,
+        rdate=None,
+        exdate=None,
+        alarms=[alarm_new],
     )
-    reminder_new = create_reminder(description="NEW", trigger_offset="-PT10M")
 
     with patch("services.import_service.ICSParser") as MP:
-        MP.return_value.get_entities.return_value = [(event, [reminder_new])]
+        MP.return_value.get_schemas.return_value = [event_schema]
 
         service = ImportService(store=mock_store)
         await service.import_local_calendar_from_file("dummy", user_id=42)
 
-        # Old reminders removed
-        assert mock_reminder_repo.delete.await_count == 2
+        # Old reminders removed (delete_by_event_id is called once for the event)
+        mock_store.ReminderService.delete_by_event_id.assert_awaited_once()
 
         # New reminders created
-        mock_reminder_repo.create.assert_awaited_once()
+        mock_store.ReminderService.create.assert_awaited_once()
 
 
 @pytest.mark.asyncio
 async def test_generate_uid_uniqueness(
-    mock_store: MagicMock, mock_event_repo: AsyncMock, monkeypatch: "MonkeyPatch"
+    mock_store: AsyncMock, mock_event_repo: AsyncMock, monkeypatch: "MonkeyPatch"
 ) -> None:
     """Test that UID generation ensures uniqueness by checking existing UIDs.
 
@@ -532,11 +583,19 @@ async def test_generate_uid_uniqueness(
         """Mock find method that returns non-empty list if UID exists."""
         return [{}] if filter.uid in existing_uids else []
 
-    mock_event_repo.find = mock_find
+    mock_store.EventService.find = mock_find
 
     uids = ["1", "2", "3"]
     iter_uids = iter(uids)
-    monkeypatch.setattr(uuid, "uuid4", lambda: next(iter_uids))
+
+    def mock_uuid4() -> str:
+        """Mock uuid4 that returns values from the iterator."""
+        try:
+            return next(iter_uids)
+        except StopIteration:
+            return "fallback-uid"
+
+    monkeypatch.setattr(uuid, "uuid4", mock_uuid4)
 
     uid = await service._generate_uid()
     assert uid == "3"

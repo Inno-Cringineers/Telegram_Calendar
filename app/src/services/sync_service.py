@@ -1,21 +1,20 @@
 import asyncio
+from dataclasses import dataclass
 from datetime import timedelta
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from database.database import UnitOfWork
 from logger.logger import logger
-from models.calendar import Calendar
 from store.store import Store
 
 
+@dataclass
 class CalendarQueueItem:
-    def __init__(self, calendar: Calendar) -> None:
-        self.calendar_id = calendar.id
-        self.calendar_name = calendar.name
-        self.calendar_url = calendar.url
-        self.user_id = calendar.user_id
+    calendar_id: int
+    calendar_name: str
+    calendar_url: str
+    user_id: int
 
 
 class SyncWorker:
@@ -45,15 +44,6 @@ class SyncWorker:
                     "calendar_url": calendar.calendar_url,
                 },
             )
-
-            # if calendar is bad - skip
-            if calendar.calendar_url is None:
-                self.queue.task_done()
-                logger.debug(
-                    "Sync worker: calendar url is None, skipping",
-                    extra={"calendar_id": calendar.calendar_id},
-                )
-                continue
 
             # upload calendar to server
             try:
@@ -110,14 +100,14 @@ class SyncService:
         """Sync calendars."""
         logger.info("Syncing calendars")
         # get calendars from database
+
         async with UnitOfWork(self.session_maker) as uow:
             session = uow.session
             if session is None:
                 raise RuntimeError("Session is None")
-            calendars = await session.execute(
-                select(Calendar).where(Calendar.sync_enabled == True, Calendar.url != None)  # noqa: E711, E712
-            )
-            calendars = calendars.scalars().all()
+            store = Store(session)
+            calendars = await store.CalendarService.get_externals_to_sync()
+
             if calendars == []:
                 logger.debug("No calendars to load to queue")
                 return
@@ -130,7 +120,7 @@ class SyncService:
                         "calendar_url": calendar.url,
                     },
                 )
-                await self.queue.put(CalendarQueueItem(calendar))
+                await self.queue.put(CalendarQueueItem(calendar.id, calendar.name, calendar.url, calendar.user_id))  # type: ignore
 
         logger.info("Calendars loaded to queue")
 

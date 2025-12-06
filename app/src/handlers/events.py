@@ -4,10 +4,10 @@ from aiogram.types import CallbackQuery
 
 from i18n.strings import t
 from keyboards.inline import (
+    back_button,
     create_calendar,
-    get_back_button,
-    get_events_create_inline,
-    get_events_menu_inline,
+    events_create_inline,
+    events_menu_inline,
 )
 from logger.logger import logger
 from states.states import EventsMenuStates
@@ -16,13 +16,10 @@ router = Router()
 
 
 @router.callback_query(F.data == "menu_events")
-async def open_events_menu(query: CallbackQuery, state: FSMContext) -> None:
+async def open_events_menu(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Open events menu."""
     user_id = query.from_user.id
     logger.info(f"User {user_id} opened events menu")
-
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     await state.set_state(EventsMenuStates.in_events_menu)
 
@@ -30,18 +27,15 @@ async def open_events_menu(query: CallbackQuery, state: FSMContext) -> None:
         await query.message.edit_text(
             t("events.title", lang=lang),
             parse_mode="HTML",
-            reply_markup=get_events_menu_inline(lang=lang),
+            reply_markup=events_menu_inline(lang=lang),
         )
 
 
 @router.callback_query(F.data == "events_import", EventsMenuStates.in_events_menu)
-async def events_import(query: CallbackQuery, state: FSMContext) -> None:
+async def events_import(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Open import feature"""
     user_id = query.from_user.id
     logger.info(f"User {user_id} is importing events")
-
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     await state.set_state(EventsMenuStates.in_events_import)
     await query.answer(t("events.import.selected", lang=lang))
@@ -55,18 +49,15 @@ async def events_import(query: CallbackQuery, state: FSMContext) -> None:
         await query.message.edit_text(
             text,
             parse_mode="HTML",
-            reply_markup=get_back_button("menu_events", lang=lang),
+            reply_markup=back_button("menu_events", lang=lang),
         )
 
 
 @router.callback_query(F.data == "events_export", EventsMenuStates.in_events_menu)
-async def events_export(query: CallbackQuery, state: FSMContext) -> None:
+async def events_export(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Open export feature"""
     user_id = query.from_user.id
     logger.info(f"User {user_id} is exporting events")
-
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     await state.set_state(EventsMenuStates.in_events_export)
     await query.answer(t("events.export.selected", lang=lang))
@@ -80,18 +71,15 @@ async def events_export(query: CallbackQuery, state: FSMContext) -> None:
         await query.message.edit_text(
             text,
             parse_mode="HTML",
-            reply_markup=get_back_button("menu_events", lang=lang),
+            reply_markup=back_button("menu_events", lang=lang),
         )
 
 
 @router.callback_query(F.data == "events_create", EventsMenuStates.in_events_menu)
-async def events_create(query: CallbackQuery, state: FSMContext) -> None:
+async def events_create(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Open event creation feature"""
     user_id = query.from_user.id
     logger.info(f"User {user_id} is choosing creating event option")
-
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     await state.set_state(EventsMenuStates.in_events_create)
     await query.answer(t("events.create.selected", lang=lang))
@@ -101,18 +89,15 @@ async def events_create(query: CallbackQuery, state: FSMContext) -> None:
         await query.message.edit_text(
             text,
             parse_mode="HTML",
-            reply_markup=get_events_create_inline(lang=lang),
+            reply_markup=events_create_inline(lang=lang),
         )
 
 
 @router.callback_query(F.data == "events_view", EventsMenuStates.in_events_menu)
-async def events_view(query: CallbackQuery, state: FSMContext) -> None:
+async def events_view(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Open event view feature"""
     user_id = query.from_user.id
     logger.info(f"User {user_id} is viewing events")
-
-    # TODO: Get user language from settings when session is available
-    lang = "en"
 
     await state.set_state(EventsMenuStates.in_events_view)
     await query.answer(t("events.view.selected", lang=lang))

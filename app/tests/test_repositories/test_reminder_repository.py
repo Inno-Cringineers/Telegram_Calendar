@@ -1,14 +1,13 @@
 """Tests for ReminderRepository using mocks."""
 
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, call
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from models.reminder import Reminder
 from repositories.exceptions import ReminderNotFoundError
 from repositories.reminder_repository import ReminderRepository
-from repositories.schemas import ReminderCreateSchema, ReminderUpdateSchema
+from repositories.schemas import ReminderCreateSchema, ReminderFilter, ReminderResponse, ReminderUpdateSchema
 
 
 @pytest.fixture
@@ -37,9 +36,6 @@ def sample_reminder() -> Reminder:
         event_id=1,
         description="Test reminder",
         trigger_offset="-PT30M",
-        trigger_datetime=datetime(2025, 1, 1, 10, 0, tzinfo=UTC),
-        repeat_count=3,
-        repeat_interval="PT5M",
         sent=False,
     )
     # Set id manually for testing (normally set by database)
@@ -56,7 +52,7 @@ async def test_get_by_id_returns_reminder(
 
     result = await reminder_repository.get_by_id(1)
 
-    assert result is sample_reminder
+    assert result == ReminderResponse.from_model(sample_reminder)
     mock_session.get.assert_called_once_with(Reminder, 1)
 
 
@@ -76,54 +72,41 @@ async def test_get_by_id_returns_none_when_not_found(
 @pytest.mark.asyncio
 async def test_create_creates_reminder(reminder_repository: ReminderRepository, mock_session: AsyncMock) -> None:
     """Test that create creates a new reminder."""
-    trigger_dt = datetime(2025, 1, 1, 10, 0, tzinfo=UTC)
-    create_data = [
-        ReminderCreateSchema(  # type: ignore[call-arg]
-            event_id=1,
-            description="New reminder",
-            trigger_offset="-PT30M",
-            trigger_datetime=trigger_dt,
-            repeat_count=5,
-            repeat_interval="PT10M",
-        )
-    ]
+    create_data = ReminderCreateSchema(
+        event_id=1,
+        description="New reminder",
+        trigger_offset="-PT30M",
+        sent=False,
+    )
 
-    result = await reminder_repository.create(create_data)
+    await reminder_repository.create_one(create_data)
 
-    assert len(result) == 1
-    assert isinstance(result[0], Reminder)
-    assert result[0].event_id == 1
-    assert result[0].description == "New reminder"
-    assert result[0].trigger_offset == "-PT30M"
-    assert result[0].trigger_datetime == trigger_dt
-    assert result[0].repeat_count == 5
-    assert result[0].repeat_interval == "PT10M"
-    assert result[0].sent is False  # Should be set to False by default
-    mock_session.add.assert_called_once_with(result[0])
+    mock_session.add.assert_called_once()
     mock_session.flush.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_create_creates_multiple_reminders(
+async def test_create_many_creates_multiple_reminders(
     reminder_repository: ReminderRepository, mock_session: AsyncMock
 ) -> None:
-    """Test that create creates multiple reminders."""
-    trigger_dt1 = datetime(2025, 1, 1, 10, 0, tzinfo=UTC)
-    trigger_dt2 = datetime(2025, 1, 2, 10, 0, tzinfo=UTC)
+    """Test that create_many creates multiple reminders."""
     create_data = [
-        ReminderCreateSchema(event_id=1, trigger_offset="-PT30M", trigger_datetime=trigger_dt1),  # type: ignore[call-arg]
-        ReminderCreateSchema(event_id=2, trigger_offset="-PT1H", trigger_datetime=trigger_dt2),  # type: ignore[call-arg]
+        ReminderCreateSchema(event_id=1, description="New reminder 1", trigger_offset="-PT30M", sent=False),
+        ReminderCreateSchema(event_id=2, description="New reminder 2", trigger_offset="-PT1H", sent=False),
     ]
 
-    result = await reminder_repository.create(create_data)
+    result = await reminder_repository.create_many(create_data)
 
     assert isinstance(result, list)
     assert len(result) == 2
-    assert isinstance(result[0], Reminder)
-    assert result[0].event_id == 1
-    assert isinstance(result[1], Reminder)
-    assert result[1].event_id == 2
-    mock_session.add.assert_has_calls([call(result[0]), call(result[1])], any_order=True)
+    assert result[0] == ReminderResponse.from_model(
+        Reminder(event_id=1, description="New reminder 1", trigger_offset="-PT30M", sent=False)
+    )
+    assert result[1] == ReminderResponse.from_model(
+        Reminder(event_id=2, description="New reminder 2", trigger_offset="-PT1H", sent=False)
+    )
+    mock_session.add.assert_called()
+    assert mock_session.add.call_count == 2
     assert mock_session.flush.call_count == 2
 
 
@@ -132,39 +115,37 @@ async def test_create_creates_reminder_with_minimal_data(
     reminder_repository: ReminderRepository, mock_session: AsyncMock
 ) -> None:
     """Test that create creates reminder with minimal required data."""
-    trigger_dt = datetime(2025, 1, 1, 10, 0, tzinfo=UTC)
-    create_data = [
-        ReminderCreateSchema(event_id=1, trigger_offset="-PT30M", trigger_datetime=trigger_dt)  # type: ignore[call-arg]
-    ]
+    create_data = ReminderCreateSchema(
+        event_id=1,
+        description="New reminder",
+        trigger_offset="-PT30M",
+        sent=False,
+    )
 
-    result = await reminder_repository.create(create_data)
+    result = await reminder_repository.create_one(create_data)
 
-    assert len(result) == 1
-    reminder = result[0]
-    assert reminder.event_id == 1
-    assert reminder.trigger_offset == "-PT30M"
-    assert reminder.trigger_datetime == trigger_dt
-    assert reminder.description is None
-    assert reminder.repeat_count is None
-    assert reminder.repeat_interval is None
-    assert reminder.sent is False
+    assert result == ReminderResponse.from_model(
+        Reminder(event_id=1, description="New reminder", trigger_offset="-PT30M", sent=False)
+    )
+    mock_session.add.assert_called_once()
+    mock_session.flush.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_update_updates_existing_reminder(
     reminder_repository: ReminderRepository, mock_session: AsyncMock, sample_reminder: Reminder
 ) -> None:
-    """Test that update updates an existing reminder."""
+    """Test that update_by_id updates an existing reminder."""
     mock_session.get.return_value = sample_reminder
-    update_data = ReminderUpdateSchema(description="Updated reminder")  # type: ignore[call-arg]
+    update_data = ReminderUpdateSchema(description="Updated reminder", trigger_offset="-PT1H", sent=True)
 
-    result = await reminder_repository.update(1, update_data)
+    result = await reminder_repository.update_by_id(1, update_data)
 
-    assert result is sample_reminder
-    assert result.description == "Updated reminder"
+    assert result == ReminderResponse.from_model(
+        Reminder(id=1, event_id=1, description="Updated reminder", trigger_offset="-PT1H", sent=True)
+    )
     mock_session.get.assert_called_once_with(Reminder, 1)
     mock_session.flush.assert_called_once()
-    mock_session.refresh.assert_called_once_with(sample_reminder)
 
 
 @pytest.mark.asyncio
@@ -173,34 +154,31 @@ async def test_update_updates_multiple_fields(
 ) -> None:
     """Test that update can update multiple fields."""
     mock_session.get.return_value = sample_reminder
-    new_trigger_dt = datetime(2025, 1, 2, 10, 0, tzinfo=UTC)
-    update_data = ReminderUpdateSchema(  # type: ignore[call-arg]
+    update_data = ReminderUpdateSchema(
         description="Updated description",
         trigger_offset="-PT1H",
-        trigger_datetime=new_trigger_dt,
-        repeat_count=10,
-        repeat_interval="PT15M",
+        sent=True,
     )
 
-    result = await reminder_repository.update(1, update_data)
+    result = await reminder_repository.update_by_id(1, update_data)
 
     assert result.description == "Updated description"
     assert result.trigger_offset == "-PT1H"
-    assert result.trigger_datetime == new_trigger_dt
-    assert result.repeat_count == 10
-    assert result.repeat_interval == "PT15M"
+    assert result.sent is True
+    mock_session.get.assert_called_once_with(Reminder, 1)
+    mock_session.flush.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_update_raises_error_when_reminder_not_found(
     reminder_repository: ReminderRepository, mock_session: AsyncMock
 ) -> None:
-    """Test that update raises ReminderNotFoundError when reminder not found."""
+    """Test that update_by_id raises ReminderNotFoundError when reminder not found."""
     mock_session.get.return_value = None
-    update_data = ReminderUpdateSchema(description="Updated reminder")  # type: ignore[call-arg]
+    update_data = ReminderUpdateSchema(description="Updated reminder", trigger_offset="-PT1H", sent=True)
 
     with pytest.raises(ReminderNotFoundError) as exc_info:
-        await reminder_repository.update(999, update_data)
+        await reminder_repository.update_by_id(999, update_data)
 
     assert exc_info.value.reminder_id == 999
     mock_session.get.assert_called_once_with(Reminder, 999)
@@ -215,15 +193,15 @@ async def test_update_only_updates_provided_fields(
     original_description = sample_reminder.description
     original_trigger_offset = sample_reminder.trigger_offset
     mock_session.get.return_value = sample_reminder
-    update_data = ReminderUpdateSchema(repeat_count=10)  # type: ignore[call-arg]
+    update_data = ReminderUpdateSchema(sent=True)
 
-    result = await reminder_repository.update(1, update_data)
+    result = await reminder_repository.update_by_id(1, update_data)
 
     assert result.description == original_description  # Not changed
     assert result.trigger_offset == original_trigger_offset  # Not changed
-    assert result.repeat_count == 10  # Changed
+    assert result.sent is True  # Changed
+    mock_session.get.assert_called_once_with(Reminder, 1)
     mock_session.flush.assert_called_once()
-    mock_session.refresh.assert_called_once_with(sample_reminder)
 
 
 @pytest.mark.asyncio
@@ -235,9 +213,9 @@ async def test_find_returns_reminder_by_event_id(
     mock_result.scalars.return_value.all.return_value = [sample_reminder]
     mock_session.execute.return_value = mock_result
 
-    result = await reminder_repository.find(1)
+    result = await reminder_repository.find(ReminderFilter(event_id=1))
 
-    assert result == [sample_reminder]
+    assert result == [ReminderResponse.from_model(sample_reminder)]
     mock_session.execute.assert_called_once()
 
 
@@ -247,10 +225,10 @@ async def test_find_returns_none_when_not_found(
 ) -> None:
     """Test that find returns None when reminder not found by event_id."""
     mock_result = MagicMock()
-    mock_result.scalar.return_value = None
+    mock_result.scalars.return_value.all.return_value = []
     mock_session.execute.return_value = mock_result
 
-    result = await reminder_repository.find(999)
+    result = await reminder_repository.find(ReminderFilter(event_id=999))
 
     assert result == []
     mock_session.execute.assert_called_once()
@@ -263,7 +241,7 @@ async def test_delete_deletes_reminder(
     """Test that delete deletes an existing reminder."""
     mock_session.get.return_value = sample_reminder
 
-    await reminder_repository.delete(1)
+    await reminder_repository.delete_by_id(1)
 
     mock_session.get.assert_called_once_with(Reminder, 1)
     mock_session.delete.assert_called_once_with(sample_reminder)
@@ -278,7 +256,7 @@ async def test_delete_raises_error_when_reminder_not_found(
     mock_session.get.return_value = None
 
     with pytest.raises(ReminderNotFoundError) as exc_info:
-        await reminder_repository.delete(999)
+        await reminder_repository.delete_by_id(999)
 
     assert exc_info.value.reminder_id == 999
     mock_session.get.assert_called_once_with(Reminder, 999)

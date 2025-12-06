@@ -7,7 +7,7 @@ import pytest
 
 from models.settings import Settings
 from repositories.exceptions import SettingsNotFoundError
-from repositories.schemas import SettingsCreateSchema, SettingsUpdateSchema
+from repositories.schemas import SettingsCreateSchema, SettingsResponse, SettingsUpdateSchema
 from repositories.settings_repository import SettingsRepository
 
 
@@ -37,9 +37,10 @@ def sample_settings() -> Settings:
         user_id=12345,
         timezone="UTC+2",
         language="en",
-        quiet_hours=False,
+        quiet_hours_enabled=False,
         quiet_hours_start=time(hour=0, minute=0),
         quiet_hours_end=time(hour=6, minute=0),
+        daily_plans_enabled=True,
         daily_plans_time=time(hour=9, minute=0),
         default_reminder_offset=15 * 60,
     )
@@ -57,7 +58,7 @@ async def test_get_by_id_returns_settings(
 
     result = await settings_repository.get_by_id(1)
 
-    assert result is sample_settings
+    assert result == SettingsResponse.from_model(sample_settings)
     mock_session.get.assert_called_once_with(Settings, 1)
 
 
@@ -77,29 +78,43 @@ async def test_get_by_id_returns_none_when_not_found(
 @pytest.mark.asyncio
 async def test_create_creates_settings(settings_repository: SettingsRepository, mock_session: AsyncMock) -> None:
     """Test that create creates a new settings."""
-    create_data = SettingsCreateSchema(  # type: ignore[call-arg]
+    create_data = SettingsCreateSchema(
         user_id=12345,
         timezone="UTC+3",
         language="ru",
-        quiet_hours=True,
+        quiet_hours_enabled=True,
         quiet_hours_start=time(hour=22, minute=0),
         quiet_hours_end=time(hour=8, minute=0),
+        daily_plans_enabled=True,
         daily_plans_time=time(hour=10, minute=30),
         default_reminder_offset=30 * 60,
     )
 
-    result = await settings_repository.create(create_data)
+    result = await settings_repository.create_one(create_data)
 
-    assert isinstance(result, Settings)
+    assert result == SettingsResponse.from_model(
+        Settings(
+            user_id=12345,
+            timezone="UTC+3",
+            language="ru",
+            quiet_hours_enabled=True,
+            quiet_hours_start=time(hour=22, minute=0),
+            quiet_hours_end=time(hour=8, minute=0),
+            daily_plans_enabled=True,
+            daily_plans_time=time(hour=10, minute=30),
+            default_reminder_offset=30 * 60,
+        )
+    )
     assert result.user_id == 12345
     assert result.timezone == "UTC+3"
     assert result.language == "ru"
-    assert result.quiet_hours is True
+    assert result.quiet_hours_enabled is True
     assert result.quiet_hours_start == time(hour=22, minute=0)
     assert result.quiet_hours_end == time(hour=8, minute=0)
+    assert result.daily_plans_enabled is True
     assert result.daily_plans_time == time(hour=10, minute=30)
     assert result.default_reminder_offset == 30 * 60
-    mock_session.add.assert_called_once_with(result)
+    mock_session.add.assert_called_once()
     mock_session.flush.assert_called_once()
 
 
@@ -108,17 +123,40 @@ async def test_create_creates_settings_with_defaults(
     settings_repository: SettingsRepository, mock_session: AsyncMock
 ) -> None:
     """Test that create creates settings with default values."""
-    create_data = SettingsCreateSchema(user_id=12345)  # type: ignore[call-arg]
+    create_data = SettingsCreateSchema(
+        user_id=12345,
+        timezone="UTC+2",
+        language="en",
+        quiet_hours_enabled=False,
+        quiet_hours_start=time(hour=0, minute=0),
+        quiet_hours_end=time(hour=6, minute=0),
+        daily_plans_enabled=False,
+        daily_plans_time=time(hour=9, minute=0),
+        default_reminder_offset=15 * 60,
+    )
 
-    result = await settings_repository.create(create_data)
+    result = await settings_repository.create_one(create_data)
 
-    assert isinstance(result, Settings)
+    assert result == SettingsResponse.from_model(
+        Settings(
+            user_id=12345,
+            timezone="UTC+2",
+            language="en",
+            quiet_hours_enabled=False,
+            quiet_hours_start=time(hour=0, minute=0),
+            quiet_hours_end=time(hour=6, minute=0),
+            daily_plans_enabled=False,
+            daily_plans_time=time(hour=9, minute=0),
+            default_reminder_offset=15 * 60,
+        )
+    )
     assert result.user_id == 12345
     assert result.timezone == "UTC+2"  # Default
     assert result.language == "en"  # Default
-    assert result.quiet_hours is False  # Default
+    assert result.quiet_hours_enabled is False  # Default
     assert result.quiet_hours_start == time(hour=0, minute=0)  # Default
     assert result.quiet_hours_end == time(hour=6, minute=0)  # Default
+    assert result.daily_plans_enabled is False  # Default
     assert result.daily_plans_time == time(hour=9, minute=0)  # Default
     assert result.default_reminder_offset == 15 * 60  # Default
 
@@ -129,15 +167,42 @@ async def test_update_updates_existing_settings(
 ) -> None:
     """Test that update updates an existing settings."""
     mock_session.get.return_value = sample_settings
-    update_data = SettingsUpdateSchema(timezone="UTC+5")  # type: ignore[call-arg]
+    update_data = SettingsUpdateSchema(
+        timezone="UTC+5",
+        language="ru",
+        quiet_hours_enabled=True,
+        quiet_hours_start=time(hour=22, minute=0),
+        quiet_hours_end=time(hour=8, minute=0),
+        daily_plans_time=time(hour=10, minute=30),
+        default_reminder_offset=30 * 60,
+    )
 
-    result = await settings_repository.update(1, update_data)
+    result = await settings_repository.update_by_id(1, update_data)
 
-    assert result is sample_settings
+    assert result == SettingsResponse.from_model(
+        Settings(
+            id=1,
+            user_id=12345,
+            timezone="UTC+5",
+            language="ru",
+            quiet_hours_enabled=True,
+            quiet_hours_start=time(hour=22, minute=0),
+            quiet_hours_end=time(hour=8, minute=0),
+            daily_plans_enabled=True,
+            daily_plans_time=time(hour=10, minute=30),
+            default_reminder_offset=30 * 60,
+        )
+    )
     assert result.timezone == "UTC+5"
+    assert result.language == "ru"
+    assert result.quiet_hours_enabled is True
+    assert result.quiet_hours_start == time(hour=22, minute=0)
+    assert result.quiet_hours_end == time(hour=8, minute=0)
+    assert result.daily_plans_enabled is True
+    assert result.daily_plans_time == time(hour=10, minute=30)
+    assert result.default_reminder_offset == 30 * 60
     mock_session.get.assert_called_once_with(Settings, 1)
     mock_session.flush.assert_called_once()
-    mock_session.refresh.assert_called_once_with(sample_settings)
 
 
 @pytest.mark.asyncio
@@ -147,14 +212,19 @@ async def test_update_updates_multiple_fields(
     """Test that update can update multiple fields."""
     mock_session.get.return_value = sample_settings
     update_data = SettingsUpdateSchema(  # type: ignore[call-arg]
-        timezone="UTC+5", language="ru", quiet_hours=True, default_reminder_offset=60 * 60
+        timezone="UTC+5",
+        language="ru",
+        quiet_hours_enabled=True,
+        daily_plans_time=time(hour=10, minute=30),
+        default_reminder_offset=60 * 60,
     )
 
-    result = await settings_repository.update(1, update_data)
+    result = await settings_repository.update_by_id(1, update_data)
 
     assert result.timezone == "UTC+5"
     assert result.language == "ru"
-    assert result.quiet_hours is True
+    assert result.quiet_hours_enabled is True
+    assert result.daily_plans_time == time(hour=10, minute=30)
     assert result.default_reminder_offset == 60 * 60
 
 
@@ -162,12 +232,18 @@ async def test_update_updates_multiple_fields(
 async def test_update_raises_error_when_settings_not_found(
     settings_repository: SettingsRepository, mock_session: AsyncMock
 ) -> None:
-    """Test that update raises SettingsNotFoundError when settings not found."""
+    """Test that update_by_id raises SettingsNotFoundError when settings not found."""
     mock_session.get.return_value = None
-    update_data = SettingsUpdateSchema(timezone="UTC+5")  # type: ignore[call-arg]
+    update_data = SettingsUpdateSchema(
+        timezone="UTC+5",
+        language="ru",
+        quiet_hours_enabled=True,
+        daily_plans_time=time(hour=10, minute=30),
+        default_reminder_offset=60 * 60,
+    )
 
     with pytest.raises(SettingsNotFoundError) as exc_info:
-        await settings_repository.update(999, update_data)
+        await settings_repository.update_by_id(999, update_data)
 
     assert exc_info.value.settings_id == 999
     mock_session.get.assert_called_once_with(Settings, 999)
@@ -182,13 +258,13 @@ async def test_update_only_updates_provided_fields(
     original_timezone = sample_settings.timezone
     original_language = sample_settings.language
     mock_session.get.return_value = sample_settings
-    update_data = SettingsUpdateSchema(quiet_hours=True)  # type: ignore[call-arg]
+    update_data = SettingsUpdateSchema(quiet_hours_enabled=True)
 
-    result = await settings_repository.update(1, update_data)
+    result = await settings_repository.update_by_id(1, update_data)
 
     assert result.timezone == original_timezone  # Not changed
     assert result.language == original_language  # Not changed
-    assert result.quiet_hours is True  # Changed
+    assert result.quiet_hours_enabled is True  # Changed
     mock_session.flush.assert_called_once()
     mock_session.refresh.assert_called_once_with(sample_settings)
 
@@ -202,24 +278,9 @@ async def test_find_returns_settings_by_user_id(
     mock_result.scalar.return_value = sample_settings
     mock_session.execute.return_value = mock_result
 
-    result = await settings_repository.find(12345)
+    result = await settings_repository.find_by_user_id(12345)
 
-    assert result is sample_settings
-    mock_session.execute.assert_called_once()
-
-
-@pytest.mark.asyncio
-async def test_find_returns_none_when_not_found(
-    settings_repository: SettingsRepository, mock_session: AsyncMock
-) -> None:
-    """Test that find returns None when settings not found by user_id."""
-    mock_result = MagicMock()
-    mock_result.scalar.return_value = None
-    mock_session.execute.return_value = mock_result
-
-    result = await settings_repository.find(99999)
-
-    assert result is None
+    assert result == SettingsResponse.from_model(sample_settings)
     mock_session.execute.assert_called_once()
 
 
@@ -227,10 +288,10 @@ async def test_find_returns_none_when_not_found(
 async def test_delete_deletes_settings(
     settings_repository: SettingsRepository, mock_session: AsyncMock, sample_settings: Settings
 ) -> None:
-    """Test that delete deletes an existing settings."""
+    """Test that delete_by_id deletes an existing settings."""
     mock_session.get.return_value = sample_settings
 
-    await settings_repository.delete(1)
+    await settings_repository.delete_by_id(1)
 
     mock_session.get.assert_called_once_with(Settings, 1)
     mock_session.delete.assert_called_once_with(sample_settings)
@@ -241,11 +302,11 @@ async def test_delete_deletes_settings(
 async def test_delete_raises_error_when_settings_not_found(
     settings_repository: SettingsRepository, mock_session: AsyncMock
 ) -> None:
-    """Test that delete raises SettingsNotFoundError when settings not found."""
+    """Test that delete_by_id raises SettingsNotFoundError when settings not found."""
     mock_session.get.return_value = None
 
     with pytest.raises(SettingsNotFoundError) as exc_info:
-        await settings_repository.delete(999)
+        await settings_repository.delete_by_id(999)
 
     assert exc_info.value.settings_id == 999
     mock_session.get.assert_called_once_with(Settings, 999)

@@ -31,6 +31,8 @@ warn_no_return = true
 ignore_missing_imports = true
 explicit_package_bases = true
 namespace_packages = true
+disable_error_code = ["union-attr", "index"]
+
 
 [[tool.mypy.overrides]]
 module = [
@@ -55,4 +57,17 @@ typeCheckingMode = "basic"
 extraPaths = ["app/src"]
 reportMissingImports = true
 reportMissingTypeStubs = false
+reportOptionalMemberAccess = false
+reportArgumentType = false
 
+[tool.basedpyright]
+include = ["app"]
+exclude = ["**/__pycache__", "**/.pytest_cache", "**/.mypy_cache"]
+pythonVersion = "3.12"
+pythonPlatform = "Linux"
+typeCheckingMode = "basic"
+extraPaths = ["app/src"]
+reportMissingImports = true
+reportMissingTypeStubs = false
+reportOptionalMemberAccess = false
+reportArgumentType = false

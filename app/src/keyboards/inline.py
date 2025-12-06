@@ -12,33 +12,34 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from i18n.strings import t
 
 
-def get_main_menu_inline(lang: str = "ru") -> InlineKeyboardMarkup:
-    """Create main menu inline keyboard.
+def _mk_markup(button_rows: list[list[InlineKeyboardButton]]) -> InlineKeyboardMarkup:
+    """Create an inline keyboard markup from a list of button rows."""
+    return InlineKeyboardMarkup(inline_keyboard=button_rows)
 
-    Args:
-        lang: Language code for button labels. Defaults to "ru".
 
-    Returns:
-        InlineKeyboardMarkup with main menu options (Settings, Events, Daily Plan, External calendars).
-    """
+def back_button(callback_data: str = "back_to_main", lang: str = "en") -> InlineKeyboardMarkup:
+    """Create a back button keyboard."""
+    return _mk_markup([[InlineKeyboardButton(text=t("btn.back", lang=lang), callback_data=callback_data)]])
+
+
+def cancel_button(callback_data: str = "cancel", lang: str = "en") -> InlineKeyboardMarkup:
+    """Create a cancel button keyboard."""
+    return _mk_markup([[InlineKeyboardButton(text=t("btn.cancel", lang=lang), callback_data=callback_data)]])
+
+
+def main_menu_inline(lang: str = "en") -> InlineKeyboardMarkup:
+    """Create main menu inline keyboard."""
     buttons = [
         [InlineKeyboardButton(text=t("btn.settings", lang=lang), callback_data="menu_settings")],
         [InlineKeyboardButton(text=t("btn.events", lang=lang), callback_data="menu_events")],
         [InlineKeyboardButton(text=t("btn.daily_plan", lang=lang), callback_data="menu_daily_plan")],
         [InlineKeyboardButton(text=t("btn.external_calendars", lang=lang), callback_data="menu_link_calendar")],
     ]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return _mk_markup(buttons)
 
 
-def get_settings_menu_inline(lang: str = "ru") -> InlineKeyboardMarkup:
-    """Create settings menu inline keyboard.
-
-    Args:
-        lang: Language code for button labels. Defaults to "ru".
-
-    Returns:
-        InlineKeyboardMarkup with settings options (Timezone, Language, Quiet Hours, Daily Plans Time).
-    """
+def settings_menu_inline(lang: str = "en") -> InlineKeyboardMarkup:
+    """Create settings menu inline keyboard."""
     buttons = [
         [InlineKeyboardButton(text=t("btn.timezone", lang=lang), callback_data="settings_timezone")],
         [InlineKeyboardButton(text=t("btn.language", lang=lang), callback_data="settings_language")],
@@ -46,11 +47,11 @@ def get_settings_menu_inline(lang: str = "ru") -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text=t("btn.daily_plans_time", lang=lang), callback_data="settings_daily_plans_time")],
         [InlineKeyboardButton(text=t("btn.back", lang=lang), callback_data="back_to_main")],
     ]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return _mk_markup(buttons)
 
 
-def get_events_menu_inline(lang: str = "ru") -> InlineKeyboardMarkup:
-    """Events menu with 4 options."""
+def events_menu_inline(lang: str = "en") -> InlineKeyboardMarkup:
+    """Create events menu inline keyboard."""
     buttons = [
         [InlineKeyboardButton(text=t("btn.import", lang=lang), callback_data="events_import")],
         [InlineKeyboardButton(text=t("btn.export", lang=lang), callback_data="events_export")],
@@ -58,98 +59,143 @@ def get_events_menu_inline(lang: str = "ru") -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text=t("btn.view", lang=lang), callback_data="events_view")],
         [InlineKeyboardButton(text=t("btn.back", lang=lang), callback_data="back_to_main")],
     ]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return _mk_markup(buttons)
 
 
-def get_events_create_inline(lang: str = "ru") -> InlineKeyboardMarkup:
-    """Daily plan time menu with 2 options."""
+def events_create_inline(lang: str = "en") -> InlineKeyboardMarkup:
+    """Create events create inline keyboard."""
     buttons = [
         [InlineKeyboardButton(text=t("btn.create_by_dialog", lang=lang), callback_data="create_new_event")],
         [InlineKeyboardButton(text=t("btn.back", lang=lang), callback_data="menu_events")],
     ]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return _mk_markup(buttons)
 
 
-def get_calendar_menu_inline(lang: str = "ru") -> InlineKeyboardMarkup:
-    """Calendar linking menu with 3 options."""
+def calendar_menu_inline(lang: str = "en") -> InlineKeyboardMarkup:
+    """Create calendar menu inline keyboard."""
     buttons = [
         [InlineKeyboardButton(text=t("btn.calendar_list", lang=lang), callback_data="calendar_list")],
         [InlineKeyboardButton(text=t("btn.link_calendar", lang=lang), callback_data="calendar_new")],
         [InlineKeyboardButton(text=t("btn.back", lang=lang), callback_data="back_to_main")],
     ]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return _mk_markup(buttons)
 
 
-def get_back_button(callback_data: str = "back_to_main", lang: str = "ru") -> InlineKeyboardMarkup:
-    """Create a simple back button keyboard.
-
-    Args:
-        callback_data: Callback data for the back button. Defaults to "back_to_main".
-        lang: Language code for button label. Defaults to "ru".
-
-    Returns:
-        InlineKeyboardMarkup with a single back button.
-    """
+def language_menu_inline(lang: str = "ru") -> InlineKeyboardMarkup:
+    """Create language menu inline keyboard."""
     buttons = [
-        [InlineKeyboardButton(text=t("btn.back", lang=lang), callback_data=callback_data)],
-    ]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
-
-
-def get_language_menu_inline(lang: str = "ru") -> InlineKeyboardMarkup:
-    """Language menu with 3 options."""
-    buttons = [
-        [InlineKeyboardButton(text=t("btn.language.en", lang=lang), callback_data="en")],
-        [InlineKeyboardButton(text=t("btn.language.ru", lang=lang), callback_data="ru")],
+        [InlineKeyboardButton(text=t("btn.language.en", lang=lang), callback_data="language_en")],
+        [InlineKeyboardButton(text=t("btn.language.ru", lang=lang), callback_data="language_ru")],
         [InlineKeyboardButton(text=t("btn.back", lang=lang), callback_data="menu_settings")],
     ]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return _mk_markup(buttons)
 
 
-def get_quiet_hours_menu_inline(lang: str = "ru") -> InlineKeyboardMarkup:
-    """Quiet hours menu with 2 options."""
+def confirm_calendar_inline(lang: str = "en") -> InlineKeyboardMarkup:
+    """Create confirm calendar inline keyboard."""
     buttons = [
+        [InlineKeyboardButton(text=t("btn.accept", lang=lang), callback_data="calendar_confirm")],
+        [InlineKeyboardButton(text=t("btn.reject", lang=lang), callback_data="menu_link_calendar")],
+    ]
+    return _mk_markup(buttons)
+
+
+def quiet_hours_menu_inline(lang: str = "en") -> InlineKeyboardMarkup:
+    """Create quiet hours menu inline keyboard."""
+    buttons = [
+        [InlineKeyboardButton(text=t("btn_quiet_hours_enable", lang=lang), callback_data="enable_disable_quiet_hours")],
         [InlineKeyboardButton(text=t("btn.quiet_hours.enter", lang=lang), callback_data="set_quite_hours")],
         [InlineKeyboardButton(text=t("btn.back", lang=lang), callback_data="menu_settings")],
     ]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return _mk_markup(buttons)
 
 
-def get_daily_plan_time_menu_inline(lang: str = "ru") -> InlineKeyboardMarkup:
-    """Daily plan time menu with 2 options."""
+def quiet_hours_accept_reject_inline(lang: str = "en") -> InlineKeyboardMarkup:
+    """Create quiet hours accept reject inline keyboard."""
+    buttons = [
+        [InlineKeyboardButton(text=t("btn.accept", lang=lang), callback_data="accept_quiet_hours")],
+        [InlineKeyboardButton(text=t("btn.reject", lang=lang), callback_data="menu_settings")],
+    ]
+    return _mk_markup(buttons)
+
+
+def calendar_inline(linked: bool, calendar_id: int, lang: str = "en") -> InlineKeyboardMarkup:
+    """Create calendar inline keyboard."""
+    link_btn = (
+        InlineKeyboardButton(text=t("btn.calendar.unlink", lang=lang), callback_data=f"calendar_unlink:{calendar_id}")
+        if linked
+        else InlineKeyboardButton(
+            text=t("btn.calendar.link", lang=lang), callback_data=f"calendar_unlink:{calendar_id}"
+        )
+    )
+
+    buttons = [
+        [
+            InlineKeyboardButton(
+                text=t("btn.calendar.delete", lang=lang), callback_data=f"calendar_delete:{calendar_id}"
+            ),
+            link_btn,
+            InlineKeyboardButton(
+                text=t("btn.calendar.rename", lang=lang), callback_data=f"calendar_rename:{calendar_id}"
+            ),
+        ]
+    ]
+    return _mk_markup(buttons)
+
+
+def confirm_calendar_rename_inline(lang: str = "en") -> InlineKeyboardMarkup:
+    """Create confirm calendar rename inline keyboard."""
+    buttons = [
+        [InlineKeyboardButton(text=t("btn.accept", lang=lang), callback_data="calendar_rename_confirm")],
+        [InlineKeyboardButton(text=t("btn.reject", lang=lang), callback_data="menu_link_calendar")],
+    ]
+    return _mk_markup(buttons)
+
+
+def daily_plan_time_menu_inline(lang: str = "ru") -> InlineKeyboardMarkup:
+    """Create daily plan time menu inline keyboard."""
     buttons = [
         [InlineKeyboardButton(text=t("btn.daily_plan_time.enter", lang=lang), callback_data="set_daily_plan_time")],
         [InlineKeyboardButton(text=t("btn.back", lang=lang), callback_data="menu_settings")],
     ]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return _mk_markup(buttons)
 
 
-def get_skip_keyboard(skip_callback: str, cancel_callback: str, lang: str = "ru") -> InlineKeyboardMarkup:
-    """Keyboard with skip option."""
+def daily_plans_time_accept_reject_inline(lang: str = "en") -> InlineKeyboardMarkup:
+    """Create daily plans time accept reject inline keyboard."""
+    buttons = [
+        [InlineKeyboardButton(text=t("btn.accept", lang=lang), callback_data="accept_daily_plans_time")],
+        [InlineKeyboardButton(text=t("btn.reject", lang=lang), callback_data="menu_settings")],
+    ]
+    return _mk_markup(buttons)
+
+
+def skip_inline(skip_callback: str, cancel_callback: str, lang: str = "ru") -> InlineKeyboardMarkup:
+    """Create skip keyboard inline keyboard."""
     buttons = [
         [InlineKeyboardButton(text=t("btn.cancel", lang=lang), callback_data=cancel_callback)],
         [InlineKeyboardButton(text=t("btn.skip", lang=lang), callback_data=skip_callback)],
     ]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return _mk_markup(buttons)
 
 
-def get_cancel_keyboard(cancel_callback: str, lang: str = "ru") -> InlineKeyboardMarkup:
-    """Keyboard with cancel option."""
+def cancel_inline(cancel_callback: str, lang: str = "ru") -> InlineKeyboardMarkup:
+    """Create cancel keyboard inline keyboard."""
     buttons = [
         [InlineKeyboardButton(text=t("btn.cancel", lang=lang), callback_data=cancel_callback)],
     ]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return _mk_markup(buttons)
 
 
-def get_event_confirmation_inline(lang: str = "ru") -> InlineKeyboardMarkup:
-    """Inline keyboard for event confirmation."""
+def event_confirmation_inline(lang: str = "ru") -> InlineKeyboardMarkup:
+    """Create event confirmation inline keyboard."""
     buttons = [
         [
             InlineKeyboardButton(text=t("btn.accept", lang=lang), callback_data="confirm_event"),
             InlineKeyboardButton(text=t("btn.reject", lang=lang), callback_data="events_cancel"),
         ]
     ]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return _mk_markup(buttons)
 
 
 def create_calendar(year: int | None = None, month: int | None = None, lang: str = "ru") -> InlineKeyboardMarkup:

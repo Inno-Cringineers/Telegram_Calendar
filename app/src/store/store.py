@@ -20,10 +20,12 @@ if TYPE_CHECKING:
     from repositories.event_repository import EventRepository
     from repositories.reminder_repository import ReminderRepository
     from repositories.settings_repository import SettingsRepository
+    from services.calendar_service import CalendarService
+    from services.event_service import EventService
     from services.import_service import ImportService
+    from services.reminder_service import ReminderService
+    from services.settings_service import SettingsService
     from services.upload_service import UploadService
-
-    # from services.event_service import EventService
 
 
 class Store:
@@ -61,8 +63,10 @@ class Store:
         self._settings_repository: SettingsRepository | None = None
         self._upload_service: UploadService | None = None
         self._import_service: ImportService | None = None
-        # Services will be initialized here when implemented
-        # self._event_service: "EventService | None" = None
+        self._settings_service: SettingsService | None = None
+        self._calendar_service: CalendarService | None = None
+        self._reminder_service: ReminderService | None = None
+        self._event_service: EventService | None = None
 
     # ========================================================================
     # REPOSITORIES
@@ -150,16 +154,54 @@ class Store:
             self._import_service = ImportService(self)
         return self._import_service
 
-    # @property
-    # def event_service(self) -> "EventService":
-    #     """Get EventService instance.
-    #
-    #     Services receive Store instance, giving them access to all repositories.
-    #
-    #     Returns:
-    #         EventService: The event service instance.
-    #     """
-    #     if self._event_service is None:
-    #         from services.event_service import EventService
-    #         self._event_service = EventService(self)  # Pass Store, not session
-    #     return self._event_service
+    @property
+    def SettingsService(self) -> "SettingsService":
+        """Get SettingsService instance.
+
+        Returns:
+            SettingsService: The settings service instance using Store's session.
+        """
+        if self._settings_service is None:
+            from services.settings_service import SettingsService
+
+            self._settings_service = SettingsService(self)
+        return self._settings_service
+
+    @property
+    def CalendarService(self) -> "CalendarService":
+        """Get CalendarService instance.
+
+        Returns:
+            CalendarService: The calendar service instance using Store's session.
+        """
+        if self._calendar_service is None:
+            from services.calendar_service import CalendarService
+
+            self._calendar_service = CalendarService(self)
+        return self._calendar_service
+
+    @property
+    def ReminderService(self) -> "ReminderService":
+        """Get ReminderService instance.
+
+        Returns:
+            ReminderService: The reminder service instance using Store's session.
+        """
+        if self._reminder_service is None:
+            from services.reminder_service import ReminderService
+
+            self._reminder_service = ReminderService(self)
+        return self._reminder_service
+
+    @property
+    def EventService(self) -> "EventService":
+        """Get EventService instance.
+
+        Returns:
+            EventService: The event service instance using Store's session.
+        """
+        if self._event_service is None:
+            from services.event_service import EventService
+
+            self._event_service = EventService(self)
+        return self._event_service

@@ -16,7 +16,7 @@ database:
 # Logger settings
 logger:
   # Console output level
-  level: DEBUG
+  level: ${LOG_LEVEL:-DEBUG}
   # Format: 'simple' or 'detailed'
   format: detailed
   # Show in console
@@ -36,3 +36,26 @@ bot:
   single_user: ${SINGLE_USER:-false}
   # Telegram token
   telegram_token: ${TELEGRAM_TOKEN}
+  # Sync workers
+  sync_workers: ${SYNC_WORKERS:-2}
+  # Sync interval in seconds
+  sync_interval: ${SYNC_INTERVAL:-10}
+
+# Default user settings
+settings:
+  # Default timezone
+  timezone: UTC+3
+  # Default language
+  language: en
+  # Quiet hours enabled by default
+  quiet_hours_enabled: false
+  # Quiet hours start time (HH:MM)
+  quiet_hours_start: "00:00"
+  # Quiet hours end time (HH:MM)
+  quiet_hours_end: "06:00"
+  # Daily plans enabled by default
+  daily_plans_enabled: true
+  # Daily plans time (HH:MM)
+  daily_plans_time: "09:00"
+  # Default reminder offset in seconds (15 minutes = 900 seconds)
+  default_reminder_offset: 900
