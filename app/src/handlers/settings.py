@@ -271,7 +271,10 @@ async def set_quite_hours(query: CallbackQuery, state: FSMContext, settings: Set
 
     await state.set_state(SettingsStates.waiting_for_quiet_hours_start)
 
-    text = f"{t('settings.quiet.hours.title', lang=settings.lang)}\n\n{t('settings.quiet.hours.start.enter', lang=settings.lang)}\n\n"
+    text = (
+        f"{t('settings.quiet.hours.title', lang=settings.lang)}\n\n"
+        f"{t('settings.quiet.hours.start.enter', lang=settings.lang)}\n\n"
+    )
 
     await edit_message(
         query.bot,

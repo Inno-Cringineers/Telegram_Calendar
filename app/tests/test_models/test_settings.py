@@ -10,7 +10,7 @@ def get_correct_settings_data() -> Settings:
         user_id=12345,
         timezone="UTC+2",
         language="en",
-        quiet_hours=False,
+        quiet_hours_enabled=False,
         quiet_hours_start=time(hour=0, minute=0),
         quiet_hours_end=time(hour=6, minute=0),
         daily_plans_time=time(hour=9, minute=0),
@@ -25,7 +25,7 @@ def test_settings_creation_with_correct_data() -> None:
     assert settings.user_id == 12345
     assert settings.timezone == "UTC+2"
     assert settings.language == "en"
-    assert settings.quiet_hours is False
+    assert settings.quiet_hours_enabled is False
     assert settings.quiet_hours_start == time(hour=0, minute=0)
     assert settings.quiet_hours_end == time(hour=6, minute=0)
     assert settings.daily_plans_time == time(hour=9, minute=0)

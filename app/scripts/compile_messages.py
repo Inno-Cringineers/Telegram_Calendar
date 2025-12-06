@@ -5,8 +5,8 @@ import sys
 from pathlib import Path
 
 try:
-    from babel.messages.pofile import read_po
     from babel.messages.mofile import write_mo
+    from babel.messages.pofile import read_po
 except ImportError:
     print("Error: Babel is not installed. Please install it with: pip install Babel")
     sys.exit(1)
@@ -46,4 +46,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

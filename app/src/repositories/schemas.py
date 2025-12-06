@@ -307,6 +307,21 @@ class EventResponse:
     """Response schema for Event entity.
 
     Contains all fields from the Event model.
+
+    Attributes:
+        id: int - Event ID.
+        user_id: int - Telegram user ID.
+        uid: str - Event unique identifier from icalendar.
+        calendar_id: int - Calendar ID.
+        date_start: datetime - Event start date and time.
+        date_end: datetime - Event end date and time.
+        all_day: bool - If True, the event is all day event.
+        need_to_remind: bool - If True, the bot will send a reminder to the user.
+        rrule: str | None - Recurrence rule.
+        rdate: list[datetime] | None - Additional recurrence dates.
+        exdate: list[datetime] | None - Exception dates.
+        title: str | None - Event title.
+        description: str | None - Event description.
     """
 
     id: int
@@ -356,6 +371,14 @@ class CalendarResponse:
     """Response schema for Calendar entity.
 
     Contains all fields from the Calendar model.
+
+    Attributes:
+        id: int - Calendar ID.
+        user_id: int - Telegram user ID.
+        name: str - Calendar name.
+        url: str | None - Calendar URL.
+        sync_enabled: bool - Whether to enable sync with the calendar.
+        last_sync: datetime | None - Last successful sync with the calendar.
     """
 
     id: int
@@ -391,6 +414,18 @@ class SettingsResponse:
     """Response schema for Settings entity.
 
     Contains all fields from the Settings model.
+
+    Attributes:
+        id: int - Settings ID.
+        user_id: int - Telegram user ID.
+        timezone: str - The timezone of the user.
+        language: str - The language of the user.
+        quiet_hours_enabled: bool - Whether the quiet hours are enabled for the user.
+        quiet_hours_start: time - The start time of the quiet hours for the user.
+        quiet_hours_end: time - The end time of the quiet hours for the user.
+        daily_plans_enabled: bool - Whether the daily plans are enabled for the user.
+        daily_plans_time: time - The time for daily plans for the user.
+        default_reminder_offset: int - The default seconds before start to send reminder. By default - 15 minutes.
     """
 
     id: int
@@ -434,6 +469,13 @@ class ReminderResponse:
     """Response schema for Reminder entity.
 
     Contains all fields from the Reminder model.
+
+    Attributes:
+        id: int - Reminder ID.
+        event_id: int - Event ID.
+        description: str | None - Description of the reminder.
+        trigger_offset: str - Trigger offset.
+        sent: bool - Whether the reminder has been sent.
     """
 
     id: int
