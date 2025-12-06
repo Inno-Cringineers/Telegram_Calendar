@@ -12,10 +12,10 @@ on:
 
 jobs:
   lint:
-    uses: ./.github/jobs/lint.yml
+    uses: ./.github/workflows/lint.yml
 
   test:
-    uses: ./.github/jobs/test.yml
+    uses: ./.github/workflows/test.yml
 
   docker-build:
     runs-on: ubuntu-latest
