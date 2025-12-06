@@ -68,6 +68,16 @@ async def main() -> None:
     logger.debug(f"Logger file backup count: {cfg.logger.backup_count}")
     logger.debug(f"Bot timeout: {cfg.bot.timeout}")
     logger.debug(f"Bot single user: {cfg.bot.single_user}")
+    logger.debug(f"Bot sync workers: {cfg.bot.sync_workers}")
+    logger.debug(f"Bot sync interval: {cfg.bot.sync_interval}")
+    logger.debug(f"Settings timezone: {cfg.settings.timezone}")
+    logger.debug(f"Settings language: {cfg.settings.language}")
+    logger.debug(f"Settings quiet hours enabled: {cfg.settings.quiet_hours_enabled}")
+    logger.debug(f"Settings quiet hours start: {cfg.settings.quiet_hours_start}")
+    logger.debug(f"Settings quiet hours end: {cfg.settings.quiet_hours_end}")
+    logger.debug(f"Settings daily plans enabled: {cfg.settings.daily_plans_enabled}")
+    logger.debug(f"Settings daily plans time: {cfg.settings.daily_plans_time}")
+    logger.debug(f"Settings default reminder offset: {cfg.settings.default_reminder_offset}")
 
     # Create bot
     bot = Bot(token=cfg.bot.telegram_token)
