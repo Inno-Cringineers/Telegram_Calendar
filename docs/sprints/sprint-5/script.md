@@ -1,6 +1,6 @@
 # Sprint 4 Meeting Script
 
-1. [Tg bot](https://t.me/personal_calendar_reminder_bot)
+1. [Tg bot](https://t.me/calendar_collection_bot)
     - Show tg bot.
 2. [Grafana cloud](https://cringineers.grafana.net/dashboard/snapshot/OhC5I5PhO1lIgcnU5PmRFNRTn6GZtt70)
     - Show Grafana Cloud
