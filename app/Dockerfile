@@ -16,6 +16,8 @@ RUN pip install --upgrade pip
 
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN opentelemetry-bootstrap --action=install
+
 WORKDIR /app/src
 
-CMD ["python", "main.py"]
+CMD ["opentelemetry-instrument", "python", "main.py"]

@@ -24,5 +24,5 @@ jobs:
         run: ruff format --check .
       - name: Run mypy
         working-directory: app
-        run: mypy . --ignore-missing-imports
+        run: mypy src --config-file pyproject.toml
 

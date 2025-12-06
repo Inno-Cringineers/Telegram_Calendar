@@ -32,10 +32,16 @@ services:
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       # Set DEV_MODE=true to enable hot reload (auto-restart on file changes)
       - DEV_MODE=${DEV_MODE:-true}
+      - OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT}
+      - OTEL_EXPORTER_OTLP_HEADERS=${OTEL_EXPORTER_OTLP_HEADERS}
+      - OTEL_EXPORTER_OTLP_PROTOCOL=${OTEL_EXPORTER_OTLP_PROTOCOL}
       # Timezone - sync with host machine timezone
       # TZ should be in IANA format (e.g., Europe/Moscow, Asia/Almaty, America/New_York)
       # If not set, will use timezone from mounted /etc/localtime
       - TZ=${TZ:-}
+      - SYNC_INTERVAL=${SYNC_INTERVAL:-10}
+      - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
     depends_on:
       postgres:
         condition: service_healthy
@@ -54,7 +60,7 @@ services:
         python run_dev.py;
       else
         echo 'Running in production mode...';
-        python main.py;
+        opentelemetry-instrument python main.py;
       fi
       "
 

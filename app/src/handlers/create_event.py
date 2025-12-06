@@ -39,7 +39,7 @@ def is_valid_time(time_str: str) -> bool:
         return False
 
 
-@router.callback_query(F.data == "create_new_event", EventsMenuStates.in_events_create)
+@router.callback_query(F.data == "create_new_event", StateFilter(EventsMenuStates.in_events_create))
 async def process_create_new_event_callback(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Transition beetween states."""
     user_name = query.from_user.first_name
@@ -67,7 +67,7 @@ async def cancel_event_creation(query: CallbackQuery, state: FSMContext, lang: s
         )
 
 
-@router.message(CreateEventStates.waiting_for_title)
+@router.message(StateFilter(CreateEventStates.waiting_for_title))
 async def process_event_title(message: Message, state: FSMContext, lang: str) -> None:
     """Process event title."""
 
@@ -89,7 +89,7 @@ async def process_event_title(message: Message, state: FSMContext, lang: str) ->
     )
 
 
-@router.message(CreateEventStates.waiting_for_description)
+@router.message(StateFilter(CreateEventStates.waiting_for_description))
 async def process_event_description(message: Message, state: FSMContext, lang: str) -> None:
     """Process event description."""
 
@@ -104,7 +104,7 @@ async def process_event_description(message: Message, state: FSMContext, lang: s
     )
 
 
-@router.callback_query(F.data == "skip_description", CreateEventStates.waiting_for_description)
+@router.callback_query(F.data == "skip_description", StateFilter(CreateEventStates.waiting_for_description))
 async def skip_event_description(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Skip event description step."""
 
@@ -118,7 +118,7 @@ async def skip_event_description(query: CallbackQuery, state: FSMContext, lang: 
         )
 
 
-@router.message(CreateEventStates.waiting_for_start_date)
+@router.message(StateFilter(CreateEventStates.waiting_for_start_date))
 async def process_event_date(message: Message, state: FSMContext, lang: str) -> None:
     """Process event date with validation."""
 
@@ -146,7 +146,7 @@ async def process_event_date(message: Message, state: FSMContext, lang: str) -> 
     )
 
 
-@router.message(CreateEventStates.waiting_for_start_time)
+@router.message(StateFilter(CreateEventStates.waiting_for_start_time))
 async def process_event_time(message: Message, state: FSMContext, lang: str) -> None:
     """Process event time with validation."""
 
@@ -184,7 +184,7 @@ async def process_event_time(message: Message, state: FSMContext, lang: str) -> 
     )
 
 
-@router.callback_query(F.data == "confirm_event", CreateEventStates.waiting_for_confirmation)
+@router.callback_query(F.data == "confirm_event", StateFilter(CreateEventStates.waiting_for_confirmation))
 async def confirm_event(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Confirm and save event."""
 
