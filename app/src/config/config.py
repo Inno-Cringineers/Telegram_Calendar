@@ -32,6 +32,7 @@ class BotConfig:
     telegram_token: str
     sync_workers: int
     sync_interval: timedelta
+    metrics_interval: timedelta
 
 
 @dataclass
@@ -183,6 +184,7 @@ def load_config() -> Config:
         telegram_token=yaml_config.get("bot", {}).get("telegram_token"),
         sync_workers=int(yaml_config.get("bot", {}).get("sync_workers", 2)),
         sync_interval=timedelta(seconds=int(yaml_config.get("bot", {}).get("sync_interval", 60))),
+        metrics_interval=timedelta(seconds=int(yaml_config.get("bot", {}).get("metrics_interval", 300))),
     )
 
     settings_config_data = yaml_config.get("settings", {})

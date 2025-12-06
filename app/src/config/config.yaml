@@ -40,6 +40,8 @@ bot:
   sync_workers: ${SYNC_WORKERS:-2}
   # Sync interval in seconds
   sync_interval: ${SYNC_INTERVAL:-10}
+  # Metrics update interval in seconds (default: 5 minutes = 300 seconds)
+  metrics_interval: ${METRICS_INTERVAL:-300}
 
 # Default user settings
 settings:

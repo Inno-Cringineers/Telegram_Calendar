@@ -1,4 +1,5 @@
 import asyncio
+from datetime import timedelta
 
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -14,6 +15,7 @@ from middlewares.logging_middleware import (
 from middlewares.settings_middleware import SettingsMiddleware
 from middlewares.store_middlware import StoreMiddleware
 from router.router import router
+from services.metrics_service import MetricsService
 from services.sync_service import SyncService
 
 
@@ -70,6 +72,7 @@ async def main() -> None:
     logger.debug(f"Bot single user: {cfg.bot.single_user}")
     logger.debug(f"Bot sync workers: {cfg.bot.sync_workers}")
     logger.debug(f"Bot sync interval: {cfg.bot.sync_interval}")
+    logger.debug(f"Bot metrics interval: {cfg.bot.metrics_interval}")
     logger.debug(f"Settings timezone: {cfg.settings.timezone}")
     logger.debug(f"Settings language: {cfg.settings.language}")
     logger.debug(f"Settings quiet hours enabled: {cfg.settings.quiet_hours_enabled}")
@@ -88,9 +91,13 @@ async def main() -> None:
     session_maker = await setup_database_and_store(dp, cfg.database.url)
     # Setup sync service
     sync_service = SyncService(session_maker, sync_interval=cfg.bot.sync_interval, sync_workers=cfg.bot.sync_workers)
+    # Setup metrics service
+    metrics_service = MetricsService(session_maker, update_interval=cfg.bot.metrics_interval)
 
     # Start sync service
     sync_task = asyncio.create_task(sync_service.start_sync_service())
+    # Start metrics service
+    metrics_task = asyncio.create_task(metrics_service.start_metrics_service())
 
     # Setup middlewares
     setup_middlewares(dp)
@@ -100,9 +107,10 @@ async def main() -> None:
     logger.info("Bot is running in polling mode...")
     await dp.start_polling(bot, timeout=cfg.bot.timeout)
 
-    # Wait for sync service to finish
-    stop_task = asyncio.create_task(sync_service.stop())
-    await asyncio.gather(sync_task, stop_task)
+    # Wait for services to finish
+    stop_sync_task = asyncio.create_task(sync_service.stop())
+    stop_metrics_task = asyncio.create_task(metrics_service.stop())
+    await asyncio.gather(sync_task, metrics_task, stop_sync_task, stop_metrics_task)
 
 
 if __name__ == "__main__":
