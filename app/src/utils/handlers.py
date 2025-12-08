@@ -84,6 +84,7 @@ async def edit_message(
         raise ValueError(f"New message is not a Message, bot returned {new_message}")
 
     data = await state.get_data()
+    is_in_sent = False
     sent = data.get("sent_messages", [])
     for msg in sent:
         if msg["message_id"] == message_id:
@@ -92,21 +93,33 @@ async def edit_message(
             msg["delete_message"] = delete_message if delete_message is not None else msg["delete_message"]
             msg["extra_data"] = extra_data if extra_data is not None else msg["extra_data"]
             msg["text"] = text
+            is_in_sent = True
             await state.update_data(sent_messages=sent)
+
+    if not is_in_sent:
+        sent.append(
+            {
+                "message_id": new_message.message_id,
+                "delete_keyboard": delete_keyboard if delete_keyboard is not None else False,
+                "delete_message": delete_message if delete_message is not None else False,
+                "extra_data": extra_data if extra_data is not None else None,
+                "text": text,
+            }
+        )
 
     await state.update_data(last_message=new_message.message_id)
     logger.debug(f"Edited message {new_message.message_id} to {text}")
     logger.debug(f"Edited messages: {sent}")
 
 
-async def clean_messages(bot: Bot, chat_id: int, state: FSMContext):
+async def clean_messages(bot: Bot, chat_id: int, state: FSMContext, delete_all: bool = False):
     """Clean up messages from chat. Used to clean up messages after state is cleared."""
     data = await state.get_data()
     sent = data.get("sent_messages", [])
     removed = []
     for msg in sent:
         logger.debug(f"Cleaning message {msg['message_id']}")
-        if msg["delete_message"] is True:
+        if msg["delete_message"] is True or delete_all is True:
             try:
                 await bot.delete_message(chat_id=chat_id, message_id=msg["message_id"])
                 logger.debug(f"Deleted message {msg['message_id']}")

@@ -28,7 +28,7 @@ async def start_handler(message: Message, state: FSMContext, lang: str) -> None:
 
     await state.set_state(MainMenuStates.in_main_menu)
 
-    await clean_messages(message.bot, message.chat.id, state)
+    await clean_messages(message.bot, message.chat.id, state, delete_all=True)
 
     await send_message(
         message.bot,
@@ -48,6 +48,8 @@ async def back_to_main(query: CallbackQuery, state: FSMContext, lang: str) -> No
     username = query.from_user.first_name if query.from_user else "User"
 
     await state.set_state(MainMenuStates.in_main_menu)
+
+    await clean_messages(query.bot, query.message.chat.id, state)
 
     await edit_message(
         query.bot,

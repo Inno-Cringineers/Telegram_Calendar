@@ -25,6 +25,8 @@ async def open_calendar_menu(query: CallbackQuery, state: FSMContext, settings: 
     """Open calendar linking menu."""
     await state.set_state(CalendarLinkingStates.in_calendar_menu)
 
+    chat_id = query.message.chat.id
+
     await clean_messages(query.bot, query.message.chat.id, state)
 
     await edit_message(

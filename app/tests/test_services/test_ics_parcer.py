@@ -568,3 +568,35 @@ def test_invalid_ics_file():
     ):
         with pytest.raises(ValueError):
             parser.get_schemas()
+
+
+@pytest.mark.asyncio
+async def test_dtstart_utc_z_suffix():
+    """Test that DTSTART with Z suffix (UTC) is correctly parsed as UTC time.
+
+    This test verifies the fix for the issue where DTSTART:20251208T070000Z
+    was incorrectly parsed and stored as 2025-12-08 04:00:00+00 instead of
+    2025-12-08 07:00:00+00.
+    """
+    with tempfile.NamedTemporaryFile("w", delete=False, suffix=".ics") as f:
+        f.write("""BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:test-utc-z
+SUMMARY:Test UTC Z suffix
+DTSTART:20251208T070000Z
+DTEND:20251208T080000Z
+END:VEVENT
+END:VCALENDAR
+""")
+
+    parser = ICSParser(f.name)
+
+    entities = parser.get_schemas()
+
+    assert len(entities) == 1
+    event = entities[0]
+
+    # Verify that 07:00 UTC is correctly parsed as 07:00 UTC, not 04:00 UTC
+    assert event.date_start == datetime(2025, 12, 8, 7, 0, tzinfo=UTC)
+    assert event.date_end == datetime(2025, 12, 8, 8, 0, tzinfo=UTC)
