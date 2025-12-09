@@ -100,6 +100,10 @@ class EventService:
         # create default reminder
         await self.store.ReminderService.create_default(created_event.id)
 
+        # rebuild user schedule
+        if self.store.reminder_scheduler is not None:
+            await self.store.reminder_scheduler.rebuild_user_schedule(data.user_id)
+
         return created_event
 
     async def update_by_id(
@@ -119,7 +123,18 @@ class EventService:
         Raises:
             EventNotFoundError: If event with given ID are not found.
         """
-        return await self.store.EventRepository.update_by_id(event_id, data)
+        # Get event before update to get user_id
+        event = await self.store.EventRepository.get_by_id(event_id)
+        if event is None:
+            raise ValueError(f"Event with id {event_id} not found")
+
+        updated_event = await self.store.EventRepository.update_by_id(event_id, data)
+        # TODO: update reminders if needed
+        # rebuild user schedule
+        if self.store.reminder_scheduler is not None:
+            await self.store.reminder_scheduler.rebuild_user_schedule(event.user_id)
+
+        return updated_event
 
     async def delete_by_id(self, event_id: int) -> None:
         """Delete event by ID.
@@ -130,9 +145,17 @@ class EventService:
         Raises:
             EventNotFoundError: If event with given ID are not found.
         """
+        # Get event before delete to get user_id
+        event = await self.store.EventRepository.get_by_id(event_id)
+        if event is None:
+            raise ValueError(f"Event with id {event_id} not found")
+
         # delete reminders associated with the event
         await self.store.ReminderService.delete_by_event_id(event_id)
         await self.store.EventRepository.delete_by_id(event_id)
+        # rebuild user schedule
+        if self.store.reminder_scheduler is not None:
+            await self.store.reminder_scheduler.rebuild_user_schedule(event.user_id)
 
     async def delete_by_calendar_id(self, calendar_id: int) -> None:
         """Delete events by calendar ID.

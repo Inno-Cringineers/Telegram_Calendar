@@ -142,7 +142,7 @@ class UnitOfWork:
             UnitOfWork: UnitOfWork instance to use inside the context.
         """
         self.session = self.session_maker()
-        logger.debug("UnitOfWork: opening session and beginning transaction")
+        # logger.debug("UnitOfWork: opening session and beginning transaction")
         # begin a transaction
         # TODO: возможно begin тут лишний и его стоит убрать, т.к. в сессии уже есть транзакция
         await self.session.begin()
@@ -160,11 +160,11 @@ class UnitOfWork:
 
         try:
             if exc_type:
-                logger.warning("UnitOfWork: exception detected, rolling back: %s", exc_val)
+                logger.warning("UnitOfWork: exception detected, rolling back: %s: %s", exc_type.__name__, exc_val)
                 await self.session.rollback()
             else:
-                logger.debug("UnitOfWork: committing transaction")
+                # logger.debug("UnitOfWork: committing transaction")
                 await self.session.commit()
         finally:
             await self.session.close()
-            logger.debug("UnitOfWork: session closed")
+            # logger.debug("UnitOfWork: session closed")

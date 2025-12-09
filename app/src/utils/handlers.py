@@ -1,13 +1,34 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import UTC, datetime, time
+from datetime import UTC, datetime, time, timedelta, timezone
 
 from aiogram.client.bot import Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from logger.logger import logger
+
+
+def parse_user_timezone(tz_str: str) -> timezone:
+    """
+    Convert strings like 'UTC+3', 'UTC+5:30', 'UTC-4:45' -> timezone object.
+    """
+    if not tz_str.startswith("UTC"):
+        raise ValueError("Invalid timezone format")
+
+    if tz_str == "UTC":
+        return UTC
+
+    sign = 1 if "+" in tz_str else -1
+    _, offset_str = tz_str.split("UTC")[1].split(sign == 1 and "+" or "-")
+
+    if ":" in offset_str:
+        hours, minutes = map(int, offset_str.split(":"))
+    else:
+        hours, minutes = int(offset_str), 0
+
+    return timezone(timedelta(hours=sign * hours, minutes=sign * minutes))
 
 
 def is_valid_query(query: CallbackQuery) -> bool:

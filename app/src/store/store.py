@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from services.calendar_service import CalendarService
     from services.event_service import EventService
     from services.import_service import ImportService
+    from services.reminder_scheduler import ReminderScheduler
     from services.reminder_service import ReminderService
     from services.settings_service import SettingsService
     from services.upload_service import UploadService
@@ -48,14 +49,16 @@ class Store:
             # event = await store.event_service.create_with_reminder(...)
     """
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, session: AsyncSession, reminder_scheduler: "ReminderScheduler | None" = None) -> None:
         """Initialize Store with a database session.
 
         Args:
             session: SQLAlchemy async session from UnitOfWork.
                     All repositories and services will use this session.
+            reminder_scheduler: Optional ReminderScheduler instance for rebuilding schedules.
         """
         self.session = session
+        self.reminder_scheduler = reminder_scheduler
         # Repositories are initialized lazily to avoid circular imports
         self._calendar_repository: CalendarRepository | None = None
         self._event_repository: EventRepository | None = None

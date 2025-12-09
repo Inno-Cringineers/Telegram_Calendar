@@ -356,7 +356,7 @@ async def calendar_confirm(query: CallbackQuery, state: FSMContext, store: Store
 
     # Get user_id
     user_id = query.from_user.id
-
+    logger.debug("Calendar confirm: user_id", extra={"user_id": user_id})
     # Upload calendar if we have all required data
     if url and name:
         try:

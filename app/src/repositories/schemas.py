@@ -114,6 +114,7 @@ class EventDurationFilter:
     """Schema for filtering events by duration.
 
     Attributes:
+        user_id: int - Filter by user ID.
         duration_from: datetime - Filter by duration from.
         duration_to: datetime - Filter by duration to.
     """
@@ -202,6 +203,7 @@ class SettingsCreateSchema:
         daily_plans_enabled: bool - Whether the daily plans are enabled for the user. default - False.
         daily_plans_time: time - The time for daily plans for the user. default - 09:00.
 
+        default_reminder_enabled: bool - Whether the default reminder is enabled for the user. default - True.
         default_reminder_offset: int - The default seconds before start to send reminder. By default - 15 minutes.
     """  # noqa: E501
 
@@ -213,6 +215,7 @@ class SettingsCreateSchema:
     quiet_hours_end: time
     daily_plans_enabled: bool
     daily_plans_time: time
+    default_reminder_enabled: bool
     default_reminder_offset: int
 
 
@@ -228,6 +231,7 @@ class SettingsUpdateSchema:
         quiet_hours_end: time - The end time of the quiet hours for the user.
         daily_plans_enabled: bool - Whether the daily plans are enabled for the user.
         daily_plans_time: time - The time for daily plans for the user.
+        default_reminder_enabled: bool - Whether the default reminder is enabled for the user. default - True.
         default_reminder_offset: int - The default seconds before start to send reminder. By default - 15 minutes.
     """  # noqa: E501
 
@@ -236,7 +240,9 @@ class SettingsUpdateSchema:
     quiet_hours_enabled: bool | object = NOT_SET
     quiet_hours_start: time | object = NOT_SET
     quiet_hours_end: time | object = NOT_SET
+    daily_plans_enabled: bool | object = NOT_SET
     daily_plans_time: time | object = NOT_SET
+    default_reminder_enabled: bool | object = NOT_SET
     default_reminder_offset: int | object = NOT_SET
 
 
@@ -254,13 +260,11 @@ class ReminderCreateSchema:
         description: string | None - DESCRIPTION. RFC 5545 format. Description of the reminder. Max 1024 chars.
         trigger_offset: string - TRIGGER in RFC 5545.Sets the interval before event start to send reminder.
             shows relative time to event start. for example: -P1D - reminder will be sent 1 day before event start.
-        sent: bool - Whether the reminder has been sent. Defaults to False.
     """  # noqa: E501
 
     event_id: int
     description: str | None
     trigger_offset: str
-    sent: bool
 
 
 @dataclass(frozen=True)
@@ -271,12 +275,10 @@ class ReminderUpdateSchema:
         description: str | None - DESCRIPTION. RFC 5545 format. Description of the reminder. Max 1024 chars. Optional.
         trigger_offset: string - TRIGGER in RFC 5545. Sets the interval before event start to send reminder.
             shows relative time to event start. for example: -P1D - reminder will be sent 1 day before event start.
-        sent: bool - Whether the reminder has been sent. Defaults to False.
     """  # noqa: E501
 
     description: str | None | object = NOT_SET
     trigger_offset: str | object = NOT_SET
-    sent: bool | object = NOT_SET
 
 
 @dataclass(frozen=True)
@@ -289,12 +291,10 @@ class ReminderFilter:
     Attributes:
         event_id: int - Filter by event ID.
         user_id: int - Filter by user ID.
-        sent: bool - Filter by sent status.
     """
 
     event_id: int | object = NOT_SET
     user_id: int | object = NOT_SET
-    sent: bool | object = NOT_SET
 
 
 # ----------------------------------------------------------------------------
@@ -437,6 +437,7 @@ class SettingsResponse:
     quiet_hours_end: time
     daily_plans_enabled: bool
     daily_plans_time: time
+    default_reminder_enabled: bool
     default_reminder_offset: int
 
     @classmethod
@@ -460,6 +461,7 @@ class SettingsResponse:
             quiet_hours_end=settings.quiet_hours_end,
             daily_plans_enabled=settings.daily_plans_enabled,
             daily_plans_time=settings.daily_plans_time,
+            default_reminder_enabled=settings.default_reminder_enabled,
             default_reminder_offset=settings.default_reminder_offset,
         )
 
@@ -475,14 +477,12 @@ class ReminderResponse:
         event_id: int - Event ID.
         description: str | None - Description of the reminder.
         trigger_offset: str - Trigger offset.
-        sent: bool - Whether the reminder has been sent.
     """
 
     id: int
     event_id: int
     description: str | None
     trigger_offset: str
-    sent: bool
 
     @classmethod
     def from_model(cls, reminder: Reminder) -> "ReminderResponse":
@@ -500,5 +500,4 @@ class ReminderResponse:
             event_id=reminder.event_id,
             description=reminder.description,
             trigger_offset=reminder.trigger_offset,
-            sent=reminder.sent,
         )

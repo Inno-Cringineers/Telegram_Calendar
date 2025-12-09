@@ -70,13 +70,22 @@ class ReminderService:
             Created Reminder instance.
         """
         created_reminder = await self.store.ReminderRepository.create_one(data)
+
+        # Get event to get user_id
+        event = await self.store.EventService.get_by_id(data.event_id)
+        if event is not None and self.store.reminder_scheduler is not None:
+            await self.store.reminder_scheduler.rebuild_user_schedule(event.user_id)
+
         return created_reminder
 
-    async def create_default(self, event_id: int) -> ReminderResponse:
+    async def create_default(self, event_id: int) -> ReminderResponse | None:
         """Create default reminder for an event.
 
         Args:
             event_id: The ID of the event to create reminder for.
+
+        Returns:
+            Created Reminder instance if default reminder is enabled, None otherwise.
         """
         event = await self.store.EventService.get_by_id(event_id)
         if event is None:
@@ -84,13 +93,18 @@ class ReminderService:
         settings = await self.store.SettingsService.get_by_user_id(event.user_id)
         if settings is None:
             raise ValueError(f"Settings with user id {event.user_id} not found")
+        if not settings.default_reminder_enabled:
+            return None
         default_reminder_offset = settings.default_reminder_offset
-        trigger_offset = vDuration(timedelta(seconds=-default_reminder_offset)).to_ical().decode("utf-8")
-        return await self.create(
+        trigger_offset = vDuration(timedelta(seconds=default_reminder_offset)).to_ical().decode("utf-8")
+        created_reminder = await self.create(
             ReminderCreateSchema(
-                event_id=event_id, description="Default reminder", trigger_offset=trigger_offset, sent=False
+                event_id=event_id,
+                description="Default reminder",
+                trigger_offset=trigger_offset,
             )
         )
+        return created_reminder
 
     async def update(
         self,
@@ -106,7 +120,19 @@ class ReminderService:
         Returns:
             Updated Reminder instance.
         """
-        return await self.store.ReminderRepository.update_by_id(reminder_id, data)
+        # Get reminder before update to get event_id
+        reminder = await self.store.ReminderRepository.get_by_id(reminder_id)
+        if reminder is None:
+            raise ValueError(f"Reminder with id {reminder_id} not found")
+
+        updated_reminder = await self.store.ReminderRepository.update_by_id(reminder_id, data)
+
+        # Get event to get user_id
+        event = await self.store.EventService.get_by_id(reminder.event_id)
+        if event is not None and self.store.reminder_scheduler is not None:
+            await self.store.reminder_scheduler.rebuild_user_schedule(event.user_id)
+
+        return updated_reminder
 
     async def delete_by_id(self, reminder_id: int) -> None:
         """Delete reminder by ID.
@@ -117,7 +143,17 @@ class ReminderService:
         Raises:
             ReminderNotFoundError: If reminder with given ID are not found.
         """
+        # Get reminder before delete to get event_id
+        reminder = await self.store.ReminderRepository.get_by_id(reminder_id)
+        if reminder is None:
+            raise ValueError(f"Reminder with id {reminder_id} not found")
+
         await self.store.ReminderRepository.delete_by_id(reminder_id)
+
+        # Get event to get user_id
+        event = await self.store.EventService.get_by_id(reminder.event_id)
+        if event is not None and self.store.reminder_scheduler is not None:
+            await self.store.reminder_scheduler.rebuild_user_schedule(event.user_id)
 
     async def delete_by_event_id(self, event_id: int) -> None:
         """Delete reminders by event ID.
@@ -125,6 +161,15 @@ class ReminderService:
         Args:
             event_id: The ID of the event to delete reminders for.
         """
+        # Get event to get user_id before deleting reminders
+        event = await self.store.EventService.get_by_id(event_id)
+        if event is None:
+            return
+
         reminders = await self.find(ReminderFilter(event_id=event_id))
         for reminder in reminders:
-            await self.delete_by_id(reminder.id)
+            await self.store.ReminderRepository.delete_by_id(reminder.id)
+
+        # rebuild user schedule after deleting all reminders
+        if self.store.reminder_scheduler is not None:
+            await self.store.reminder_scheduler.rebuild_user_schedule(event.user_id)

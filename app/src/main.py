@@ -14,15 +14,18 @@ from middlewares.logging_middleware import (
 from middlewares.settings_middleware import SettingsMiddleware
 from middlewares.store_middlware import StoreMiddleware
 from router.router import router
+from services.reminder_scheduler import ReminderScheduler
 from services.sync_service import SyncService
 
 
-async def setup_database_and_store(dp: Dispatcher, db_url: str) -> async_sessionmaker[AsyncSession]:
-    """Setup database and create store middleware.
+async def setup_database_and_store(db_url: str) -> async_sessionmaker[AsyncSession]:
+    """Setup database and return session maker.
 
     Args:
-        dp: Aiogram Dispatcher instance.
         db_url: Database connection URL.
+
+    Returns:
+        Session maker for creating database sessions.
     """
     # Create async SQLAlchemy engine
     engine = create_engine(db_url)
@@ -30,10 +33,6 @@ async def setup_database_and_store(dp: Dispatcher, db_url: str) -> async_session
     await create_tables(engine)
     # Create session maker
     session_maker = create_session_maker(engine)
-
-    # Middleware to inject Store (must be after DatabaseMiddleware)
-    dp.message.middleware(StoreMiddleware(session_maker))
-    dp.callback_query.middleware(StoreMiddleware(session_maker))
 
     return session_maker
 
@@ -75,10 +74,19 @@ async def main() -> None:
     dp = Dispatcher(storage=MemoryStorage())
     # TODO: Add Redis storage for FSM
     # Setup database
-    session_maker = await setup_database_and_store(dp, cfg.database.url)
+    session_maker = await setup_database_and_store(cfg.database.url)
+    # Setup reminder scheduler
+    reminder_scheduler = ReminderScheduler(session_maker, bot)
+    # Setup store middleware with reminder scheduler
+    dp.message.middleware(StoreMiddleware(session_maker, reminder_scheduler=reminder_scheduler))
+    dp.callback_query.middleware(StoreMiddleware(session_maker, reminder_scheduler=reminder_scheduler))
     # Setup sync service
-    sync_service = SyncService(session_maker, sync_interval=cfg.bot.sync_interval, sync_workers=cfg.bot.sync_workers)
+    sync_service = SyncService(
+        session_maker, reminder_scheduler, sync_interval=cfg.bot.sync_interval, sync_workers=cfg.bot.sync_workers
+    )
 
+    # Start reminder scheduler
+    reminder_scheduler_task = asyncio.create_task(reminder_scheduler.start())
     # Start sync service
     sync_task = asyncio.create_task(sync_service.start_sync_service())
 
@@ -90,9 +98,13 @@ async def main() -> None:
     logger.info("Bot is running in polling mode...")
     await dp.start_polling(bot, timeout=cfg.bot.timeout)
 
-    # Wait for sync service to finish
+    # Stop sync service
     stop_task = asyncio.create_task(sync_service.stop())
     await asyncio.gather(sync_task, stop_task)
+
+    # Stop reminder scheduler
+    stop_reminder_scheduler_task = asyncio.create_task(reminder_scheduler.stop())
+    await asyncio.gather(reminder_scheduler_task, stop_reminder_scheduler_task)
 
 
 if __name__ == "__main__":

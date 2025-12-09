@@ -45,6 +45,7 @@ def settings_menu_inline(lang: str = "en") -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text=t("btn.language", lang=lang), callback_data="settings_language")],
         [InlineKeyboardButton(text=t("btn.quiet_hours", lang=lang), callback_data="settings_quiet_hours")],
         [InlineKeyboardButton(text=t("btn.daily_plans_time", lang=lang), callback_data="settings_daily_plans_time")],
+        [InlineKeyboardButton(text=t("btn.default_reminder", lang=lang), callback_data="settings_default_reminder")],
         [InlineKeyboardButton(text=t("btn.back", lang=lang), callback_data="back_to_main")],
     ]
     return _mk_markup(buttons)

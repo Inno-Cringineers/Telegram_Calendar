@@ -7,7 +7,7 @@ tests can call the middleware directly with a mocked handler.
 """
 
 from collections.abc import Awaitable, Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from aiogram import BaseMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -15,6 +15,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from database.database import UnitOfWork
 from logger.logger import logger
 from store.store import Store
+
+if TYPE_CHECKING:
+    from services.reminder_scheduler import ReminderScheduler
 
 
 class StoreMiddleware(BaseMiddleware):
@@ -24,14 +27,18 @@ class StoreMiddleware(BaseMiddleware):
         dp.message.middleware(StoreMiddleware(session_maker))
     """
 
-    def __init__(self, session_maker: async_sessionmaker[AsyncSession]):
+    def __init__(
+        self, session_maker: async_sessionmaker[AsyncSession], reminder_scheduler: "ReminderScheduler | None" = None
+    ):
         """Initialize middleware.
 
         Args:
             session_maker: async_sessionmaker that will be used to create a Store.
+            reminder_scheduler: Optional ReminderScheduler instance to pass to Store.
         """
         super().__init__()
         self.session_maker = session_maker
+        self.reminder_scheduler = reminder_scheduler
 
     async def __call__(
         self,
@@ -53,7 +60,7 @@ class StoreMiddleware(BaseMiddleware):
         async with UnitOfWork(self.session_maker) as uow:
             if uow.session is None:
                 raise RuntimeError("UnitOfWork session is None")
-            store = Store(uow.session)
+            store = Store(uow.session, reminder_scheduler=self.reminder_scheduler)
             data["store"] = store
             result = await handler(event, data)
         logger.debug("StoreMiddleware: handler completed %s", getattr(handler, "__name__", repr(handler)))

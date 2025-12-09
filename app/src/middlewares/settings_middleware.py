@@ -25,6 +25,7 @@ class SettingsData:
     quiet_hours_end: time
     daily_plans_enabled: bool
     daily_plans_time: time
+    default_reminder_enabled: bool
     default_reminder_offset: int
 
 
@@ -112,6 +113,7 @@ class SettingsMiddleware(BaseMiddleware):
             quiet_hours_end=settings.quiet_hours_end,
             daily_plans_enabled=settings.daily_plans_enabled,
             daily_plans_time=settings.daily_plans_time,
+            default_reminder_enabled=settings.default_reminder_enabled,
             default_reminder_offset=settings.default_reminder_offset,
         )
 

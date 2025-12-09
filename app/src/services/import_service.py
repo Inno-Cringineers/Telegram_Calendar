@@ -1,7 +1,7 @@
 """Import service for importing events from icalendar files."""
 
 import uuid
-from datetime import date, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from typing import TYPE_CHECKING
 
 from icalendar.prop import vDuration
@@ -112,7 +112,7 @@ class ImportService:
                 ),
             )
             # delete reminders associated with the event
-            await self.store.ReminderService.delete_by_event_id(event[0].id)
+            # await self.store.ReminderService.delete_by_event_id(event[0].id)
             # create reminders
             if schema.alarms is not None:
                 for alarm in schema.alarms:
@@ -139,25 +139,31 @@ class ImportService:
                 await self._create_reminder(created_event, alarm)
 
     async def _create_reminder(self, event: EventResponse, alarm: VAlarmSchema) -> None:
-        """Create a new reminder in the database.
-
-        Args:
-            event_id: ID of the event to create the reminder for.
-            alarm: VAlarmSchema to create the reminder from.
-        """
-
+        """Create a new reminder in the database, only for future occurrences."""
         trigger_offset = alarm.trigger_offset
+
         if trigger_offset is None:
             if alarm.trigger_datetime is None:
                 return
-            # calculate trigger offset from trigger datetime
-            trigger_offset = vDuration(alarm.trigger_datetime - event.date_start).to_ical().decode("utf-8")
+            # вычисляем offset из trigger_datetime
+            delta = alarm.trigger_datetime - event.date_start
+            trigger_offset = vDuration(delta).to_ical().decode("utf-8")
 
+        # Парсим offset в timedelta
+        delta = vDuration.from_ical(trigger_offset)  # timedelta
+
+        # Момент отправки напоминания
+        reminder_datetime = event.date_start + delta
+
+        # Скипаем прошедшие
+        if reminder_datetime <= datetime.now(UTC):
+            return
+
+        # Сохраняем
         reminder = ReminderCreateSchema(
             event_id=event.id,
             description=alarm.description,
             trigger_offset=trigger_offset,
-            sent=False,
         )
         await self.store.ReminderService.create(reminder)
 
@@ -178,7 +184,6 @@ class ImportService:
         """
         # loading entities from file using ICSParser
         schemas = ICSParser(file_path).get_schemas()
-
         # checking if calendar already exists
         calendar = await self.store.CalendarService.find(CalendarFilter(user_id=user_id, url=calendar_url))
         if calendar == []:

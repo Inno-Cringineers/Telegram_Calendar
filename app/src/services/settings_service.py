@@ -51,6 +51,14 @@ class SettingsService:
         """
         return await self.store.SettingsRepository.find_by_user_id(user_id)
 
+    async def get_all_users(self) -> list[int]:
+        """Retrieve all users.
+
+        Returns:
+            The list of users.
+        """
+        return await self.store.SettingsRepository.get_all_user_ids()
+
     async def create_default(
         self,
         user_id: int,
@@ -91,10 +99,17 @@ class SettingsService:
             quiet_hours_end=_parse_time(settings_config.quiet_hours_end),
             daily_plans_enabled=settings_config.daily_plans_enabled,
             daily_plans_time=_parse_time(settings_config.daily_plans_time),
+            default_reminder_enabled=settings_config.default_reminder_enabled,
             default_reminder_offset=settings_config.default_reminder_offset,
         )
 
-        return await self.store.SettingsRepository.create_one(create_schema)
+        created_settings = await self.store.SettingsRepository.create_one(create_schema)
+
+        # rebuild user schedule for new user
+        if self.store.reminder_scheduler is not None:
+            await self.store.reminder_scheduler.rebuild_user_schedule(user_id)
+
+        return created_settings
 
     async def update(self, settings_id: int, data: SettingsUpdateSchema) -> SettingsResponse:
         """Update existing settings.

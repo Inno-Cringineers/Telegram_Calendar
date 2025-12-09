@@ -7,6 +7,7 @@ Provides CRUD operations and query methods for Reminder model.
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from models.event import Event
 from models.reminder import Reminder
 from repositories.exceptions import ReminderNotFoundError
 from repositories.schemas import NOT_SET, ReminderCreateSchema, ReminderFilter, ReminderResponse, ReminderUpdateSchema
@@ -48,7 +49,6 @@ class ReminderRepository:
             event_id=data.event_id,
             description=data.description,
             trigger_offset=data.trigger_offset,
-            sent=False,
         )
         self.session.add(reminder)
         await self.session.flush()
@@ -70,7 +70,6 @@ class ReminderRepository:
                 event_id=item.event_id,
                 description=item.description,
                 trigger_offset=item.trigger_offset,
-                sent=False,
             )
             self.session.add(reminder)
             await self.session.flush()
@@ -113,10 +112,14 @@ class ReminderRepository:
         Returns:
             The list of reminders as responses if found, empty list otherwise.
         """
+        if filter.user_id is not NOT_SET:
+            stmt = select(Reminder).join(Event).where(Event.user_id == filter.user_id)
 
         stmt = select(Reminder)
         conditions = [
-            getattr(Reminder, field) == value for field, value in vars(filter).items() if value is not NOT_SET
+            getattr(Reminder, field) == value
+            for field, value in vars(filter).items()
+            if value is not NOT_SET and field != "user_id"
         ]
 
         stmt = stmt.where(*conditions)

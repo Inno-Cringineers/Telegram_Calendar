@@ -57,5 +57,7 @@ settings:
   daily_plans_enabled: true
   # Daily plans time (HH:MM)
   daily_plans_time: "09:00"
+  # Default reminder enabled by default
+  default_reminder_enabled: true
   # Default reminder offset in seconds (15 minutes = 900 seconds)
   default_reminder_offset: 900

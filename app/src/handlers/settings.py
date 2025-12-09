@@ -1,4 +1,4 @@
-from datetime import time
+from datetime import time, timedelta
 
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
@@ -45,12 +45,19 @@ async def get_settings_title(settings: SettingsData) -> str:
     else:
         daily_plan = "Disabled" if settings.lang == "en" else "Отключено"
 
+    if settings.default_reminder_enabled:
+        formatted = str(timedelta(seconds=settings.default_reminder_offset))
+        reminder = f"{formatted}"
+    else:
+        reminder = "Disabled" if settings.lang == "en" else "Отключено"
+
     return t(
         "settings.title",
         timezone=settings.timezone,
         language=language,
         quiet_hours=quiet_hours,
         daily_plan=daily_plan,
+        reminder=reminder,
         lang=settings.lang,
     )
 
