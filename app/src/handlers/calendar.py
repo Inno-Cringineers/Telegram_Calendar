@@ -37,6 +37,8 @@ async def open_calendar_menu(query: CallbackQuery, state: FSMContext, settings: 
         f"{t('calendar_link_title', lang=settings.lang)}\n\n{t('calendar_link_description', lang=settings.lang)}",
         calendar_menu_inline(lang=settings.lang),
         parse_mode="HTML",
+        delete_keyboard=True,
+        delete_message=False,
     )
 
 

@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from repositories.reminder_repository import ReminderRepository
     from repositories.settings_repository import SettingsRepository
     from services.calendar_service import CalendarService
+    from services.daily_plan_scheduler import DailyPlanScheduler
     from services.event_service import EventService
     from services.import_service import ImportService
     from services.reminder_scheduler import ReminderScheduler
@@ -49,7 +50,12 @@ class Store:
             # event = await store.event_service.create_with_reminder(...)
     """
 
-    def __init__(self, session: AsyncSession, reminder_scheduler: "ReminderScheduler | None" = None) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        reminder_scheduler: "ReminderScheduler | None" = None,
+        daily_plan_scheduler: "DailyPlanScheduler | None" = None,
+    ) -> None:
         """Initialize Store with a database session.
 
         Args:

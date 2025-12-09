@@ -230,7 +230,7 @@ class ReminderScheduler:
                 if wait > 0:
                     # sleep but allow cancellation by setting stop_event or by cancelling task
                     try:
-                        logger.debug("Waiting for next reminders for user %s at %s", user_id, next_send_at)
+                        # logger.debug("Waiting for next reminders for user %s at %s", user_id, next_send_at)
                         await asyncio.wait_for(self._stop_event.wait(), timeout=wait)
                         # stop_event set -> break
                         if self._stop_event.is_set():

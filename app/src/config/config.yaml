@@ -39,7 +39,7 @@ bot:
   # Sync workers
   sync_workers: ${SYNC_WORKERS:-2}
   # Sync interval in seconds
-  sync_interval: ${SYNC_INTERVAL:-10}
+  sync_interval: ${SYNC_INTERVAL:-60}
 
 # Default user settings
 settings:
