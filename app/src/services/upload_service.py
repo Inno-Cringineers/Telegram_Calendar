@@ -33,7 +33,10 @@ class UploadService:
         await self.store.ImportService.import_external_calendar_from_file(file_path, user_id, calendar_name, url)
 
         # delete old version of file
-        os.remove(file_path)  # TODO
+        try:
+            os.remove(file_path)
+        except Exception as e:
+            logger.error("Error deleting old version of file", exc_info=e, extra={"file_path": file_path})
         # saves ics file to local storage as old version
 
     async def _download_ics_file(self, url: str) -> str:
