@@ -1,5 +1,5 @@
 import asyncio
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC, datetime, time, timedelta, timezone
 
 from aiogram import Bot
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -85,14 +85,26 @@ class DailyPlanScheduler:
             if settings.daily_plans_time is None:
                 return None
 
-            daily_plans_time = settings.daily_plans_time
-            user_tz = self._parse_timezone(settings.timezone)
-            user_date_now = datetime.now(user_tz)
-            next_daily_plan_time = user_date_now.replace(
-                hour=daily_plans_time.hour, minute=daily_plans_time.minute, second=0, microsecond=0
-            )
-            # return next daily plan time in UTC
-            return next_daily_plan_time.astimezone(UTC)
+            daily_plans_time: time = settings.daily_plans_time
+            # if current time > daily plans time, return next day daily plan time
+            time_now = datetime.now(UTC).time()
+            if time_now > daily_plans_time:
+                user_tz = self._parse_timezone(settings.timezone)
+                user_date_now = datetime.now(user_tz) + timedelta(days=1)
+                next_daily_plan_time = user_date_now.replace(
+                    hour=daily_plans_time.hour, minute=daily_plans_time.minute, second=0, microsecond=0
+                )
+                # return next daily plan time in UTC
+                return next_daily_plan_time.astimezone(UTC)
+
+            else:  # if current time < daily plans time, return this day daily plan time
+                user_tz = self._parse_timezone(settings.timezone)
+                user_date_now = datetime.now(user_tz)
+                next_daily_plan_time = user_date_now.replace(
+                    hour=daily_plans_time.hour, minute=daily_plans_time.minute, second=0, microsecond=0
+                )
+                # return next daily plan time in UTC
+                return next_daily_plan_time.astimezone(UTC)
 
     # ---------------- worker per user ----------------
 
@@ -124,6 +136,7 @@ class DailyPlanScheduler:
                 if wait > 0:
                     # sleep but allow cancellation by setting stop_event or by cancelling task
                     try:
+                        logger.debug("Waiting for next daily plan for user %s at %s", user_id, next)
                         # logger.debug("Waiting for next daily plan for user %s at %s", user_id, next)
                         await asyncio.wait_for(self._stop_event.wait(), timeout=wait)
                         # stop_event set -> break
@@ -263,3 +276,29 @@ class DailyPlanScheduler:
             task.cancel()
         await asyncio.gather(*self._tasks.values())
         self._tasks.clear()
+
+
+# singleton
+_scheduler: DailyPlanScheduler | None = None
+
+
+def init_daily_plan_scheduler(session_maker: async_sessionmaker[AsyncSession], bot: Bot) -> DailyPlanScheduler:
+    """
+    Инициализирует синглтон. Вызывать один раз — при старте приложения.
+    """
+    global _scheduler
+    if _scheduler is None:
+        _scheduler = DailyPlanScheduler(session_maker, bot)
+    return _scheduler
+
+
+def get_daily_plan_scheduler() -> DailyPlanScheduler:
+    """
+    Возвращает существующий синглтон.
+    Если он ещё не инициализирован — бросает исключение.
+    """
+    if _scheduler is None:
+        raise RuntimeError(
+            "DailyPlanScheduler is not initialized! Call init_daily_plan_scheduler(session_maker, bot) first."
+        )
+    return _scheduler

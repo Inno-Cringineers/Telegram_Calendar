@@ -57,7 +57,7 @@ class SyncWorker:
                     session = uow.session
                     if session is None:
                         raise RuntimeError("Session is None")
-                    store = Store(session, self.reminder_scheduler)
+                    store = Store(session)
                     await store.UploadService.upload_ical_url(
                         calendar.user_id, calendar.calendar_name, calendar.calendar_url
                     )
@@ -112,7 +112,7 @@ class SyncService:
             session = uow.session
             if session is None:
                 raise RuntimeError("Session is None")
-            store = Store(session, self.reminder_scheduler)
+            store = Store(session)
             calendars = await store.CalendarService.get_externals_to_sync()
 
             if calendars == []:

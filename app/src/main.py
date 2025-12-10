@@ -14,7 +14,8 @@ from middlewares.logging_middleware import (
 from middlewares.settings_middleware import SettingsMiddleware
 from middlewares.store_middlware import StoreMiddleware
 from router.router import router
-from services.reminder_scheduler import ReminderScheduler
+from services.daily_plan_scheduler import init_daily_plan_scheduler
+from services.reminder_scheduler import init_reminder_scheduler
 from services.sync_service import SyncService
 
 
@@ -76,10 +77,11 @@ async def main() -> None:
     # Setup database
     session_maker = await setup_database_and_store(cfg.database.url)
     # Setup reminder scheduler
-    reminder_scheduler = ReminderScheduler(session_maker, bot)
-    # Setup store middleware with reminder scheduler
-    dp.message.middleware(StoreMiddleware(session_maker, reminder_scheduler=reminder_scheduler))
-    dp.callback_query.middleware(StoreMiddleware(session_maker, reminder_scheduler=reminder_scheduler))
+    reminder_scheduler = init_reminder_scheduler(session_maker, bot)
+    daily_plan_scheduler = init_daily_plan_scheduler(session_maker, bot)
+    # Setup store middleware
+    dp.message.middleware(StoreMiddleware(session_maker))
+    dp.callback_query.middleware(StoreMiddleware(session_maker))
     # Setup sync service
     sync_service = SyncService(
         session_maker, reminder_scheduler, sync_interval=cfg.bot.sync_interval, sync_workers=cfg.bot.sync_workers
@@ -87,6 +89,7 @@ async def main() -> None:
 
     # Start reminder scheduler
     reminder_scheduler_task = asyncio.create_task(reminder_scheduler.start())
+    daily_plan_scheduler_task = asyncio.create_task(daily_plan_scheduler.start())
     # Start sync service
     sync_task = asyncio.create_task(sync_service.start_sync_service())
 
@@ -98,13 +101,17 @@ async def main() -> None:
     logger.info("Bot is running in polling mode...")
     await dp.start_polling(bot, timeout=cfg.bot.timeout)
 
+    # Stop daily plan scheduler
+    stop_daily_plan_scheduler_task = asyncio.create_task(daily_plan_scheduler.stop())
+    await asyncio.gather(daily_plan_scheduler_task, stop_daily_plan_scheduler_task)
+
     # Stop sync service
     stop_task = asyncio.create_task(sync_service.stop())
     await asyncio.gather(sync_task, stop_task)
 
     # Stop reminder scheduler
     stop_reminder_scheduler_task = asyncio.create_task(reminder_scheduler.stop())
-    await asyncio.gather(reminder_scheduler_task, stop_reminder_scheduler_task)
+    await asyncio.gather(reminder_scheduler_task, stop_reminder_scheduler_task, stop_daily_plan_scheduler_task)
 
 
 if __name__ == "__main__":

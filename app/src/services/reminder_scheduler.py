@@ -342,3 +342,29 @@ class ReminderScheduler:
             task.cancel()
         await asyncio.gather(*self._tasks.values())
         self._tasks.clear()
+
+
+# singleton
+_scheduler: ReminderScheduler | None = None
+
+
+def init_reminder_scheduler(session_maker: async_sessionmaker[AsyncSession], bot: Bot) -> ReminderScheduler:
+    """
+    Инициализирует синглтон. Вызывать один раз — при старте приложения.
+    """
+    global _scheduler
+    if _scheduler is None:
+        _scheduler = ReminderScheduler(session_maker, bot)
+    return _scheduler
+
+
+def get_reminder_scheduler() -> ReminderScheduler:
+    """
+    Возвращает существующий синглтон.
+    Если он ещё не инициализирован — бросает исключение.
+    """
+    if _scheduler is None:
+        raise RuntimeError(
+            "ReminderScheduler is not initialized! Call init_reminder_scheduler(session_maker, bot) first."
+        )
+    return _scheduler
