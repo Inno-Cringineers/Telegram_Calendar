@@ -38,7 +38,10 @@ async def get_daily_plan(query: CallbackQuery, state: FSMContext, store: Store, 
             query.message.chat.id,
             query.message.message_id,
             state,
-            text=f"{t('daily.plan.title', lang=lang, today=now_local.strftime('%d.%m.%Y'))}\n\n{t('daily.plan.no.events', lang=lang)}",
+            text=(
+                f"{t('daily.plan.title', lang=lang, today=now_local.strftime('%d.%m.%Y'))}\n\n"
+                f"{t('daily.plan.no.events', lang=lang)}"
+            ),
             reply_markup=back_button("back_to_main", lang=lang),
             parse_mode="HTML",
             delete_keyboard=True,
