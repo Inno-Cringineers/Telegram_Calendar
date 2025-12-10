@@ -12,7 +12,6 @@ from repositories.schemas import (
     EventResponse,
     EventUpdateSchema,
 )
-from services.reminder_scheduler import get_reminder_scheduler
 from store.store import Store
 
 if TYPE_CHECKING:
@@ -101,10 +100,6 @@ class EventService:
         # create default reminder
         await self.store.ReminderService.create_default(created_event.id)
 
-        # rebuild user schedule
-        if get_reminder_scheduler() is not None:
-            await get_reminder_scheduler().rebuild_user_schedule(data.user_id)
-
         return created_event
 
     async def update_by_id(
@@ -131,9 +126,6 @@ class EventService:
 
         updated_event = await self.store.EventRepository.update_by_id(event_id, data)
         # TODO: update reminders if needed
-        # rebuild user schedule
-        if get_reminder_scheduler() is not None:
-            await get_reminder_scheduler().rebuild_user_schedule(event.user_id)
 
         return updated_event
 
@@ -154,9 +146,6 @@ class EventService:
         # delete reminders associated with the event
         await self.store.ReminderService.delete_by_event_id(event_id)
         await self.store.EventRepository.delete_by_id(event_id)
-        # rebuild user schedule
-        if get_reminder_scheduler() is not None:
-            await get_reminder_scheduler().rebuild_user_schedule(event.user_id)
 
     async def delete_by_calendar_id(self, calendar_id: int) -> None:
         """Delete events by calendar ID.

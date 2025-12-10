@@ -83,6 +83,16 @@ def create_session_maker(engine: AsyncEngine) -> async_sessionmaker[AsyncSession
     Returns:
         async_sessionmaker bound to the engine.
     """
+    # Setup event listeners for scheduler rebuilds
+    # Import here to avoid circular dependencies
+    try:
+        from database.event_listeners import setup_event_listeners  # noqa: F401
+
+        setup_event_listeners()
+    except ImportError:
+        # Event listeners module may not be available in all contexts (e.g., tests)
+        logger.warning("Could not import event_listeners, scheduler rebuilds will not be automatic")
+
     return async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 

@@ -86,25 +86,18 @@ class DailyPlanScheduler:
                 return None
 
             daily_plans_time: time = settings.daily_plans_time
-            # if current time > daily plans time, return next day daily plan time
-            time_now = datetime.now(UTC).time()
-            if time_now > daily_plans_time:
-                user_tz = self._parse_timezone(settings.timezone)
-                user_date_now = datetime.now(user_tz) + timedelta(days=1)
-                next_daily_plan_time = user_date_now.replace(
-                    hour=daily_plans_time.hour, minute=daily_plans_time.minute, second=0, microsecond=0
-                )
-                # return next daily plan time in UTC
-                return next_daily_plan_time.astimezone(UTC)
+            user_tz = self._parse_timezone(settings.timezone)
+            user_date_now = datetime.now(user_tz)
 
-            else:  # if current time < daily plans time, return this day daily plan time
-                user_tz = self._parse_timezone(settings.timezone)
-                user_date_now = datetime.now(user_tz)
-                next_daily_plan_time = user_date_now.replace(
-                    hour=daily_plans_time.hour, minute=daily_plans_time.minute, second=0, microsecond=0
-                )
-                # return next daily plan time in UTC
-                return next_daily_plan_time.astimezone(UTC)
+            # if current time > daily plans time, return next day daily plan time
+            if user_date_now.time() >= daily_plans_time:
+                user_date_now = user_date_now + timedelta(days=1)
+
+            next_daily_plan_time = user_date_now.replace(
+                hour=daily_plans_time.hour, minute=daily_plans_time.minute, second=0, microsecond=0
+            )
+            # return next daily plan time in UTC
+            return next_daily_plan_time.astimezone(UTC)
 
     # ---------------- worker per user ----------------
 
@@ -133,6 +126,7 @@ class DailyPlanScheduler:
 
                 now = self._now_utc()
                 wait = (next - now).total_seconds()
+                logger.debug("%s Waiting for next daily plan for user %s at %s, wait: %s", now, user_id, next, wait)
                 if wait > 0:
                     # sleep but allow cancellation by setting stop_event or by cancelling task
                     try:

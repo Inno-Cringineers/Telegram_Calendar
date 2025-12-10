@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 
 from repositories.exceptions import SettingsNotFoundError
 from repositories.schemas import SettingsCreateSchema, SettingsResponse, SettingsUpdateSchema
-from services.reminder_scheduler import get_reminder_scheduler
 from store.store import Store
 
 if TYPE_CHECKING:
@@ -106,10 +105,6 @@ class SettingsService:
 
         created_settings = await self.store.SettingsRepository.create_one(create_schema)
 
-        # rebuild user schedule for new user
-        if get_reminder_scheduler() is not None:
-            await get_reminder_scheduler().rebuild_user_schedule(user_id)
-
         return created_settings
 
     async def update(self, settings_id: int, data: SettingsUpdateSchema) -> SettingsResponse:
@@ -125,7 +120,8 @@ class SettingsService:
         Raises:
             SettingsNotFoundError: If settings with given ID are not found.
         """
-        return await self.store.SettingsRepository.update_by_id(settings_id, data)
+        updated_settings = await self.store.SettingsRepository.update_by_id(settings_id, data)
+        return updated_settings
 
     async def update_by_user_id(
         self,
@@ -150,10 +146,11 @@ class SettingsService:
         if settings is None:
             raise SettingsNotFoundError(user_id=user_id)
 
-        return await self.update(
+        updated_settings = await self.update(
             settings.id,
             data,
         )
+        return updated_settings
 
     async def switch_quiet_hours(self, user_id: int) -> SettingsResponse:
         """Switch quiet hours.

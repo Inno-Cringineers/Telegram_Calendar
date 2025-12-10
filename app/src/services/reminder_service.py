@@ -14,7 +14,6 @@ from repositories.schemas import (
     ReminderResponse,
     ReminderUpdateSchema,
 )
-from services.reminder_scheduler import get_reminder_scheduler
 from store.store import Store
 
 if TYPE_CHECKING:
@@ -72,11 +71,6 @@ class ReminderService:
         """
         created_reminder = await self.store.ReminderRepository.create_one(data)
 
-        # Get event to get user_id
-        event = await self.store.EventService.get_by_id(data.event_id)
-        if event is not None and get_reminder_scheduler() is not None:
-            await get_reminder_scheduler().rebuild_user_schedule(event.user_id)
-
         return created_reminder
 
     async def create_default(self, event_id: int) -> ReminderResponse | None:
@@ -128,11 +122,6 @@ class ReminderService:
 
         updated_reminder = await self.store.ReminderRepository.update_by_id(reminder_id, data)
 
-        # Get event to get user_id
-        event = await self.store.EventService.get_by_id(reminder.event_id)
-        if event is not None and get_reminder_scheduler() is not None:
-            await get_reminder_scheduler().rebuild_user_schedule(event.user_id)
-
         return updated_reminder
 
     async def delete_by_id(self, reminder_id: int) -> None:
@@ -151,11 +140,6 @@ class ReminderService:
 
         await self.store.ReminderRepository.delete_by_id(reminder_id)
 
-        # Get event to get user_id
-        event = await self.store.EventService.get_by_id(reminder.event_id)
-        if event is not None and get_reminder_scheduler() is not None:
-            await get_reminder_scheduler().rebuild_user_schedule(event.user_id)
-
     async def delete_by_event_id(self, event_id: int) -> None:
         """Delete reminders by event ID.
 
@@ -170,7 +154,3 @@ class ReminderService:
         reminders = await self.find(ReminderFilter(event_id=event_id))
         for reminder in reminders:
             await self.store.ReminderRepository.delete_by_id(reminder.id)
-
-        # rebuild user schedule after deleting all reminders
-        if get_reminder_scheduler() is not None:
-            await get_reminder_scheduler().rebuild_user_schedule(event.user_id)

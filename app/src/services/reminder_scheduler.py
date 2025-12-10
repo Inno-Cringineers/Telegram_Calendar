@@ -227,6 +227,8 @@ class ReminderScheduler:
 
                 now = self._now_utc()
                 wait = (next_send_at - now).total_seconds()
+                logger.debug("Waiting for next reminders for user %s at %s", user_id, next_send_at)
+                logger.debug("Wait time: %s seconds", wait)
                 if wait > 0:
                     # sleep but allow cancellation by setting stop_event or by cancelling task
                     try:
