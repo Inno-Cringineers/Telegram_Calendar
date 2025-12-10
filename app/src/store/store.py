@@ -48,7 +48,10 @@ class Store:
             # event = await store.event_service.create_with_reminder(...)
     """
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+    ) -> None:
         """Initialize Store with a database session.
 
         Args:

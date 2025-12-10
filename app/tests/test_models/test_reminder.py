@@ -10,7 +10,6 @@ def get_correct_reminder_data() -> Reminder:
         event_id=1,
         description="Test description",
         trigger_offset="-P1D",
-        sent=False,
     )
 
 
@@ -21,7 +20,6 @@ def test_reminder_creation_with_correct_data() -> None:
     assert reminder.event_id == 1
     assert reminder.description == "Test description"
     assert reminder.trigger_offset == "-P1D"
-    assert reminder.sent is False
 
 
 def test_description_constraint() -> None:

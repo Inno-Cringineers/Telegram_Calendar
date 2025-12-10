@@ -36,7 +36,6 @@ def sample_reminder() -> Reminder:
         event_id=1,
         description="Test reminder",
         trigger_offset="-PT30M",
-        sent=False,
     )
     # Set id manually for testing (normally set by database)
     reminder.id = 1
@@ -76,7 +75,6 @@ async def test_create_creates_reminder(reminder_repository: ReminderRepository, 
         event_id=1,
         description="New reminder",
         trigger_offset="-PT30M",
-        sent=False,
     )
 
     await reminder_repository.create_one(create_data)
@@ -91,8 +89,8 @@ async def test_create_many_creates_multiple_reminders(
 ) -> None:
     """Test that create_many creates multiple reminders."""
     create_data = [
-        ReminderCreateSchema(event_id=1, description="New reminder 1", trigger_offset="-PT30M", sent=False),
-        ReminderCreateSchema(event_id=2, description="New reminder 2", trigger_offset="-PT1H", sent=False),
+        ReminderCreateSchema(event_id=1, description="New reminder 1", trigger_offset="-PT30M"),
+        ReminderCreateSchema(event_id=2, description="New reminder 2", trigger_offset="-PT1H"),
     ]
 
     result = await reminder_repository.create_many(create_data)
@@ -100,10 +98,10 @@ async def test_create_many_creates_multiple_reminders(
     assert isinstance(result, list)
     assert len(result) == 2
     assert result[0] == ReminderResponse.from_model(
-        Reminder(event_id=1, description="New reminder 1", trigger_offset="-PT30M", sent=False)
+        Reminder(event_id=1, description="New reminder 1", trigger_offset="-PT30M")
     )
     assert result[1] == ReminderResponse.from_model(
-        Reminder(event_id=2, description="New reminder 2", trigger_offset="-PT1H", sent=False)
+        Reminder(event_id=2, description="New reminder 2", trigger_offset="-PT1H")
     )
     mock_session.add.assert_called()
     assert mock_session.add.call_count == 2
@@ -119,13 +117,12 @@ async def test_create_creates_reminder_with_minimal_data(
         event_id=1,
         description="New reminder",
         trigger_offset="-PT30M",
-        sent=False,
     )
 
     result = await reminder_repository.create_one(create_data)
 
     assert result == ReminderResponse.from_model(
-        Reminder(event_id=1, description="New reminder", trigger_offset="-PT30M", sent=False)
+        Reminder(event_id=1, description="New reminder", trigger_offset="-PT30M")
     )
     mock_session.add.assert_called_once()
     mock_session.flush.assert_called_once()
@@ -137,12 +134,12 @@ async def test_update_updates_existing_reminder(
 ) -> None:
     """Test that update_by_id updates an existing reminder."""
     mock_session.get.return_value = sample_reminder
-    update_data = ReminderUpdateSchema(description="Updated reminder", trigger_offset="-PT1H", sent=True)
+    update_data = ReminderUpdateSchema(description="Updated reminder", trigger_offset="-PT1H")
 
     result = await reminder_repository.update_by_id(1, update_data)
 
     assert result == ReminderResponse.from_model(
-        Reminder(id=1, event_id=1, description="Updated reminder", trigger_offset="-PT1H", sent=True)
+        Reminder(id=1, event_id=1, description="Updated reminder", trigger_offset="-PT1H")
     )
     mock_session.get.assert_called_once_with(Reminder, 1)
     mock_session.flush.assert_called_once()
@@ -157,14 +154,12 @@ async def test_update_updates_multiple_fields(
     update_data = ReminderUpdateSchema(
         description="Updated description",
         trigger_offset="-PT1H",
-        sent=True,
     )
 
     result = await reminder_repository.update_by_id(1, update_data)
 
     assert result.description == "Updated description"
     assert result.trigger_offset == "-PT1H"
-    assert result.sent is True
     mock_session.get.assert_called_once_with(Reminder, 1)
     mock_session.flush.assert_called_once()
 
@@ -175,7 +170,7 @@ async def test_update_raises_error_when_reminder_not_found(
 ) -> None:
     """Test that update_by_id raises ReminderNotFoundError when reminder not found."""
     mock_session.get.return_value = None
-    update_data = ReminderUpdateSchema(description="Updated reminder", trigger_offset="-PT1H", sent=True)
+    update_data = ReminderUpdateSchema(description="Updated reminder", trigger_offset="-PT1H")
 
     with pytest.raises(ReminderNotFoundError) as exc_info:
         await reminder_repository.update_by_id(999, update_data)
@@ -193,13 +188,12 @@ async def test_update_only_updates_provided_fields(
     original_description = sample_reminder.description
     original_trigger_offset = sample_reminder.trigger_offset
     mock_session.get.return_value = sample_reminder
-    update_data = ReminderUpdateSchema(sent=True)
+    update_data = ReminderUpdateSchema()
 
     result = await reminder_repository.update_by_id(1, update_data)
 
     assert result.description == original_description  # Not changed
     assert result.trigger_offset == original_trigger_offset  # Not changed
-    assert result.sent is True  # Changed
     mock_session.get.assert_called_once_with(Reminder, 1)
     mock_session.flush.assert_called_once()
 

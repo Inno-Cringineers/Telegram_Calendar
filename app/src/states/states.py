@@ -45,9 +45,12 @@ class SettingsStates(StatesGroup):
     editing_language = State()
     in_quiet_hours_menu = State()
     editing_quiet_hours = State()
+    in_daily_plans_menu = State()
     editing_daily_plans_time = State()
     waiting_for_quiet_hours_start = State()
     waiting_for_quiet_hours_end = State()
+    in_default_reminder_menu = State()
+    editing_default_reminder_time = State()
 
 
 class CalendarLinkingStates(StatesGroup):

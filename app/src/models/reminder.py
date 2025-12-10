@@ -3,7 +3,7 @@ This module defines the `Reminder` class, which represents notifications
 for events in the application.
 """
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String
+from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from sqlalchemy.util.typing import Literal
 
@@ -27,18 +27,10 @@ class Reminder(Base):
         id: int - Primary key.
         event_id: int - FK to Event, not null.
 
-        --- content section ---
-
-        description: string | None - DESCRIPTION. RFC 5545 format. Description of the reminder. Max 1024 chars.
-
         --- trigger section ---
 
         trigger_offset: string - TRIGGER in RFC 5545.Sets the interval before event start to send reminder.
             shows relative time to event start. for example: -P1D - reminder will be sent 1 day before event start.
-
-        --- metadata section ---
-
-        sent: bool - Whether the reminder has been sent. Defaults to False.
     """  # noqa: E501
 
     # --- id section ---
@@ -51,9 +43,6 @@ class Reminder(Base):
 
     # --- trigger section ---
     trigger_offset: Mapped[str] = mapped_column(String(255), nullable=False)
-
-    # --- metadata section ---
-    sent: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # --- ORM-level validation ---
     @validates("description")

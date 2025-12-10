@@ -29,7 +29,7 @@ msgid "btn_daily_plan_time_enter"
 msgstr "enter daily plans time"
 
 msgid "btn_daily_plans_time"
-msgstr "⏰ Daily Plans Time"
+msgstr "📋 Daily Plans Time"
 
 msgid "btn_delete"
 msgstr "❌ Delete"
@@ -97,6 +97,24 @@ msgstr "❌ Delete"
 msgid "btn_calendar_rename"
 msgstr "✏️ Rename"
 
+msgid "btn_default_reminder"
+msgstr "⏰ Reminders"
+
+msgid "btn_daily_plan_enable"
+msgstr "Enable daily plans"
+
+msgid "btn_daily_plan_disable"
+msgstr "Disable daily plans"
+
+msgid "btn_default_reminder_enable"
+msgstr "Enable reminders"
+
+msgid "btn_default_reminder_disable"
+msgstr "Disable reminders"
+
+msgid "btn_default_reminder_time_enter"
+msgstr "Enter reminder time"
+
 msgid "calendar_link_title"
 msgstr "🔗 <b>Link a Calendar</b>"
 
@@ -162,6 +180,9 @@ msgstr "❌ name is too long"
 
 msgid "calendar_link_error"
 msgstr "❌ linking error, may be url is incorrect"
+
+msgid "calendar_sync_error"
+msgstr "❌ Failed to synchronize calendar. The link may be invalid or unavailable."
 
 msgid "calendar_link_url_exists"
 msgstr "❌ calendar with this url already exists"
@@ -310,7 +331,7 @@ msgid "settings_daily_plans_time_selected"
 msgstr "✅ Daily plans time setting selected"
 
 msgid "settings_daily_plans_time_title"
-msgstr "⏰ <b>Daily plans Time</b>"
+msgstr "📋 <b>Daily plans Time</b>"
 
 msgid "settings_daily_plans_time_enter"
 msgstr "Enter daily plans time in HH:MM format (e.g., 09:30)"
@@ -406,8 +427,70 @@ msgid "settings_timezone_updated"
 msgstr "✅ Timezone updated successfully to <b>{timezone}</b>"
 
 msgid "settings_title"
-msgstr "⚙️ <b>Settings</b>\n\n<u>Your current settings:</u>\n\n🌍 Timezone: <b>{timezone}</b>\n\n🇬🇧 Language: <b>{language}</b>\n\n🔇 Quiet hours: <b>{quiet_hours}</b>\n\n⏰ Daily plan time: <b>{daily_plan}</b>\n\n"
+msgstr "⚙️ <b>Settings</b>\n\n<u>Your current settings:</u>\n\n🌍 Timezone: <b>{timezone}</b>\n\n🇬🇧 Language: <b>{language}</b>\n\n🔇 Quiet hours: <b>{quiet_hours}</b>\n\n📋 Daily plan time: <b>{daily_plan}</b>\n\n⏰ Remind before event: <b>{reminder}</b>"
+
+msgid "settings_daily_plans_enabled"
+msgstr "✅ Daily plans enabled"
+
+msgid "settings_daily_plans_disabled"
+msgstr "❌ Daily plans disabled"
+
+msgid "settings_default_reminder_title"
+msgstr "⏰ <b>Default Reminder</b>"
+
+msgid "settings_default_reminder_current"
+msgstr "Current reminder time: <b>{reminder}</b>"
+
+msgid "settings_default_reminder_description"
+msgstr "Default reminder will be sent before each event starts."
+
+msgid "settings_default_reminder_enabled"
+msgstr "✅ Default reminder enabled"
+
+msgid "settings_default_reminder_disabled"
+msgstr "❌ Default reminder disabled"
+
+msgid "settings_default_reminder_time_enter"
+msgstr "Enter reminder time in HH:MM:SS format (e.g., 00:15:00 for 15 minutes)"
+
+msgid "settings_default_reminder_time_format_error"
+msgstr "❌ Invalid time format.\n\nYou entered: <b>{user_input}</b>\n"
+
+msgid "settings_default_reminder_time_accept_reject"
+msgstr "Reminder time will be changed to:\n<b>{reminder}</b>"
+
+msgid "settings_default_reminder_time_accepted"
+msgstr "✅ Reminder time changed"
 
 msgid "start_welcome"
 msgstr "👋 <b>Welcome to the Personal Calendar Reminder bot, {user_name}!</b>\n\nI can manage your events, send reminders about upcoming ones, and synchronize with external calendars.\n\n📋 <b>Commands:</b>\n/start - Show this dialog\n/help - Get help\n\n🎯 <b>Main features:</b>\n• 📅 View events\n• ➕ Create events\n• ✏️ Edit and delete events\n• 🔗 Import external calendars (Google, Outlook, etc.)\n• ⏰ Event reminders\n• 📋 Daily plans"
 
+msgid "daily_plan_no_events"
+msgstr "Today you have no events"
+
+msgid "daily_plan_event_content"
+msgstr "🗓️ <b>{title}</b>\ndescription: {description}\n{duration}\n{source}"
+
+msgid "daily_plan_event_duration_all_day"
+msgstr "all day event"
+
+msgid "daily_plan_event_duration_not_all_day"
+msgstr "{start} - {end}"
+
+msgid "daily_plan_event_source_external"
+msgstr "source: <a href="{link}">{name}</a>"
+
+msgid "daily_plan_event_source_local"
+msgstr "source: local bot storage" 
+
+msgid "daily_plan_title"
+msgstr "📋 <b>Your daily plan for the day - {today}</b>"
+
+msgid "daily_plan_event_description_none"
+msgstr "empty"
+
+msgid "daily_plan_event_title_none"
+msgstr "unnamed"
+
+msgid "reminder_message"
+msgstr "🔔 Reminder: <b>{event_name}</b>\n\n🕒 starts: {start}"

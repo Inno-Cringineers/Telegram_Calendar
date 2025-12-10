@@ -10,6 +10,7 @@ import aiohttp
 from aiogram import Bot
 from aiogram.types import Message
 
+from logger.logger import logger
 from store.store import Store
 
 
@@ -25,6 +26,10 @@ class UploadService:
         # if not _is_diff(file_path):
         #    return
         # imports events from ics file
+        logger.debug(
+            "Upload service: uploading ics file from url, user_id: %s",
+            user_id,
+        )
         await self.store.ImportService.import_external_calendar_from_file(file_path, user_id, calendar_name, url)
 
         # delete old version of file

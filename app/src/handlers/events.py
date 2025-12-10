@@ -12,6 +12,7 @@ from keyboards.inline import (
 )
 from logger.logger import logger
 from states.states import EventsMenuStates
+from utils.handlers import clean_messages, edit_message
 
 router = Router()
 
@@ -19,17 +20,22 @@ router = Router()
 @router.callback_query(F.data == "menu_events")
 async def open_events_menu(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Open events menu."""
-    user_id = query.from_user.id
-    logger.info(f"User {user_id} opened events menu")
 
     await state.set_state(EventsMenuStates.in_events_menu)
 
-    if query.message and hasattr(query.message, "edit_text"):
-        await query.message.edit_text(
-            t("events.title", lang=lang),
-            parse_mode="HTML",
-            reply_markup=events_menu_inline(lang=lang),
-        )
+    await clean_messages(query.bot, query.message.chat.id, state)
+
+    await edit_message(
+        query.bot,
+        query.message.chat.id,
+        query.message.message_id,
+        state,
+        t("events.title", lang=lang),
+        events_menu_inline(lang=lang),
+        parse_mode="HTML",
+        delete_keyboard=True,
+        delete_message=False,
+    )
 
 
 @router.callback_query(F.data == "events_import", StateFilter(EventsMenuStates.in_events_menu))

@@ -47,6 +47,7 @@ class SettingsConfig:
         quiet_hours_end: Default quiet hours end time as "HH:MM" string.
         daily_plans_enabled: Whether daily plans are enabled by default.
         daily_plans_time: Default daily plans time as "HH:MM" string.
+        default_reminder_enabled: Whether default reminder is enabled by default.
         default_reminder_offset: Default reminder offset in seconds.
     """
 
@@ -57,6 +58,7 @@ class SettingsConfig:
     quiet_hours_end: str
     daily_plans_enabled: bool
     daily_plans_time: str
+    default_reminder_enabled: bool
     default_reminder_offset: int
 
 
@@ -196,6 +198,7 @@ def load_config() -> Config:
         quiet_hours_end=settings_config_data.get("quiet_hours_end", "06:00"),
         daily_plans_enabled=str_to_bool(settings_config_data.get("daily_plans_enabled", True)),
         daily_plans_time=settings_config_data.get("daily_plans_time", "09:00"),
+        default_reminder_enabled=str_to_bool(settings_config_data.get("default_reminder_enabled", True)),
         default_reminder_offset=settings_config_data.get("default_reminder_offset", 900),
     )
 

@@ -45,6 +45,7 @@ def settings_menu_inline(lang: str = "en") -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text=t("btn.language", lang=lang), callback_data="settings_language")],
         [InlineKeyboardButton(text=t("btn.quiet_hours", lang=lang), callback_data="settings_quiet_hours")],
         [InlineKeyboardButton(text=t("btn.daily_plans_time", lang=lang), callback_data="settings_daily_plans_time")],
+        [InlineKeyboardButton(text=t("btn.default_reminder", lang=lang), callback_data="settings_default_reminder")],
         [InlineKeyboardButton(text=t("btn.back", lang=lang), callback_data="back_to_main")],
     ]
     return _mk_markup(buttons)
@@ -152,9 +153,11 @@ def confirm_calendar_rename_inline(lang: str = "en") -> InlineKeyboardMarkup:
     return _mk_markup(buttons)
 
 
-def daily_plan_time_menu_inline(lang: str = "ru") -> InlineKeyboardMarkup:
+def daily_plan_time_menu_inline(lang: str = "ru", enabled: bool = False) -> InlineKeyboardMarkup:
     """Create daily plan time menu inline keyboard."""
+    enable_text = t("btn.daily_plan.disable", lang=lang) if enabled else t("btn.daily_plan.enable", lang=lang)
     buttons = [
+        [InlineKeyboardButton(text=enable_text, callback_data="enable_disable_daily_plans")],
         [InlineKeyboardButton(text=t("btn.daily_plan_time.enter", lang=lang), callback_data="set_daily_plan_time")],
         [InlineKeyboardButton(text=t("btn.back", lang=lang), callback_data="menu_settings")],
     ]
@@ -165,6 +168,32 @@ def daily_plans_time_accept_reject_inline(lang: str = "en") -> InlineKeyboardMar
     """Create daily plans time accept reject inline keyboard."""
     buttons = [
         [InlineKeyboardButton(text=t("btn.accept", lang=lang), callback_data="accept_daily_plans_time")],
+        [InlineKeyboardButton(text=t("btn.reject", lang=lang), callback_data="menu_settings")],
+    ]
+    return _mk_markup(buttons)
+
+
+def default_reminder_menu_inline(lang: str = "en", enabled: bool = False) -> InlineKeyboardMarkup:
+    """Create default reminder menu inline keyboard."""
+    enable_text = (
+        t("btn.default_reminder.disable", lang=lang) if enabled else t("btn.default_reminder.enable", lang=lang)
+    )
+    buttons = [
+        [InlineKeyboardButton(text=enable_text, callback_data="enable_disable_default_reminder")],
+        [
+            InlineKeyboardButton(
+                text=t("btn.default_reminder_time.enter", lang=lang), callback_data="set_default_reminder_time"
+            )
+        ],
+        [InlineKeyboardButton(text=t("btn.back", lang=lang), callback_data="menu_settings")],
+    ]
+    return _mk_markup(buttons)
+
+
+def default_reminder_time_accept_reject_inline(lang: str = "en") -> InlineKeyboardMarkup:
+    """Create default reminder time accept reject inline keyboard."""
+    buttons = [
+        [InlineKeyboardButton(text=t("btn.accept", lang=lang), callback_data="accept_default_reminder_time")],
         [InlineKeyboardButton(text=t("btn.reject", lang=lang), callback_data="menu_settings")],
     ]
     return _mk_markup(buttons)

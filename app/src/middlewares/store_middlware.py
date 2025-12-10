@@ -7,7 +7,7 @@ tests can call the middleware directly with a mocked handler.
 """
 
 from collections.abc import Awaitable, Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from aiogram import BaseMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -15,6 +15,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from database.database import UnitOfWork
 from logger.logger import logger
 from store.store import Store
+
+if TYPE_CHECKING:
+    pass
 
 
 class StoreMiddleware(BaseMiddleware):

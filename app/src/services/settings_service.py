@@ -51,6 +51,14 @@ class SettingsService:
         """
         return await self.store.SettingsRepository.find_by_user_id(user_id)
 
+    async def get_all_users(self) -> list[int]:
+        """Retrieve all users.
+
+        Returns:
+            The list of users.
+        """
+        return await self.store.SettingsRepository.get_all_user_ids()
+
     async def create_default(
         self,
         user_id: int,
@@ -91,10 +99,13 @@ class SettingsService:
             quiet_hours_end=_parse_time(settings_config.quiet_hours_end),
             daily_plans_enabled=settings_config.daily_plans_enabled,
             daily_plans_time=_parse_time(settings_config.daily_plans_time),
+            default_reminder_enabled=settings_config.default_reminder_enabled,
             default_reminder_offset=settings_config.default_reminder_offset,
         )
 
-        return await self.store.SettingsRepository.create_one(create_schema)
+        created_settings = await self.store.SettingsRepository.create_one(create_schema)
+
+        return created_settings
 
     async def update(self, settings_id: int, data: SettingsUpdateSchema) -> SettingsResponse:
         """Update existing settings.
@@ -109,7 +120,8 @@ class SettingsService:
         Raises:
             SettingsNotFoundError: If settings with given ID are not found.
         """
-        return await self.store.SettingsRepository.update_by_id(settings_id, data)
+        updated_settings = await self.store.SettingsRepository.update_by_id(settings_id, data)
+        return updated_settings
 
     async def update_by_user_id(
         self,
@@ -134,10 +146,11 @@ class SettingsService:
         if settings is None:
             raise SettingsNotFoundError(user_id=user_id)
 
-        return await self.update(
+        updated_settings = await self.update(
             settings.id,
             data,
         )
+        return updated_settings
 
     async def switch_quiet_hours(self, user_id: int) -> SettingsResponse:
         """Switch quiet hours.
@@ -154,6 +167,23 @@ class SettingsService:
 
         return await self.update(
             settings.id, SettingsUpdateSchema(quiet_hours_enabled=not settings.quiet_hours_enabled)
+        )
+
+    async def switch_daily_plans(self, user_id: int) -> SettingsResponse:
+        """Switch daily plans.
+
+        Args:
+            user_id: Telegram user ID.
+
+        Returns:
+            Updated Settings instance.
+        """
+        settings = await self.get_by_user_id(user_id)
+        if settings is None:
+            raise SettingsNotFoundError(user_id=user_id)
+
+        return await self.update(
+            settings.id, SettingsUpdateSchema(daily_plans_enabled=not settings.daily_plans_enabled)
         )
 
     async def delete(self, settings_id: int) -> None:

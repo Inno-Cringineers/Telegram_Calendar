@@ -187,7 +187,8 @@ class EventRepository:
             # Convert EventResponse back to model-like simple object
             # (или можно получить Event модель заново, если нужно)
             event_model = await self.session.get(Event, event_resp.id)
-
+            if event_model is None:
+                continue
             for occ_start, occ_end in _event_occurrences(event_model, filter.duration_from, filter.duration_to):
                 if _intersects(occ_start, occ_end, filter.duration_from, filter.duration_to):
                     matched.append(event_resp)
