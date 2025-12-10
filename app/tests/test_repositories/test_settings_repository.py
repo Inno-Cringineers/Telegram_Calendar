@@ -88,6 +88,7 @@ async def test_create_creates_settings(settings_repository: SettingsRepository, 
         daily_plans_enabled=True,
         daily_plans_time=time(hour=10, minute=30),
         default_reminder_offset=30 * 60,
+        default_reminder_enabled=True,
     )
 
     result = await settings_repository.create_one(create_data)
@@ -103,6 +104,7 @@ async def test_create_creates_settings(settings_repository: SettingsRepository, 
             daily_plans_enabled=True,
             daily_plans_time=time(hour=10, minute=30),
             default_reminder_offset=30 * 60,
+            default_reminder_enabled=True,
         )
     )
     assert result.user_id == 12345
@@ -114,6 +116,7 @@ async def test_create_creates_settings(settings_repository: SettingsRepository, 
     assert result.daily_plans_enabled is True
     assert result.daily_plans_time == time(hour=10, minute=30)
     assert result.default_reminder_offset == 30 * 60
+    assert result.default_reminder_enabled is True
     mock_session.add.assert_called_once()
     mock_session.flush.assert_called_once()
 
@@ -133,6 +136,7 @@ async def test_create_creates_settings_with_defaults(
         daily_plans_enabled=False,
         daily_plans_time=time(hour=9, minute=0),
         default_reminder_offset=15 * 60,
+        default_reminder_enabled=True,
     )
 
     result = await settings_repository.create_one(create_data)
@@ -148,6 +152,7 @@ async def test_create_creates_settings_with_defaults(
             daily_plans_enabled=False,
             daily_plans_time=time(hour=9, minute=0),
             default_reminder_offset=15 * 60,
+            default_reminder_enabled=True,
         )
     )
     assert result.user_id == 12345
@@ -159,6 +164,7 @@ async def test_create_creates_settings_with_defaults(
     assert result.daily_plans_enabled is False  # Default
     assert result.daily_plans_time == time(hour=9, minute=0)  # Default
     assert result.default_reminder_offset == 15 * 60  # Default
+    assert result.default_reminder_enabled is True  # Default
 
 
 @pytest.mark.asyncio
@@ -175,6 +181,7 @@ async def test_update_updates_existing_settings(
         quiet_hours_end=time(hour=8, minute=0),
         daily_plans_time=time(hour=10, minute=30),
         default_reminder_offset=30 * 60,
+        default_reminder_enabled=True,
     )
 
     result = await settings_repository.update_by_id(1, update_data)
@@ -191,6 +198,7 @@ async def test_update_updates_existing_settings(
             daily_plans_enabled=True,
             daily_plans_time=time(hour=10, minute=30),
             default_reminder_offset=30 * 60,
+            default_reminder_enabled=True,
         )
     )
     assert result.timezone == "UTC+5"
