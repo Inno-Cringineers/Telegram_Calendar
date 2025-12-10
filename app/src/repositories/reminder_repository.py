@@ -138,3 +138,17 @@ class ReminderRepository:
             raise ReminderNotFoundError(reminder_id=reminder_id)
         await self.session.delete(reminder_model)
         await self.session.flush()
+
+    async def delete_by_description_and_user_id(self, description: str, user_id: int) -> None:
+        """Delete reminders by description and user_id.
+
+        Args:
+            description: The description to match.
+            user_id: The user ID to filter by.
+        """
+        stmt = select(Reminder).join(Event).where(Event.user_id == user_id, Reminder.description == description)
+        result = await self.session.execute(stmt)
+        reminders = result.scalars().all()
+        for reminder in reminders:
+            await self.session.delete(reminder)
+        await self.session.flush()

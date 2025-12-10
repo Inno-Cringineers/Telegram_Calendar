@@ -169,6 +169,23 @@ class SettingsService:
             settings.id, SettingsUpdateSchema(quiet_hours_enabled=not settings.quiet_hours_enabled)
         )
 
+    async def switch_daily_plans(self, user_id: int) -> SettingsResponse:
+        """Switch daily plans.
+
+        Args:
+            user_id: Telegram user ID.
+
+        Returns:
+            Updated Settings instance.
+        """
+        settings = await self.get_by_user_id(user_id)
+        if settings is None:
+            raise SettingsNotFoundError(user_id=user_id)
+
+        return await self.update(
+            settings.id, SettingsUpdateSchema(daily_plans_enabled=not settings.daily_plans_enabled)
+        )
+
     async def delete(self, settings_id: int) -> None:
         """Delete settings by ID.
 

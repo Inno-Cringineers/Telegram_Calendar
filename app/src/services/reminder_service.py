@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from icalendar import vDuration
 
 from repositories.schemas import (
+    EventFilter,
     ReminderCreateSchema,
     ReminderFilter,
     ReminderResponse,
@@ -90,6 +91,13 @@ class ReminderService:
             raise ValueError(f"Settings with user id {event.user_id} not found")
         if not settings.default_reminder_enabled:
             return None
+
+        # Check if default reminder already exists
+        existing_reminders = await self.find(ReminderFilter(event_id=event_id))
+        has_default = any(r.description == "Default reminder" for r in existing_reminders)
+        if has_default:
+            return None
+
         default_reminder_offset = settings.default_reminder_offset
         trigger_offset = vDuration(timedelta(seconds=default_reminder_offset)).to_ical().decode("utf-8")
         created_reminder = await self.create(
@@ -154,3 +162,83 @@ class ReminderService:
         reminders = await self.find(ReminderFilter(event_id=event_id))
         for reminder in reminders:
             await self.store.ReminderRepository.delete_by_id(reminder.id)
+
+    async def delete_default_reminders_by_user_id(self, user_id: int) -> None:
+        """Delete all default reminders for a user.
+
+        Args:
+            user_id: The user ID to delete default reminders for.
+        """
+        await self.store.ReminderRepository.delete_by_description_and_user_id("Default reminder", user_id)
+
+    async def restore_default_reminders_for_user(self, user_id: int) -> None:
+        """Restore default reminders for all user's events.
+
+        Args:
+            user_id: The user ID to restore default reminders for.
+        """
+        settings = await self.store.SettingsService.get_by_user_id(user_id)
+        if settings is None or not settings.default_reminder_enabled:
+            return
+
+        # Get all events for the user
+        events = await self.store.EventService.find(EventFilter(user_id=user_id))  # type: ignore[call-arg]
+        default_reminder_offset = settings.default_reminder_offset
+        trigger_offset = vDuration(timedelta(seconds=default_reminder_offset)).to_ical().decode("utf-8")
+
+        for event in events:
+            # Check if default reminder already exists
+            existing_reminders = await self.find(ReminderFilter(event_id=event.id))
+            default_reminder = next((r for r in existing_reminders if r.description == "Default reminder"), None)
+
+            if default_reminder is None:
+                # Create new default reminder
+                await self.create(
+                    ReminderCreateSchema(
+                        event_id=event.id,
+                        description="Default reminder",
+                        trigger_offset=trigger_offset,
+                    )
+                )
+            else:
+                # Update existing default reminder with new offset
+                await self.update(
+                    default_reminder.id,
+                    ReminderUpdateSchema(trigger_offset=trigger_offset),
+                )
+
+    async def update_default_reminders_for_user(self, user_id: int) -> None:
+        """Update all default reminders for a user with new offset.
+
+        Args:
+            user_id: The user ID to update default reminders for.
+        """
+        settings = await self.store.SettingsService.get_by_user_id(user_id)
+        if settings is None or not settings.default_reminder_enabled:
+            return
+
+        # Get all events for the user
+        events = await self.store.EventService.find(EventFilter(user_id=user_id))  # type: ignore[call-arg]
+        default_reminder_offset = settings.default_reminder_offset
+        trigger_offset = vDuration(timedelta(seconds=default_reminder_offset)).to_ical().decode("utf-8")
+
+        for event in events:
+            # Get all reminders for this event
+            existing_reminders = await self.find(ReminderFilter(event_id=event.id))
+            default_reminder = next((r for r in existing_reminders if r.description == "Default reminder"), None)
+
+            if default_reminder is not None:
+                # Update existing default reminder with new offset
+                await self.update(
+                    default_reminder.id,
+                    ReminderUpdateSchema(trigger_offset=trigger_offset),
+                )
+            else:
+                # Create new default reminder if it doesn't exist
+                await self.create(
+                    ReminderCreateSchema(
+                        event_id=event.id,
+                        description="Default reminder",
+                        trigger_offset=trigger_offset,
+                    )
+                )

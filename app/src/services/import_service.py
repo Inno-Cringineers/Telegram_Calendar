@@ -97,7 +97,7 @@ class ImportService:
         # check if event already exists - then update it
         event = await self.store.EventService.find(EventFilter(uid=schema.uid))
         if event != []:
-            await self.store.EventService.update_by_id(
+            updated_event = await self.store.EventService.update_by_id(
                 event[0].id,
                 EventUpdateSchema(
                     date_start=schema.date_start,
@@ -113,10 +113,12 @@ class ImportService:
             )
             # delete reminders associated with the event
             # await self.store.ReminderService.delete_by_event_id(event[0].id)
-            # create reminders
+            # create reminders from schema alarms
             if schema.alarms is not None:
                 for alarm in schema.alarms:
-                    await self._create_reminder(event[0], alarm)
+                    await self._create_reminder(updated_event, alarm)
+            # Create default reminder if enabled and doesn't exist
+            await self.store.ReminderService.create_default(updated_event.id)
             return
 
         event = EventCreateSchema(

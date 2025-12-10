@@ -85,6 +85,24 @@ msgstr "🌍 Часовой пояс"
 msgid "btn_view"
 msgstr "🔍 Просмотр"
 
+msgid "btn_default_reminder"
+msgstr "⏰ Напоминания"
+
+msgid "btn_daily_plan_enable"
+msgstr "Включить ежедневные планы"
+
+msgid "btn_daily_plan_disable"
+msgstr "Выключить ежедневные планы"
+
+msgid "btn_default_reminder_enable"
+msgstr "Включить напоминания"
+
+msgid "btn_default_reminder_disable"
+msgstr "Выключить напоминания"
+
+msgid "btn_default_reminder_time_enter"
+msgstr "Ввести время напоминания"
+
 msgid "calendar_link_title"
 msgstr "🔗 <b>Связать календарь</b>\n\nВыберите действие:"
 
@@ -108,6 +126,12 @@ msgstr "<b>Введите ссылку на ical:</b>"
 
 msgid "calendar_new_title"
 msgstr "🔗 <b>Связать новый календарь</b>"
+
+msgid "calendar_link_error"
+msgstr "❌ Ошибка связывания, возможно, URL неверный"
+
+msgid "calendar_sync_error"
+msgstr "❌ Не удалось синхронизировать календарь. Ссылка может быть недействительной или недоступной."
 
 msgid "calendar_next_month"
 msgstr ">>"
@@ -327,7 +351,73 @@ msgid "settings_timezone_updated"
 msgstr "✅ Часовой пояс успешно обновлен на <b>{timezone}</b>"
 
 msgid "settings_title"
-msgstr "⚙️ <b>Настройки</b>\n\n<u>Ваши текущие настройки:</u>\n\n🌍 Часовой пояс: <b>{timezone}</b>\n\n🇷🇺 Язык: <b>{language}</b>\n\n🔇 Тихие часы: <b>{quiet_hours}</b>\n\n⏰ Время ежедневного плана: <b>{daily_plan}</b>\n\n"
+msgstr "⚙️ <b>Настройки</b>\n\n<u>Ваши текущие настройки:</u>\n\n🌍 Часовой пояс: <b>{timezone}</b>\n\n🇷🇺 Язык: <b>{language}</b>\n\n🔇 Тихие часы: <b>{quiet_hours}</b>\n\n⏰ Время ежедневного плана: <b>{daily_plan}</b>\n\n⏰ Напоминание до события: <b>{reminder}</b>"
+
+msgid "settings_daily_plans_enabled"
+msgstr "✅ Ежедневные планы включены"
+
+msgid "settings_daily_plans_disabled"
+msgstr "❌ Ежедневные планы выключены"
+
+msgid "settings_default_reminder_title"
+msgstr "⏰ <b>Напоминание по умолчанию</b>"
+
+msgid "settings_default_reminder_current"
+msgstr "Текущее время напоминания: <b>{reminder}</b>"
+
+msgid "settings_default_reminder_description"
+msgstr "Напоминание по умолчанию будет отправляться перед началом каждого события."
+
+msgid "settings_default_reminder_enabled"
+msgstr "✅ Напоминание по умолчанию включено"
+
+msgid "settings_default_reminder_disabled"
+msgstr "❌ Напоминание по умолчанию выключено"
+
+msgid "settings_default_reminder_time_enter"
+msgstr "Введите время напоминания в формате ЧЧ:ММ:СС (например, 00:15:00 для 15 минут)"
+
+msgid "settings_default_reminder_time_format_error"
+msgstr "❌ Неверный формат времени.\n\nВы ввели: <b>{user_input}</b>\n"
+
+msgid "settings_default_reminder_time_accept_reject"
+msgstr "Время напоминания будет изменено на:\n<b>{reminder}</b>"
+
+msgid "settings_default_reminder_time_accepted"
+msgstr "✅ Время напоминания изменено"
+
+msgid "settings_daily_plans_enabled"
+msgstr "✅ Ежедневные планы включены"
+
+msgid "settings_daily_plans_disabled"
+msgstr "❌ Ежедневные планы выключены"
+
+msgid "settings_default_reminder_title"
+msgstr "⏰ <b>Напоминание по умолчанию</b>"
+
+msgid "settings_default_reminder_current"
+msgstr "Текущее время напоминания: <b>{reminder}</b>"
+
+msgid "settings_default_reminder_description"
+msgstr "Напоминание по умолчанию будет отправляться перед началом каждого события."
+
+msgid "settings_default_reminder_enabled"
+msgstr "✅ Напоминание по умолчанию включено"
+
+msgid "settings_default_reminder_disabled"
+msgstr "❌ Напоминание по умолчанию выключено"
+
+msgid "settings_default_reminder_time_enter"
+msgstr "Введите время напоминания в формате ЧЧ:ММ:СС (например, 00:15:00 для 15 минут)"
+
+msgid "settings_default_reminder_time_format_error"
+msgstr "❌ Неверный формат времени.\n\nВы ввели: <b>{user_input}</b>\n"
+
+msgid "settings_default_reminder_time_accept_reject"
+msgstr "Время напоминания будет изменено на:\n<b>{reminder}</b>"
+
+msgid "settings_default_reminder_time_accepted"
+msgstr "✅ Время напоминания изменено"
 
 msgid "start_welcome"
 msgstr "👋 <b>Добро пожаловать в Personal Calendar Reminder bot, {user_name}!</b>\n\nЯ могу управлять вашими событиями, отправлять вам напоминания о приближающихся событиях, синхронизироваться с внешними календарями.\n\n📋 <b>Команды:</b>\n/start - Показать это диалоговое окно\n/help - Получить помощь\n\n🎯 <b>Основные функции:</b>\n• 📅 Просмотр событий\n• ➕ Создание событий\n• ✏️ Редактирование и удаление событий\n• 🔗 Экспорт внешних календарей (google, outlook и т.д.)\n• ⏰ Напоминания о событиях\n• 📋 Ежедневные планы"

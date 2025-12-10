@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
@@ -106,7 +108,7 @@ async def calendar_list(query: CallbackQuery, state: FSMContext, store: Store, s
 
 @router.callback_query(F.data.startswith("calendar_unlink:"), CalendarLinkingStates.in_calendar_menu)
 async def calendar_unlink(query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData) -> None:
-    """Unlink a calendar."""
+    """Unlink or link a calendar with immediate sync on enable."""
     if query.data is None or len(query.data) == 0:
         logger.error("Query data is None or empty", extra={"query": query})
         return
@@ -118,10 +120,41 @@ async def calendar_unlink(query: CallbackQuery, state: FSMContext, store: Store,
         logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
         return
 
-    calendar = await store.CalendarService.unlink_calendar(calendar_id)
-    if calendar is None:
-        logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
-        return
+    # Check if we're enabling sync (was False, will be True)
+    was_sync_enabled = calendar.sync_enabled
+    will_enable_sync = not was_sync_enabled
+
+    # If enabling sync, try to synchronize immediately (only for external calendars with URL)
+    if will_enable_sync:
+        if calendar.url is not None:
+            try:
+                # Try to synchronize the calendar
+                await store.UploadService.upload_ical_url(calendar.user_id, calendar.name, calendar.url)
+                # If successful, enable sync and update last_sync
+                # Remove timezone info as database expects naive datetime
+                now_utc = datetime.now(UTC).replace(tzinfo=None)
+                calendar = await store.CalendarService.update(
+                    calendar_id,
+                    CalendarUpdateSchema(sync_enabled=True, last_sync=now_utc),
+                )
+                logger.info(f"Calendar {calendar_id} synchronized successfully and enabled")
+            except Exception as e:
+                logger.error(f"Error synchronizing calendar {calendar_id}: {e}", exc_info=e)
+                # Show popup error message and keep sync_enabled=False
+                await query.answer(t("calendar.sync.error", lang=settings.lang), show_alert=True)
+                return
+        else:
+            # For local calendars (no URL), just enable sync without synchronization
+            calendar = await store.CalendarService.update(
+                calendar_id,
+                CalendarUpdateSchema(sync_enabled=True),
+            )
+    else:
+        # If disabling sync, just toggle it
+        calendar = await store.CalendarService.unlink_calendar(calendar_id)
+        if calendar is None:
+            logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
+            return
 
     messages = await get_messages(state)
 
