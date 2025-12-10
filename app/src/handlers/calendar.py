@@ -112,10 +112,16 @@ async def calendar_unlink(query: CallbackQuery, state: FSMContext, store: Store,
         return
 
     calendar_id = int(query.data.split(":")[1])
+    user_id = query.from_user.id
 
     calendar = await store.CalendarService.get_by_id(calendar_id)
     if calendar is None:
         logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
+        return
+
+    # Verify calendar belongs to the user
+    if calendar.user_id != user_id:
+        logger.error("Calendar does not belong to user", extra={"calendar_id": calendar_id, "user_id": user_id})
         return
 
     # Check if we're enabling sync (was False, will be True)
@@ -194,6 +200,16 @@ async def calendar_delete(query: CallbackQuery, state: FSMContext, store: Store,
         return
 
     calendar_id = int(query.data.split(":")[1])
+    user_id = query.from_user.id
+
+    # Verify calendar belongs to the user before deletion
+    calendar = await store.CalendarService.get_by_id(calendar_id)
+    if calendar is None:
+        logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
+        return
+    if calendar.user_id != user_id:
+        logger.error("Calendar does not belong to user", extra={"calendar_id": calendar_id, "user_id": user_id})
+        return
 
     messages = await get_messages(state)
 
@@ -433,10 +449,16 @@ async def calendar_rename(query: CallbackQuery, state: FSMContext, store: Store,
         return
 
     calendar_id = int(query.data.split(":")[1])
+    user_id = query.from_user.id
 
     calendar = await store.CalendarService.get_by_id(calendar_id)
     if calendar is None:
         logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
+        return
+
+    # Verify calendar belongs to the user
+    if calendar.user_id != user_id:
+        logger.error("Calendar does not belong to user", extra={"calendar_id": calendar_id, "user_id": user_id})
         return
 
     await clean_messages(query.bot, query.message.chat.id, state)
@@ -481,9 +503,16 @@ async def process_calendar_name_rename(
     if calendar_id is None:
         logger.error("Calendar id is not found", extra={"state": state})
         return
+    user_id = message.from_user.id
+
     calendar = await store.CalendarService.get_by_id(calendar_id)
     if calendar is None:
         logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
+        return
+
+    # Verify calendar belongs to the user
+    if calendar.user_id != user_id:
+        logger.error("Calendar does not belong to user", extra={"calendar_id": calendar_id, "user_id": user_id})
         return
 
     name = message.text
@@ -548,6 +577,17 @@ async def calendar_rename_confirm(
     if calendar_id is None:
         logger.error("Calendar id is not found", extra={"state": state})
         return
+    user_id = query.from_user.id
+
+    # Verify calendar belongs to the user
+    calendar = await store.CalendarService.get_by_id(calendar_id)
+    if calendar is None:
+        logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
+        return
+    if calendar.user_id != user_id:
+        logger.error("Calendar does not belong to user", extra={"calendar_id": calendar_id, "user_id": user_id})
+        return
+
     name = data.get("name")
     if name is None:
         logger.error("New name is not found", extra={"state": state})
