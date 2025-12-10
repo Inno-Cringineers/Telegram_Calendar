@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 
 from aiogram import F, Router
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
@@ -41,7 +42,7 @@ async def open_calendar_menu(query: CallbackQuery, state: FSMContext, settings: 
     )
 
 
-@router.callback_query(F.data == "calendar_list", CalendarLinkingStates.in_calendar_menu)
+@router.callback_query(F.data == "calendar_list", StateFilter(CalendarLinkingStates.in_calendar_menu))
 async def calendar_list(query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData) -> None:
     """Show list of linked calendars."""
     calendars = await store.CalendarService.get_external_calendars_by_user_id(query.from_user.id)
@@ -103,7 +104,7 @@ async def calendar_list(query: CallbackQuery, state: FSMContext, store: Store, s
     )
 
 
-@router.callback_query(F.data.startswith("calendar_unlink:"), CalendarLinkingStates.in_calendar_menu)
+@router.callback_query(F.data.startswith("calendar_unlink:"), StateFilter(CalendarLinkingStates.in_calendar_menu))
 async def calendar_unlink(query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData) -> None:
     """Unlink or link a calendar with immediate sync on enable."""
     if query.data is None or len(query.data) == 0:
@@ -185,7 +186,7 @@ async def calendar_unlink(query: CallbackQuery, state: FSMContext, store: Store,
     )
 
 
-@router.callback_query(F.data.startswith("calendar_delete:"), CalendarLinkingStates.in_calendar_menu)
+@router.callback_query(F.data.startswith("calendar_delete:"), StateFilter(CalendarLinkingStates.in_calendar_menu))
 async def calendar_delete(query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData) -> None:
     """Delete a calendar."""
     if query.data is None or len(query.data) == 0:
@@ -212,7 +213,7 @@ async def calendar_delete(query: CallbackQuery, state: FSMContext, store: Store,
     await query.bot.delete_message(chat_id=query.message.chat.id, message_id=message["message_id"])
 
 
-@router.callback_query(F.data == "calendar_new", CalendarLinkingStates.in_calendar_menu)
+@router.callback_query(F.data == "calendar_new", StateFilter(CalendarLinkingStates.in_calendar_menu))
 async def calendar_new(query: CallbackQuery, state: FSMContext, settings: SettingsData) -> None:
     """Link a new calendar."""
     await state.set_state(CalendarLinkingStates.waiting_for_calendar_link)
@@ -229,7 +230,7 @@ async def calendar_new(query: CallbackQuery, state: FSMContext, settings: Settin
     )
 
 
-@router.message(CalendarLinkingStates.waiting_for_calendar_link)
+@router.message(StateFilter(CalendarLinkingStates.waiting_for_calendar_link))
 async def process_calendar_link(message: Message, state: FSMContext, settings: SettingsData, store: Store) -> None:
     """Process calendar link."""
 
@@ -318,7 +319,7 @@ async def process_calendar_link(message: Message, state: FSMContext, settings: S
     )
 
 
-@router.message(CalendarLinkingStates.waiting_for_calendar_name)
+@router.message(StateFilter(CalendarLinkingStates.waiting_for_calendar_name))
 async def process_calendar_name(message: Message, state: FSMContext, settings: SettingsData) -> None:
     """Process calendar name."""
     last_message_id = await get_last_message_id(state)
@@ -377,7 +378,9 @@ async def process_calendar_name(message: Message, state: FSMContext, settings: S
     )
 
 
-@router.callback_query(F.data == "calendar_confirm", CalendarLinkingStates.waiting_for_calendar_confirmation)
+@router.callback_query(
+    F.data == "calendar_confirm", StateFilter(CalendarLinkingStates.waiting_for_calendar_confirmation)
+)
 async def calendar_confirm(query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData) -> None:
     """Confirm calendar linking."""
 
@@ -422,7 +425,7 @@ async def calendar_confirm(query: CallbackQuery, state: FSMContext, store: Store
     )
 
 
-@router.callback_query(F.data.startswith("calendar_rename:"), CalendarLinkingStates.in_calendar_menu)
+@router.callback_query(F.data.startswith("calendar_rename:"), StateFilter(CalendarLinkingStates.in_calendar_menu))
 async def calendar_rename(query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData) -> None:
     """Rename a calendar."""
     if query.data is None or len(query.data) == 0:
@@ -463,7 +466,7 @@ async def calendar_rename(query: CallbackQuery, state: FSMContext, store: Store,
     )
 
 
-@router.message(CalendarLinkingStates.waiting_for_calendar_name_rename)
+@router.message(StateFilter(CalendarLinkingStates.waiting_for_calendar_name_rename))
 async def process_calendar_name_rename(
     message: Message, state: FSMContext, store: Store, settings: SettingsData
 ) -> None:
@@ -533,7 +536,9 @@ async def process_calendar_name_rename(
     )
 
 
-@router.callback_query(F.data == "calendar_rename_confirm", CalendarLinkingStates.waiting_for_calendar_confirmation)
+@router.callback_query(
+    F.data == "calendar_rename_confirm", StateFilter(CalendarLinkingStates.waiting_for_calendar_confirmation)
+)
 async def calendar_rename_confirm(
     query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData
 ) -> None:

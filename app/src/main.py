@@ -15,6 +15,7 @@ from middlewares.settings_middleware import SettingsMiddleware
 from middlewares.store_middlware import StoreMiddleware
 from router.router import router
 from services.daily_plan_scheduler import init_daily_plan_scheduler
+from services.metrics_service import MetricsService
 from services.reminder_scheduler import init_reminder_scheduler
 from services.sync_service import SyncService
 
@@ -68,6 +69,17 @@ async def main() -> None:
     logger.debug(f"Logger file backup count: {cfg.logger.backup_count}")
     logger.debug(f"Bot timeout: {cfg.bot.timeout}")
     logger.debug(f"Bot single user: {cfg.bot.single_user}")
+    logger.debug(f"Bot sync workers: {cfg.bot.sync_workers}")
+    logger.debug(f"Bot sync interval: {cfg.bot.sync_interval}")
+    logger.debug(f"Bot metrics interval: {cfg.bot.metrics_interval}")
+    logger.debug(f"Settings timezone: {cfg.settings.timezone}")
+    logger.debug(f"Settings language: {cfg.settings.language}")
+    logger.debug(f"Settings quiet hours enabled: {cfg.settings.quiet_hours_enabled}")
+    logger.debug(f"Settings quiet hours start: {cfg.settings.quiet_hours_start}")
+    logger.debug(f"Settings quiet hours end: {cfg.settings.quiet_hours_end}")
+    logger.debug(f"Settings daily plans enabled: {cfg.settings.daily_plans_enabled}")
+    logger.debug(f"Settings daily plans time: {cfg.settings.daily_plans_time}")
+    logger.debug(f"Settings default reminder offset: {cfg.settings.default_reminder_offset}")
 
     # Create bot
     bot = Bot(token=cfg.bot.telegram_token)
@@ -83,15 +95,17 @@ async def main() -> None:
     dp.message.middleware(StoreMiddleware(session_maker))
     dp.callback_query.middleware(StoreMiddleware(session_maker))
     # Setup sync service
-    sync_service = SyncService(
-        session_maker, reminder_scheduler, sync_interval=cfg.bot.sync_interval, sync_workers=cfg.bot.sync_workers
-    )
+    sync_service = SyncService(session_maker, sync_interval=cfg.bot.sync_interval, sync_workers=cfg.bot.sync_workers)
+    # Setup metrics service
+    metrics_service = MetricsService(session_maker, update_interval=cfg.bot.metrics_interval)
 
     # Start reminder scheduler
     reminder_scheduler_task = asyncio.create_task(reminder_scheduler.start())
     daily_plan_scheduler_task = asyncio.create_task(daily_plan_scheduler.start())
     # Start sync service
     sync_task = asyncio.create_task(sync_service.start_sync_service())
+    # Start metrics service
+    metrics_task = asyncio.create_task(metrics_service.start_metrics_service())
 
     # Setup middlewares
     setup_middlewares(dp)
@@ -108,6 +122,9 @@ async def main() -> None:
     # Stop sync service
     stop_task = asyncio.create_task(sync_service.stop())
     await asyncio.gather(sync_task, stop_task)
+    # Wait for services to finish
+    stop_metrics_task = asyncio.create_task(metrics_service.stop())
+    await asyncio.gather(metrics_task, stop_metrics_task)
 
     # Stop reminder scheduler
     stop_reminder_scheduler_task = asyncio.create_task(reminder_scheduler.stop())

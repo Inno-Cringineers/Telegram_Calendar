@@ -1,4 +1,5 @@
 from aiogram import F, Router
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
@@ -37,7 +38,7 @@ async def open_events_menu(query: CallbackQuery, state: FSMContext, lang: str) -
     )
 
 
-@router.callback_query(F.data == "events_import", EventsMenuStates.in_events_menu)
+@router.callback_query(F.data == "events_import", StateFilter(EventsMenuStates.in_events_menu))
 async def events_import(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Open import feature"""
     user_id = query.from_user.id
@@ -59,7 +60,7 @@ async def events_import(query: CallbackQuery, state: FSMContext, lang: str) -> N
         )
 
 
-@router.callback_query(F.data == "events_export", EventsMenuStates.in_events_menu)
+@router.callback_query(F.data == "events_export", StateFilter(EventsMenuStates.in_events_menu))
 async def events_export(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Open export feature"""
     user_id = query.from_user.id
@@ -81,7 +82,7 @@ async def events_export(query: CallbackQuery, state: FSMContext, lang: str) -> N
         )
 
 
-@router.callback_query(F.data == "events_create", EventsMenuStates.in_events_menu)
+@router.callback_query(F.data == "events_create", StateFilter(EventsMenuStates.in_events_menu))
 async def events_create(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Open event creation feature"""
     user_id = query.from_user.id
@@ -99,7 +100,7 @@ async def events_create(query: CallbackQuery, state: FSMContext, lang: str) -> N
         )
 
 
-@router.callback_query(F.data == "events_view", EventsMenuStates.in_events_menu)
+@router.callback_query(F.data == "events_view", StateFilter(EventsMenuStates.in_events_menu))
 async def events_view(query: CallbackQuery, state: FSMContext, lang: str) -> None:
     """Open event view feature"""
     user_id = query.from_user.id

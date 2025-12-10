@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from database.database import UnitOfWork
 from logger.logger import logger
-from services.reminder_scheduler import ReminderScheduler
 from store.store import Store
 
 
@@ -23,11 +22,9 @@ class SyncWorker:
         self,
         queue: asyncio.Queue[CalendarQueueItem | None],
         session_maker: async_sessionmaker[AsyncSession],
-        reminder_scheduler: ReminderScheduler,
     ) -> None:
         self.queue = queue
         self.session_maker = session_maker
-        self.reminder_scheduler = reminder_scheduler
 
     async def run(self) -> None:
         """Run the sync worker."""
@@ -74,12 +71,10 @@ class SyncService:
     def __init__(
         self,
         session_maker: async_sessionmaker[AsyncSession],
-        reminder_scheduler: ReminderScheduler,
         sync_interval: timedelta,
         sync_workers: int,
     ) -> None:
         self.session_maker = session_maker
-        self.reminder_scheduler = reminder_scheduler
         self.sync_interval = sync_interval
         self.sync_workers = sync_workers
         self.queue: asyncio.Queue[CalendarQueueItem | None] = asyncio.Queue[CalendarQueueItem | None]()
@@ -94,7 +89,7 @@ class SyncService:
 
         # initialize workers
         for _ in range(self.sync_workers):
-            worker = SyncWorker(self.queue, self.session_maker, self.reminder_scheduler)
+            worker = SyncWorker(self.queue, self.session_maker)
             task = asyncio.create_task(worker.run())
             self.worker_tasks.append(task)
 

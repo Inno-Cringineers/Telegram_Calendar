@@ -36,6 +36,9 @@ services:
       # TZ should be in IANA format (e.g., Europe/Moscow, Asia/Almaty, America/New_York)
       # If not set, will use timezone from mounted /etc/localtime
       - TZ=${TZ:-}
+      - SYNC_INTERVAL=${SYNC_INTERVAL:-10}
+      - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
+
     depends_on:
       postgres:
         condition: service_healthy
