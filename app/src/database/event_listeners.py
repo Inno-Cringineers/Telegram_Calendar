@@ -38,12 +38,12 @@ def setup_event_listeners() -> None:
             flush_context: Flush context (unused).
             instances: Instances being flushed (unused).
         """
-        logger.debug(
-            "Event listener: before_flush triggered, new=%s, dirty=%s, deleted=%s",
-            len(session.new),
-            len(session.dirty),
-            len(session.deleted),
-        )
+        # logger.debug(
+        #     "Event listener: before_flush triggered, new=%s, dirty=%s, deleted=%s",
+        #     len(session.new),
+        #     len(session.dirty),
+        #     len(session.deleted),
+        # )
 
         # Initialize tracking sets in session.info if not present
         if "scheduler_rebuild_users" not in session.info:
@@ -145,11 +145,11 @@ def setup_event_listeners() -> None:
                             "Event listener: could not load event %s for deleted reminder", reminder.event_id
                         )
 
-        logger.debug(
-            "Event listener: before_flush completed, daily_plan_users=%s, reminder_users=%s",
-            len(daily_plan_users),
-            len(reminder_users),
-        )
+        # logger.debug(
+        #     "Event listener: before_flush completed, daily_plan_users=%s, reminder_users=%s",
+        #     len(daily_plan_users),
+        #     len(reminder_users),
+        # )
 
     # Register after_commit listener
     # Use Session events which work for both sync and async sessions
@@ -160,7 +160,7 @@ def setup_event_listeners() -> None:
         Args:
             session: The SQLAlchemy session that just committed.
         """
-        logger.debug("Event listener: after_commit triggered, session type=%s", type(session).__name__)
+        # logger.debug("Event listener: after_commit triggered, session type=%s", type(session).__name__)
 
         # Check if this session has sync_session attribute (indicates it's from AsyncSession)
         # AsyncSession wraps a sync Session, and events fire on the sync session
@@ -171,11 +171,11 @@ def setup_event_listeners() -> None:
             daily_plan_users: set[int] = scheduler_rebuild_users.get("daily_plan", set())
             reminder_users: set[int] = scheduler_rebuild_users.get("reminder", set())
 
-            logger.debug(
-                "Event listener: after_commit processing, daily_plan_users=%s, reminder_users=%s",
-                len(daily_plan_users),
-                len(reminder_users),
-            )
+            # logger.debug(
+            #     "Event listener: after_commit processing, daily_plan_users=%s, reminder_users=%s",
+            #     len(daily_plan_users),
+            #     len(reminder_users),
+            # )
 
             # Schedule async work to run after commit
             async def _process_after_commit() -> None:
@@ -189,7 +189,7 @@ def setup_event_listeners() -> None:
                         scheduler = get_daily_plan_scheduler()
                         for user_id in daily_plan_users:
                             await scheduler.rebuild_user_schedule(user_id)
-                            logger.debug("Daily plan scheduler: triggered rebuild for user %s after commit", user_id)
+                            # logger.debug("Daily plan scheduler: triggered rebuild for user %s after commit", user_id)
                     except RuntimeError:
                         # Scheduler not initialized yet, skip
                         pass
@@ -202,7 +202,7 @@ def setup_event_listeners() -> None:
                         scheduler = get_reminder_scheduler()
                         for user_id in reminder_users:
                             await scheduler.rebuild_user_schedule(user_id)
-                            logger.debug("Reminder scheduler: triggered rebuild for user %s after commit", user_id)
+                            # logger.debug("Reminder scheduler: triggered rebuild for user %s after commit", user_id)
                     except RuntimeError:
                         # Scheduler not initialized yet, skip
                         pass
@@ -215,7 +215,7 @@ def setup_event_listeners() -> None:
             try:
                 loop = asyncio.get_running_loop()
                 # If loop is running, create a task
-                logger.debug("Event listener: creating task for async processing")
+                # logger.debug("Event listener: creating task for async processing")
                 asyncio.create_task(_process_after_commit())
             except RuntimeError:
                 # No running loop, this shouldn't happen in async context
