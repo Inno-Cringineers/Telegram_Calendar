@@ -238,6 +238,48 @@ msgstr "🔍 Просмотр событий выбран"
 msgid "events_view_title"
 msgstr "🔍 <b>Просмотр событий</b>"
 
+msgid "events_view_select_start_date"
+msgstr "Выберите начальную дату:"
+
+msgid "events_view_select_end_date"
+msgstr "Выберите конечную дату:"
+
+msgid "events_view_select_complete"
+msgstr "Диапазон дат выбран. Выберите конечную дату или выберите новую начальную дату:"
+
+msgid "events_view_date_before_start"
+msgstr "❌ Конечная дата должна быть после начальной даты"
+
+msgid "events_view_range"
+msgstr "📅 <b>Диапазон дат:</b> {start} - {end}"
+
+msgid "events_view_no_events"
+msgstr "❌ События не найдены в этом диапазоне"
+
+msgid "events_view_end"
+msgstr "Конец списка событий"
+
+msgid "events_view_event_content"
+msgstr "🗓️ <b>{title}</b>\nописание: {description}\n{duration}\n{source}"
+
+msgid "events_view_event_title_none"
+msgstr "без названия"
+
+msgid "events_view_event_description_none"
+msgstr "пусто"
+
+msgid "events_view_event_duration_all_day"
+msgstr "событие на весь день"
+
+msgid "events_view_event_duration_not_all_day"
+msgstr "{date} {start} - {end}"
+
+msgid "events_view_event_source_external"
+msgstr "источник: <a href=\"{link}\">{name}</a>"
+
+msgid "events_view_event_source_local"
+msgstr "источник: локальное хранилище бота"
+
 msgid "menu_main_title"
 msgstr "🏠 <b>Главное меню</b>\n\nВыберите опцию:"
 

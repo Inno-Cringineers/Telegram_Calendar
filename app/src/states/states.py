@@ -9,6 +9,7 @@ class EventsMenuStates(StatesGroup):
     in_events_export = State()
     in_events_create = State()
     in_events_view = State()
+    selecting_date_range = State()
 
 
 class CreateEventStates(StatesGroup):
