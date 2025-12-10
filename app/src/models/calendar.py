@@ -55,7 +55,23 @@ class Calendar(Base):
         return value
 
     @validates("url")
-    def validate_url(self, key: Literal["url"], value: str) -> str:
+    def validate_url(self, key: Literal["url"], value: str | None) -> str | None:
+        """Validate calendar URL.
+
+        Args:
+            key: Field name (always "url").
+            value: URL value to validate, can be None for local calendars.
+
+        Returns:
+            Validated URL string or None.
+
+        Raises:
+            ValueError: If URL format is invalid.
+        """
+        # Allow None for local calendars
+        if value is None:
+            return None
+
         value = value.strip()
         if not (value.startswith("http://") or value.startswith("https://")):
             raise ValueError("Calendar URL must start with http or https.")

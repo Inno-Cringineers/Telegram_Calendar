@@ -71,6 +71,12 @@ class UploadService:
                 return file_path
 
     async def upload_ics_file(self, message: Message, bot: Bot) -> None:
+        """Upload .ics file from user message.
+
+        Args:
+            message: Message with document attachment.
+            bot: Bot instance for downloading file.
+        """
         # check if document is present
         if message.document is None:
             raise ValueError("Document is required in message")
@@ -84,6 +90,13 @@ class UploadService:
         if file_name[-4:] != ".ics":
             raise ValueError("File must be .ics file")
 
+        # get user id first (needed for file path)
+        if message.from_user is None:
+            raise ValueError("User is None")
+        user_id = message.from_user.id
+        if user_id is None:
+            raise ValueError("User id is None")
+
         # get file id
         file_id = message.document.file_id
         file = await bot.get_file(file_id)
@@ -93,21 +106,14 @@ class UploadService:
         if file_path is None:
             raise ValueError("File path is None")
 
-        # create save path
-        save_path = f"downloads/{file_name}"
+        # create save path with user_id to avoid conflicts
+        save_path = f"downloads/{user_id}_{file_name}"
 
         # create save directory
-        os.makedirs(save_path, exist_ok=True)
+        os.makedirs("downloads", exist_ok=True)
 
         # download file
         await bot.download_file(file_path, save_path)
-
-        # get user id
-        if message.from_user is None:
-            raise ValueError("User is None")
-        user_id = message.from_user.id
-        if user_id is None:
-            raise ValueError("User id is None")
 
         # import file
         await self.store.ImportService.import_local_calendar_from_file(save_path, user_id)

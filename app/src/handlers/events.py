@@ -1,9 +1,10 @@
+import os
 from datetime import UTC, datetime, timezone
 
 from aiogram import F, Router
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, FSInputFile, Message
 
 from i18n.strings import t
 from keyboards.inline import (
@@ -43,46 +44,101 @@ async def open_events_menu(query: CallbackQuery, state: FSMContext, lang: str) -
 
 
 @router.callback_query(F.data == "events_import", StateFilter(EventsMenuStates.in_events_menu))
-async def events_import(query: CallbackQuery, state: FSMContext, lang: str) -> None:
-    """Open import feature"""
+async def events_import(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
+    """Open import feature - request .ics file from user."""
     user_id = query.from_user.id
     logger.info(f"User {user_id} is importing events")
 
     await state.set_state(EventsMenuStates.in_events_import)
     await query.answer(t("events.import.selected", lang=lang))
 
-    if query.message and hasattr(query.message, "edit_text"):
-        text = (
-            f"{t('events.import.title', lang=lang)}\n\n"
-            "{t('events.import.description', lang=lang)}\n\n"
-            "<i>{t('events.feature_dev', lang=lang)}</i>"
-        )
-        await query.message.edit_text(
-            text,
-            parse_mode="HTML",
-            reply_markup=back_button("menu_events", lang=lang),
-        )
+    text = f"{t('events.import.title', lang=lang)}\n\n{t('events.import.description', lang=lang)}"
+    await edit_message(
+        query.bot,
+        query.message.chat.id,
+        query.message.message_id,
+        state,
+        text=text,
+        reply_markup=back_button("menu_events", lang=lang),
+        parse_mode="HTML",
+        delete_keyboard=True,
+        delete_message=False,
+    )
 
 
 @router.callback_query(F.data == "events_export", StateFilter(EventsMenuStates.in_events_menu))
-async def events_export(query: CallbackQuery, state: FSMContext, lang: str) -> None:
-    """Open export feature"""
+async def events_export(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
+    """Export local calendar events to .ics file."""
     user_id = query.from_user.id
     logger.info(f"User {user_id} is exporting events")
 
-    await state.set_state(EventsMenuStates.in_events_export)
     await query.answer(t("events.export.selected", lang=lang))
 
-    if query.message and hasattr(query.message, "edit_text"):
-        text = (
-            f"{t('events.export.title', lang=lang)}\n\n"
-            "{t('events.export.description', lang=lang)}\n\n"
-            "<i>{t('events.feature_dev', lang=lang)}</i>"
+    if query.bot is None or query.message is None:
+        logger.error("Query bot or message is None", extra={"query": query})
+        return
+
+    try:
+        # Generate .ics file
+        file_path = await store.ExportService.export_local_calendar_to_file(user_id)
+
+        # Send file to user
+        document = FSInputFile(file_path, filename="calendar.ics")
+        await query.bot.send_document(
+            chat_id=query.message.chat.id,
+            document=document,
+            caption=t("events_export_success", lang=lang),
         )
-        await query.message.edit_text(
-            text,
-            parse_mode="HTML",
+
+        # Clean up temporary file
+        try:
+            os.remove(file_path)
+        except Exception as e:
+            logger.error(f"Error deleting temporary file {file_path}: {e}", exc_info=e)
+
+        # Update message
+        await edit_message(
+            query.bot,
+            query.message.chat.id,
+            query.message.message_id,
+            state,
+            text=f"{t('events.export.title', lang=lang)}\n\n{t('events_export_success', lang=lang)}",
             reply_markup=back_button("menu_events", lang=lang),
+            parse_mode="HTML",
+            delete_keyboard=True,
+        )
+
+    except ValueError as e:
+        error_msg = str(e)
+        if "not found" in error_msg.lower():
+            error_text = t("events_export_error_no_calendar", lang=lang)
+        elif "no events" in error_msg.lower():
+            error_text = t("events_export_error_no_events", lang=lang)
+        else:
+            error_text = t("events_export_error", lang=lang)
+
+        logger.error(f"Error exporting calendar for user {user_id}: {e}", exc_info=e)
+        await edit_message(
+            query.bot,
+            query.message.chat.id,
+            query.message.message_id,
+            state,
+            text=f"{t('events.export.title', lang=lang)}\n\n{error_text}",
+            reply_markup=back_button("menu_events", lang=lang),
+            parse_mode="HTML",
+            delete_keyboard=True,
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error exporting calendar for user {user_id}: {e}", exc_info=e)
+        await edit_message(
+            query.bot,
+            query.message.chat.id,
+            query.message.message_id,
+            state,
+            text=f"{t('events.export.title', lang=lang)}\n\n{t('events_export_error', lang=lang)}",
+            reply_markup=back_button("menu_events", lang=lang),
+            parse_mode="HTML",
+            delete_keyboard=True,
         )
 
 
@@ -390,3 +446,48 @@ async def get_event_source(event: EventResponse, store: Store, lang: str) -> str
 async def ignore_callback(query: CallbackQuery) -> None:
     """Ignore callback for calendar header buttons."""
     await query.answer()
+
+
+@router.message(StateFilter(EventsMenuStates.in_events_import))
+async def process_ics_file(message: Message, state: FSMContext, store: Store, lang: str) -> None:
+    """Process uploaded .ics file."""
+    if message.from_user is None:
+        logger.error("Message from_user is None", extra={"message": message})
+        return
+
+    user_id = message.from_user.id
+
+    if message.bot is None:
+        logger.error("Message bot is None", extra={"message": message})
+        return
+
+    # Check if message has document
+    if message.document is None:
+        await message.answer(t("events_import_error_no_file", lang=lang), parse_mode="HTML")
+        return
+
+    # Check if file is .ics
+    file_name = message.document.file_name
+    if file_name is None or not file_name.endswith(".ics"):
+        await message.answer(t("events_import_error_invalid_format", lang=lang), parse_mode="HTML")
+        return
+
+    try:
+        # Import file using UploadService
+        await store.UploadService.upload_ics_file(message, message.bot)
+        await message.answer(t("events_import_success", lang=lang), parse_mode="HTML")
+
+        # Return to events menu
+        await state.set_state(EventsMenuStates.in_events_menu)
+
+    except ValueError as e:
+        error_msg = str(e)
+        if "must be .ics" in error_msg.lower():
+            error_text = t("events_import_error_invalid_format", lang=lang)
+        else:
+            error_text = t("events_import_error", lang=lang)
+        logger.error(f"Error importing calendar for user {user_id}: {e}", exc_info=e)
+        await message.answer(error_text, parse_mode="HTML")
+    except Exception as e:
+        logger.error(f"Unexpected error importing calendar for user {user_id}: {e}", exc_info=e)
+        await message.answer(t("events_import_error", lang=lang), parse_mode="HTML")

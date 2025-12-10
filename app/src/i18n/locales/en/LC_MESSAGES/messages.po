@@ -139,9 +139,6 @@ msgstr "Feature is under development. You can unlink calendars here."
 msgid "calendar_list_linked"
 msgstr "<b>Linked Calendars:</b>"
 
-msgid "calendar_list_title"
-msgstr "📑 <b>Your Calendars</b>"
-
 msgid "calendar_new_answer"
 msgstr "🔗 Link new calendar"
 
@@ -212,14 +209,10 @@ msgid "create_event_confirmed"
 msgstr "✅ Event created!"
 
 msgid "create_event_date_format_error"
-msgstr "❌ Incorrect date format
-
-Format: DD.MM.YYYY (example: 25.12.2025)"
+msgstr "❌ Incorrect date format.\n\nYou entered: <b>{user_input}</b>\n\nFormat: DD.MM.YYYY (example: 25.12.2025)"
 
 msgid "create_event_enter_date"
-msgstr "📅 Enter start date:
-
-Format: DD.MM.YYYY (example: 25.12.2025)"
+msgstr "📅 Enter start date:\n\nFormat: DD.MM.YYYY (example: 25.12.2025)"
 
 msgid "create_event_enter_description"
 msgstr "📄 Enter description:
@@ -227,9 +220,7 @@ msgstr "📄 Enter description:
 "
 
 msgid "create_event_enter_time"
-msgstr "⏰ Enter start time:
-
-Format: HH:MM (example: 14:30)"
+msgstr "⏰ Enter start time:\n\nFormat: HH:MM (example: 14:30)"
 
 msgid "create_event_enter_title"
 msgstr "📝 Enter event title:
@@ -261,15 +252,16 @@ msgid "create_event_success"
 msgstr "✅ <b>Event successfully created</b>"
 
 msgid "create_event_time_format_error"
-msgstr "❌ Incorrect time format
-
-Use format: HH:MM (example: 14:30)"
+msgstr "❌ Incorrect time format.\n\nYou entered: <b>{user_input}</b>\n\nUse format: HH:MM (example: 14:30)"
 
 msgid "create_event_title_empty"
 msgstr "❌ Title should not be empty"
 
 msgid "create_event_title_too_long"
 msgstr "❌ Title too long (maximum 100 chars)"
+
+msgid "create_event_error"
+msgstr "❌ Error creating event. Please try again."
 
 msgid "daily_plan_end"
 msgstr "End of daily plan"
@@ -354,6 +346,30 @@ msgstr "source: <a href=\"{link}\">{name}</a>"
 
 msgid "events_view_event_source_local"
 msgstr "source: local bot storage"
+
+msgid "events_import_success"
+msgstr "✅ Events successfully imported to local calendar"
+
+msgid "events_import_error"
+msgstr "❌ Error importing events. Please check the file format."
+
+msgid "events_import_error_no_file"
+msgstr "❌ File not found. Please upload a .ics file"
+
+msgid "events_import_error_invalid_format"
+msgstr "❌ Invalid file format. Please upload a .ics file"
+
+msgid "events_export_success"
+msgstr "✅ Calendar successfully exported"
+
+msgid "events_export_error"
+msgstr "❌ Error exporting calendar"
+
+msgid "events_export_error_no_calendar"
+msgstr "❌ Local calendar not found"
+
+msgid "events_export_error_no_events"
+msgstr "❌ No events in local calendar"
 
 msgid "menu_main_title"
 msgstr ""

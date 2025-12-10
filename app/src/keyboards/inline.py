@@ -221,7 +221,7 @@ def event_confirmation_inline(lang: str = "ru") -> InlineKeyboardMarkup:
     buttons = [
         [
             InlineKeyboardButton(text=t("btn.accept", lang=lang), callback_data="confirm_event"),
-            InlineKeyboardButton(text=t("btn.reject", lang=lang), callback_data="events_cancel"),
+            InlineKeyboardButton(text=t("btn.reject", lang=lang), callback_data="reject_event"),
         ]
     ]
     return _mk_markup(buttons)
