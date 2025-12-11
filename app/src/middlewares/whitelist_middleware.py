@@ -76,8 +76,9 @@ class WhitelistMiddleware(BaseMiddleware):
         # If user has no username, deny access
         if not username:
             logger.warning(
-                f"WhitelistMiddleware: User {event.from_user.id if hasattr(event, 'from_user') and event.from_user else 'unknown'} "
-                "has no username, access denied"
+                "WhitelistMiddleware: User "
+                + f"{event.from_user.id if hasattr(event, 'from_user') and event.from_user else 'unknown'} "
+                + "has no username, access denied"
             )
             await self._send_access_denied_message(event)
             return None
@@ -87,7 +88,10 @@ class WhitelistMiddleware(BaseMiddleware):
 
         if username_with_at not in self._whitelist:
             logger.warning(
-                f"WhitelistMiddleware: User @{username} (ID: {event.from_user.id if hasattr(event, 'from_user') and event.from_user else 'unknown'}) "
+                "WhitelistMiddleware: User @"
+                + username
+                + " (ID: "
+                + f"{event.from_user.id if hasattr(event, 'from_user') and event.from_user else 'unknown'}) "
                 "is not in whitelist, access denied"
             )
             await self._send_access_denied_message(event)

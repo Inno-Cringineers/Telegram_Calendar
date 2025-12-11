@@ -362,12 +362,16 @@ async def confirm_event(query: CallbackQuery, state: FSMContext, store: Store, s
         logger.error(f"Error creating event for user {user_id}: {e}", exc_info=e)
         await query.answer(t("create_event.error", lang=settings.lang), show_alert=True)
         await edit_message(
-            query.bot,
-            query.message.chat.id,
-            query.message.message_id,
-            state,
-            f"{t('create_event.preview.title', lang=settings.lang)}\n\n<i>{t('create_event.error', lang=settings.lang)}</i>",
-            event_confirmation_inline(lang=settings.lang),
+            bot=query.bot,
+            chat_id=query.message.chat.id,
+            message_id=query.message.message_id,
+            state=state,
+            text=(
+                t("create_event.preview.title", lang=settings.lang)
+                + "\n\n"
+                + t("create_event.error", lang=settings.lang)
+            ),
+            reply_markup=event_confirmation_inline(lang=settings.lang),
             parse_mode="HTML",
         )
 
