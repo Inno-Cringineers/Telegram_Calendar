@@ -6,7 +6,7 @@ from aiogram.types import CallbackQuery
 from dateutil.rrule import rrulestr
 
 from i18n.strings import t
-from keyboards.inline import back_button
+from keyboards.inline import back_button, event_inline
 from logger.logger import logger
 from repositories.schemas import EventDurationFilter, EventResponse
 from store.store import Store
@@ -60,9 +60,11 @@ async def get_daily_plan(query: CallbackQuery, state: FSMContext, store: Store, 
         parse_mode="HTML",
         delete_keyboard=False,
         delete_message=True,
+        context="daily_plan",
     )
 
     for event in events:
+        is_local = await is_local_event(event, store)
         await send_message(
             query.bot,
             query.message.chat.id,
@@ -77,8 +79,11 @@ async def get_daily_plan(query: CallbackQuery, state: FSMContext, store: Store, 
                 source=await get_event_source(event, store, lang),
             ),
             parse_mode="HTML",
+            reply_markup=event_inline(event.id, is_local, lang=lang),
             delete_keyboard=False,
             delete_message=True,
+            extra_data={"event_id": event.id},
+            context="daily_plan",
         )
 
     await send_message(
@@ -89,7 +94,8 @@ async def get_daily_plan(query: CallbackQuery, state: FSMContext, store: Store, 
         reply_markup=back_button("back_to_main", lang=lang),
         parse_mode="HTML",
         delete_keyboard=True,
-        delete_message=False,
+        delete_message=True,  # Mark for deletion when leaving daily_plan context
+        context="daily_plan",
     )
 
 
@@ -360,6 +366,23 @@ def get_event_duration(event: EventResponse, tz_info: timezone, lang: str) -> st
         start=start,
         end=end,
     )
+
+
+async def is_local_event(event: EventResponse, store: Store) -> bool:
+    """Check if event is from local calendar.
+
+    Args:
+        event: Event to check.
+        store: Store instance.
+
+    Returns:
+        True if event is from local calendar, False otherwise.
+    """
+    calendar = await store.CalendarService.get_by_id(event.calendar_id)
+    if calendar is None:
+        return False
+    # Local calendar has name "local calendar" and url is None
+    return calendar.name == "local calendar" and calendar.url is None
 
 
 async def get_event_source(event: EventResponse, store: Store, lang: str) -> str:

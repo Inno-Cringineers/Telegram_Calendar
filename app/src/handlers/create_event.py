@@ -290,6 +290,77 @@ async def process_event_time(message: Message, state: FSMContext, store: Store, 
         return
 
     await state.update_data(start_time=time_str.strip())
+    await state.set_state(CreateEventStates.waiting_for_end_date)
+
+    text = t("create_event.enter_end_date", lang=settings.lang)
+    await edit_message(
+        message.bot,
+        message.chat.id,
+        last_message,
+        state,
+        text,
+        cancel_inline("events_cancel", lang=settings.lang),
+        parse_mode="HTML",
+    )
+
+
+@router.message(StateFilter(CreateEventStates.waiting_for_end_date))
+async def process_event_end_date(message: Message, state: FSMContext, store: Store, settings: SettingsData) -> None:
+    """Process event end date with validation."""
+    date_str = message.text
+
+    # Delete user message
+    await message.delete()
+    last_message = await get_last_message_id(state)
+    if last_message is None:
+        logger.error("Last message is not found", extra={"state": await state.get_data()})
+        return
+
+    if date_str is None:
+        date_str = "nothing" if settings.lang == "en" else "ничего"
+
+    if date_str is None or not is_valid_date(date_str.strip()):
+        text = (
+            f"{t('create_event.enter_end_date', lang=settings.lang)}\n\n"
+            f"<i>{t('create_event.date_format_error', lang=settings.lang, user_input=date_str)}</i>"
+        )
+        await edit_message(
+            message.bot,
+            message.chat.id,
+            last_message,
+            state,
+            text,
+            cancel_inline("events_cancel", lang=settings.lang),
+            parse_mode="HTML",
+        )
+        return
+
+    # Validate that end date is not before start date
+    data = await state.get_data()
+    start_date_str = data.get("start_date")
+    if start_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, "%d.%m.%Y").date()
+            end_date = datetime.strptime(date_str.strip(), "%d.%m.%Y").date()
+            if end_date < start_date:
+                text = (
+                    f"{t('create_event.enter_end_date', lang=settings.lang)}\n\n"
+                    f"<i>{t('create_event.end_date_before_start', lang=settings.lang)}</i>"
+                )
+                await edit_message(
+                    message.bot,
+                    message.chat.id,
+                    last_message,
+                    state,
+                    text,
+                    cancel_inline("events_cancel", lang=settings.lang),
+                    parse_mode="HTML",
+                )
+                return
+        except ValueError:
+            pass
+
+    await state.update_data(end_date=date_str.strip())
     await state.set_state(CreateEventStates.waiting_for_end_time)
 
     text = t("create_event.enter_end_time", lang=settings.lang)
@@ -335,6 +406,34 @@ async def process_event_end_time(message: Message, state: FSMContext, store: Sto
         )
         return
 
+    # Validate that end datetime is not before start datetime
+    data = await state.get_data()
+    start_date_str = data.get("start_date")
+    start_time_str = data.get("start_time")
+    end_date_str = data.get("end_date")
+
+    if start_date_str and start_time_str and end_date_str:
+        try:
+            start_datetime = datetime.strptime(f"{start_date_str} {start_time_str}", "%d.%m.%Y %H:%M")
+            end_datetime = datetime.strptime(f"{end_date_str} {time_str.strip()}", "%d.%m.%Y %H:%M")
+            if end_datetime <= start_datetime:
+                text = (
+                    f"{t('create_event.enter_end_time', lang=settings.lang)}\n\n"
+                    f"<i>{t('create_event.end_datetime_before_start', lang=settings.lang)}</i>"
+                )
+                await edit_message(
+                    message.bot,
+                    message.chat.id,
+                    last_message,
+                    state,
+                    text,
+                    cancel_inline("events_cancel", lang=settings.lang),
+                    parse_mode="HTML",
+                )
+                return
+        except ValueError:
+            pass
+
     await state.update_data(end_time=time_str.strip())
     await state.set_state(CreateEventStates.waiting_for_confirmation)
 
@@ -345,12 +444,14 @@ async def process_event_end_time(message: Message, state: FSMContext, store: Sto
         if data.get("description")
         else t("create_event.preview.description_none", lang=settings.lang)
     )
+    end_date_str = data.get("end_date", data.get("start_date"))
     preview_text = (
         f"{t('create_event.preview.title', lang=settings.lang)}\n\n"
         f"{t('create_event.preview.title_label', lang=settings.lang, title=data['title'])}\n"
         f"{t('create_event.preview.description_label', lang=settings.lang, description=description_text)}\n"
         f"{t('create_event.preview.date_label', lang=settings.lang, date=data['start_date'])}\n"
         f"{t('create_event.preview.time_label', lang=settings.lang, time=data['start_time'])}\n"
+        f"{t('create_event.preview.end_date_label', lang=settings.lang, date=end_date_str)}\n"
         f"{t('create_event.preview.end_time_label', lang=settings.lang, time=time_str.strip())}\n\n"
         f"<i>{t('create_event.preview.confirm', lang=settings.lang)}</i>"
     )
@@ -394,25 +495,27 @@ async def confirm_event(query: CallbackQuery, state: FSMContext, store: Store, s
             )
 
         user_tz = parse_user_timezone(settings.timezone)
-        date_obj = datetime.strptime(data["start_date"], "%d.%m.%Y")
+        start_date_obj = datetime.strptime(data["start_date"], "%d.%m.%Y")
+        end_date_obj = datetime.strptime(data.get("end_date", data["start_date"]), "%d.%m.%Y")
 
         if all_day:
-            # For all day events, start at 00:00:00 and end at 23:59:59 of the same day
-            local_datetime_start = datetime.combine(date_obj.date(), datetime.min.time()).replace(tzinfo=user_tz)
+            # For all day events, start at 00:00:00 and end at 23:59:59 of the end date
+            local_datetime_start = datetime.combine(start_date_obj.date(), datetime.min.time()).replace(tzinfo=user_tz)
             max_time = datetime.max.time().replace(microsecond=0)
-            local_datetime_end = datetime.combine(date_obj.date(), max_time).replace(tzinfo=user_tz)
+            local_datetime_end = datetime.combine(end_date_obj.date(), max_time).replace(tzinfo=user_tz)
         else:
             # Parse start and end times
             start_time_obj = datetime.strptime(data["start_time"], "%H:%M").time()
             end_time_obj = datetime.strptime(data["end_time"], "%H:%M").time()
 
-            # Combine date and times
-            local_datetime_start = datetime.combine(date_obj.date(), start_time_obj).replace(tzinfo=user_tz)
-            local_datetime_end = datetime.combine(date_obj.date(), end_time_obj).replace(tzinfo=user_tz)
+            # Combine dates and times
+            local_datetime_start = datetime.combine(start_date_obj.date(), start_time_obj).replace(tzinfo=user_tz)
+            local_datetime_end = datetime.combine(end_date_obj.date(), end_time_obj).replace(tzinfo=user_tz)
 
-            # If end time is before start time, assume it's the next day
+            # Validate that end datetime is after start datetime
             if local_datetime_end <= local_datetime_start:
-                local_datetime_end += timedelta(days=1)
+                # This should not happen due to validation, but handle it just in case
+                local_datetime_end = local_datetime_start + timedelta(hours=1)
 
         # Convert to UTC
         utc_datetime_start = local_datetime_start.astimezone(UTC)

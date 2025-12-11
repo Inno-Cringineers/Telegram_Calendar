@@ -254,6 +254,23 @@ class ReminderScheduler:
                     except Exception as e:
                         logger.exception("Failed to send reminder %s: %s", reminder_id, e)
 
+                # Recalculate next reminders after sending (to avoid sending twice)
+                # This ensures we get the next reminder time
+                try:
+                    next = await self._get_next_reminders_for_user(user_id)
+                    if next is None:
+                        # sleep while rebuild is requested by user
+                        await self._stop_event.wait()
+                        if self._stop_event.is_set():
+                            break
+                        continue
+                    next_send_at = next[0]
+                    next_reminder_ids = next[1]
+                except Exception as e:
+                    logger.error("Failed to compute next reminders for user %s: %s", user_id, e)
+                    await asyncio.sleep(60)  # 1 minute backoff TODO: make it configurable
+                    continue
+
                 # small sleep to avoid tight loop if many reminders are at same second
                 await asyncio.sleep(0.5)  # 0.5 seconds sleep TODO: make it configurable
 
@@ -297,6 +314,16 @@ class ReminderScheduler:
             if settings is None:
                 logger.warning("Settings not found for user %s", user_id)
                 return
+
+        # Check quiet hours before sending reminder
+        if self._is_in_quiet_hours(settings):
+            logger.debug(
+                "Reminder %s for user %s skipped due to quiet hours",
+                reminder_id,
+                user_id,
+            )
+            return
+
         name = self._format_name(event.title, settings)
         start = self._format_start(event.date_start, settings)
         message = t("reminder.message", event_name=name, start=start, lang=settings.language)
@@ -313,6 +340,36 @@ class ReminderScheduler:
     def _format_start(start: datetime, settings: SettingsResponse) -> str:
         tz_info = parse_user_timezone(settings.timezone)
         return start.astimezone(tz_info).strftime("%d.%m.%Y %H:%M")
+
+    @staticmethod
+    def _is_in_quiet_hours(settings: SettingsResponse) -> bool:
+        """Check if current time is within quiet hours for the user.
+
+        Args:
+            settings: User settings with quiet hours configuration.
+
+        Returns:
+            True if current time is within quiet hours, False otherwise.
+        """
+        if not settings.quiet_hours_enabled:
+            return False
+
+        # Get current time in user's timezone
+        user_tz = parse_user_timezone(settings.timezone)
+        now_local = datetime.now(user_tz)
+        current_time = now_local.time()
+
+        quiet_start = settings.quiet_hours_start
+        quiet_end = settings.quiet_hours_end
+
+        # Handle case when quiet hours span across midnight (e.g., 22:00 - 06:00)
+        if quiet_start <= quiet_end:
+            # Normal case: quiet hours within same day (e.g., 00:00 - 06:00)
+            return quiet_start <= current_time <= quiet_end
+        else:
+            # Quiet hours span across midnight (e.g., 22:00 - 06:00)
+            # Check if current time is after start OR before end
+            return current_time >= quiet_start or current_time <= quiet_end
 
     # ---------------- public API ----------------
 

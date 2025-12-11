@@ -1,11 +1,12 @@
 import os
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 
 from aiogram import F, Router
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, FSInputFile, Message
+from icalendar.prop import vDuration
 
 if TYPE_CHECKING:
     pass
@@ -15,12 +16,25 @@ from i18n.strings import t
 from keyboards.inline import (
     back_button,
     create_calendar,
+    event_inline,
     events_create_inline,
     events_menu_inline,
+    reminder_confirm_inline,
+    reminder_inline,
+    reminder_list_inline,
 )
 from logger.logger import logger
-from repositories.schemas import EventDurationFilter, EventResponse
-from states.states import EventsMenuStates
+from repositories.schemas import (
+    EventDurationFilter,
+    EventResponse,
+    ReminderCreateSchema,
+    ReminderFilter,
+)
+from states.states import (
+    EditEventStates,
+    EventsMenuStates,
+    ReminderManagementStates,
+)
 from store.store import Store
 from utils.handlers import clean_messages, edit_message, get_last_message_id, parse_user_timezone, send_message
 
@@ -37,7 +51,8 @@ async def open_events_menu(query: CallbackQuery, state: FSMContext, lang: str) -
         logger.error("Query bot or message is None", extra={"query": query})
         return
 
-    await clean_messages(query.bot, query.message.chat.id, state)
+    # Clean all messages from previous contexts (events view, etc.)
+    await clean_messages(query.bot, query.message.chat.id, state, delete_all=True)
 
     # Check if message contains a document (file) - cannot edit such messages
     # Need to check if message is a Message instance (not InaccessibleMessage)
@@ -59,19 +74,33 @@ async def open_events_menu(query: CallbackQuery, state: FSMContext, lang: str) -
             delete_message=False,
         )
     else:
-        # Regular text message - can be edited
+        # Try to edit message, but if it fails (e.g., message was deleted), send new one
         if isinstance(query.message, Message):
-            await edit_message(
-                query.bot,
-                query.message.chat.id,
-                query.message.message_id,
-                state,
-                t("events.title", lang=lang),
-                events_menu_inline(lang=lang),
-                parse_mode="HTML",
-                delete_keyboard=True,
-                delete_message=False,
-            )
+            try:
+                await edit_message(
+                    query.bot,
+                    query.message.chat.id,
+                    query.message.message_id,
+                    state,
+                    t("events.title", lang=lang),
+                    events_menu_inline(lang=lang),
+                    parse_mode="HTML",
+                    delete_keyboard=True,
+                    delete_message=False,
+                )
+            except Exception as e:
+                # Message might be deleted, send new one instead
+                logger.debug(f"Could not edit message, sending new one: {e}")
+                await send_message(
+                    query.bot,
+                    query.message.chat.id,
+                    state,
+                    t("events.title", lang=lang),
+                    reply_markup=events_menu_inline(lang=lang),
+                    parse_mode="HTML",
+                    delete_keyboard=True,
+                    delete_message=False,
+                )
         else:
             # Fallback if message is not accessible
             await send_message(
@@ -427,9 +456,11 @@ async def show_events_in_range(
         parse_mode="HTML",
         delete_keyboard=False,
         delete_message=True,
+        context="events",
     )
 
     for event in events:
+        is_local = await is_local_event(event, store)
         await send_message(
             query.bot,
             query.message.chat.id,
@@ -444,8 +475,11 @@ async def show_events_in_range(
                 source=await get_event_source(event, store, lang),
             ),
             parse_mode="HTML",
+            reply_markup=event_inline(event.id, is_local, lang=lang),
             delete_keyboard=False,
             delete_message=True,
+            extra_data={"event_id": event.id},
+            context="events",
         )
 
     await send_message(
@@ -456,7 +490,8 @@ async def show_events_in_range(
         reply_markup=back_button("menu_events", lang=lang),
         parse_mode="HTML",
         delete_keyboard=True,
-        delete_message=False,
+        delete_message=True,  # Mark for deletion when leaving events context
+        context="events",
     )
 
 
@@ -725,6 +760,23 @@ def get_event_duration(event: EventResponse, tz_info: timezone, lang: str) -> st
     return t("events.view.event.duration.not.all.day", lang=lang, date=date_str, start=start, end=end)
 
 
+async def is_local_event(event: EventResponse, store: Store) -> bool:
+    """Check if event is from local calendar.
+
+    Args:
+        event: Event to check.
+        store: Store instance.
+
+    Returns:
+        True if event is from local calendar, False otherwise.
+    """
+    calendar = await store.CalendarService.get_by_id(event.calendar_id)
+    if calendar is None:
+        return False
+    # Local calendar has name "local calendar" and url is None
+    return calendar.name == "local calendar" and calendar.url is None
+
+
 async def get_event_source(event: EventResponse, store: Store, lang: str) -> str:
     """Get event source (external calendar or local)."""
     calendar = await store.CalendarService.get_by_id(event.calendar_id)
@@ -850,3 +902,650 @@ async def process_ics_file(message: Message, state: FSMContext, store: Store, la
             )
         else:
             await message.answer(t("events_import_error", lang=lang), parse_mode="HTML")
+
+
+@router.callback_query(F.data.startswith("event_delete:"))
+async def event_delete(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
+    """Delete an event."""
+    if query.data is None or len(query.data) == 0:
+        logger.error("Query data is None or empty", extra={"query": query})
+        return
+
+    event_id = int(query.data.split(":")[1])
+    user_id = query.from_user.id
+
+    # Get event and verify it belongs to user and is local
+    event = await store.EventService.get_by_id(event_id)
+    if event is None:
+        logger.error("Event is not found", extra={"event_id": event_id})
+        await query.answer(t("events.delete.error.not_found", lang=lang), show_alert=True)
+        return
+
+    if event.user_id != user_id:
+        logger.error("Event does not belong to user", extra={"event_id": event_id, "user_id": user_id})
+        await query.answer(t("events.delete.error.not_owner", lang=lang), show_alert=True)
+        return
+
+    is_local = await is_local_event(event, store)
+    if not is_local:
+        logger.error("Event is not local", extra={"event_id": event_id})
+        await query.answer(t("events.delete.error.not_local", lang=lang), show_alert=True)
+        return
+
+    # Delete event
+    await store.EventService.delete_by_id(event_id)
+
+    # Find and delete the message with this event
+    from utils.handlers import get_messages
+
+    messages = await get_messages(state)
+    message_to_delete = None
+    for msg in messages:
+        if msg.get("extra_data", {}) is None:
+            continue
+        if msg.get("extra_data", {}).get("event_id") == event_id:
+            message_to_delete = msg
+            break
+
+    if message_to_delete is not None and message_to_delete.get("message_id") is not None:
+        try:
+            await query.bot.delete_message(chat_id=query.message.chat.id, message_id=message_to_delete["message_id"])
+        except Exception as e:
+            logger.warning(f"Could not delete event message: {e}")
+
+    await query.answer(t("events.delete.success", lang=lang), show_alert=False)
+
+
+def parse_reminder_time(time_str: str) -> timedelta | None:
+    """Parse reminder time string to timedelta.
+
+    Supports format HH:MM:SS (e.g., "01:30:00" for 1 hour 30 minutes).
+
+    Args:
+        time_str: Time string to parse in HH:MM:SS format.
+
+    Returns:
+        timedelta if parsing successful, None otherwise.
+    """
+    time_str = time_str.strip()
+
+    # Try to parse HH:MM:SS format
+    from utils.handlers import is_valid_time_hhmmss
+
+    if is_valid_time_hhmmss(time_str):
+        try:
+            parts = time_str.split(":")
+            hours = int(parts[0])
+            minutes = int(parts[1])
+            seconds = int(parts[2]) if len(parts) > 2 else 0
+            return timedelta(hours=hours, minutes=minutes, seconds=seconds)
+        except (ValueError, IndexError):
+            pass
+
+    return None
+
+
+def format_trigger_offset(trigger_offset: str, lang: str) -> str:
+    """Format trigger_offset for display in HH:MM:SS format.
+
+    Args:
+        trigger_offset: RFC 5545 trigger offset string.
+        lang: Language code.
+
+    Returns:
+        Formatted string in HH:MM:SS format.
+    """
+    try:
+        delta = vDuration.from_ical(trigger_offset)
+        if isinstance(delta, timedelta):
+            total_seconds = int(delta.total_seconds())
+            if total_seconds < 0:
+                total_seconds = abs(total_seconds)
+
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            seconds = total_seconds % 60
+
+            return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    except Exception:
+        pass
+
+    return trigger_offset
+
+
+@router.callback_query(F.data.startswith("event_reminders:"))
+async def event_reminders(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
+    """Show reminders list for an event."""
+    if query.data is None or len(query.data) == 0:
+        logger.error("Query data is None or empty", extra={"query": query})
+        return
+
+    event_id = int(query.data.split(":")[1])
+    user_id = query.from_user.id
+
+    # Get event and verify it belongs to user
+    event = await store.EventService.get_by_id(event_id)
+    if event is None:
+        logger.error("Event is not found", extra={"event_id": event_id})
+        await query.answer(t("reminders.error.event_not_found", lang=lang), show_alert=True)
+        return
+
+    if event.user_id != user_id:
+        logger.error("Event does not belong to user", extra={"event_id": event_id, "user_id": user_id})
+        await query.answer(t("reminders.error.not_owner", lang=lang), show_alert=True)
+        return
+
+    await clean_messages(query.bot, query.message.chat.id, state)
+    await state.set_state(ReminderManagementStates.viewing_reminders)
+    await state.update_data(event_id=event_id)
+
+    # Get reminders for this event
+    reminders = await store.ReminderService.find(ReminderFilter(event_id=event_id))
+
+    # Format event info
+    event_title = event.title or t("events.view.event.title.none", lang=lang)
+    event_text = t("reminders.list.title", lang=lang, event_title=event_title)
+
+    # Send main message with create button
+    await send_message(
+        query.bot,
+        query.message.chat.id,
+        state,
+        event_text,
+        parse_mode="HTML",
+        reply_markup=reminder_list_inline(event_id, lang=lang),
+        delete_keyboard=False,
+        delete_message=True,
+        context="reminders",
+    )
+
+    # Send messages for each reminder
+    for reminder in reminders:
+        reminder_desc = reminder.description or t("reminders.description.none", lang=lang)
+        reminder_time = format_trigger_offset(reminder.trigger_offset, lang)
+        reminder_text = t(
+            "reminders.item.content",
+            lang=lang,
+            description=reminder_desc,
+            time=reminder_time,
+        )
+        await send_message(
+            query.bot,
+            query.message.chat.id,
+            state,
+            reminder_text,
+            parse_mode="HTML",
+            reply_markup=reminder_inline(reminder.id, event_id, lang=lang),
+            delete_keyboard=False,
+            delete_message=True,
+            extra_data={"reminder_id": reminder.id},
+            context="reminders",
+        )
+
+    # Send end message
+    await send_message(
+        query.bot,
+        query.message.chat.id,
+        state,
+        t("reminders.list.end", lang=lang),
+        parse_mode="HTML",
+        reply_markup=back_button("back_to_main", lang=lang),
+        delete_keyboard=True,
+        delete_message=True,  # Mark for deletion when leaving reminders context
+        context="reminders",
+    )
+
+
+@router.callback_query(F.data.startswith("reminder_create:"), StateFilter(ReminderManagementStates.viewing_reminders))
+async def reminder_create_start(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
+    """Start creating a new reminder."""
+    if query.data is None or len(query.data) == 0:
+        logger.error("Query data is None or empty", extra={"query": query})
+        return
+
+    event_id = int(query.data.split(":")[1])
+    user_id = query.from_user.id
+
+    # Get event and verify it belongs to user
+    event = await store.EventService.get_by_id(event_id)
+    if event is None:
+        logger.error("Event is not found", extra={"event_id": event_id})
+        await query.answer(t("reminders.error.event_not_found", lang=lang), show_alert=True)
+        return
+
+    if event.user_id != user_id:
+        logger.error("Event does not belong to user", extra={"event_id": event_id, "user_id": user_id})
+        await query.answer(t("reminders.error.not_owner", lang=lang), show_alert=True)
+        return
+
+    # Clean messages from reminders list context before starting creation dialog
+    await clean_messages(query.bot, query.message.chat.id, state, context="reminders")
+
+    await state.set_state(ReminderManagementStates.waiting_for_reminder_description)
+    await state.update_data(event_id=event_id)
+
+    # Get event title for display
+    event_title = event.title or t("events.view.event.title.none", lang=lang)
+
+    # Send new message for creation dialog instead of editing (because list messages are deleted)
+    await send_message(
+        query.bot,
+        query.message.chat.id,
+        state,
+        t("reminders.create.enter_description", lang=lang, event_title=event_title),
+        parse_mode="HTML",
+        reply_markup=back_button("reminder_back", lang=lang),
+        delete_keyboard=False,
+        delete_message=True,  # Mark for deletion when leaving creation flow
+    )
+
+
+@router.message(StateFilter(ReminderManagementStates.waiting_for_reminder_description))
+async def process_reminder_description(message: Message, state: FSMContext, store: Store, lang: str) -> None:
+    """Process reminder description input."""
+    last_message_id = await get_last_message_id(state)
+    if last_message_id is None:
+        logger.error("Last message id is not found", extra={"state": state})
+        return
+
+    data = await state.get_data()
+    event_id = data.get("event_id")
+    if event_id is None:
+        logger.error("Event id is not found", extra={"state": state})
+        return
+
+    # Get event for title
+    event = await store.EventService.get_by_id(event_id)
+    if event is None:
+        logger.error("Event is not found", extra={"event_id": event_id})
+        return
+    event_title = event.title or t("events.view.event.title.none", lang=lang)
+
+    description = message.text
+    await message.delete()
+
+    if description is None or len(description) == 0:
+        await edit_message(
+            message.bot,
+            message.chat.id,
+            last_message_id,
+            state,
+            t("reminders.create.description.empty", lang=lang, event_title=event_title),
+            parse_mode="HTML",
+            reply_markup=back_button("reminder_back", lang=lang),
+        )
+        return
+
+    if description == "Default reminder":
+        await edit_message(
+            message.bot,
+            message.chat.id,
+            last_message_id,
+            state,
+            t("reminders.create.description.invalid", lang=lang, event_title=event_title),
+            parse_mode="HTML",
+            reply_markup=back_button("reminder_back", lang=lang),
+        )
+        return
+
+    if len(description) > 1024:
+        await edit_message(
+            message.bot,
+            message.chat.id,
+            last_message_id,
+            state,
+            t("reminders.create.description.too_long", lang=lang, event_title=event_title),
+            parse_mode="HTML",
+            reply_markup=back_button("reminder_back", lang=lang),
+        )
+        return
+
+    await state.update_data(description=description)
+    await state.set_state(ReminderManagementStates.waiting_for_reminder_time)
+
+    await edit_message(
+        message.bot,
+        message.chat.id,
+        last_message_id,
+        state,
+        t("reminders.create.enter_time", lang=lang, event_title=event_title),
+        parse_mode="HTML",
+        reply_markup=back_button("reminder_back", lang=lang),
+    )
+
+
+@router.message(StateFilter(ReminderManagementStates.waiting_for_reminder_time))
+async def process_reminder_time(message: Message, state: FSMContext, store: Store, lang: str) -> None:
+    """Process reminder time input."""
+    last_message_id = await get_last_message_id(state)
+    if last_message_id is None:
+        logger.error("Last message id is not found", extra={"state": state})
+        return
+
+    data = await state.get_data()
+    event_id = data.get("event_id")
+    description = data.get("description")
+    if event_id is None or description is None:
+        logger.error("Event id or description is not found", extra={"state": state})
+        return
+
+    # Get event for title
+    event = await store.EventService.get_by_id(event_id)
+    if event is None:
+        logger.error("Event is not found", extra={"event_id": event_id})
+        return
+    event_title = event.title or t("events.view.event.title.none", lang=lang)
+
+    time_str = message.text
+    await message.delete()
+
+    if time_str is None or len(time_str) == 0:
+        await edit_message(
+            message.bot,
+            message.chat.id,
+            last_message_id,
+            state,
+            t("reminders.create.time.empty", lang=lang, event_title=event_title),
+            parse_mode="HTML",
+            reply_markup=back_button("reminder_back", lang=lang),
+        )
+        return
+
+    # Parse time string to timedelta
+    delta = parse_reminder_time(time_str)
+    if delta is None:
+        await edit_message(
+            message.bot,
+            message.chat.id,
+            last_message_id,
+            state,
+            t("reminders.create.time.invalid", lang=lang, event_title=event_title),
+            parse_mode="HTML",
+            reply_markup=back_button("reminder_back", lang=lang),
+        )
+        return
+
+    # Convert timedelta to trigger_offset
+    trigger_offset = vDuration(delta).to_ical().decode("utf-8")
+    # Make it negative (before event)
+    if not trigger_offset.startswith("-"):
+        trigger_offset = "-" + trigger_offset
+
+    await state.update_data(trigger_offset=trigger_offset)
+    await state.set_state(ReminderManagementStates.waiting_for_reminder_confirmation)
+
+    # Get event to show preview
+    event = await store.EventService.get_by_id(event_id)
+    if event is None:
+        logger.error("Event is not found", extra={"event_id": event_id})
+        return
+
+    event_title = event.title or t("events.view.event.title.none", lang=lang)
+    formatted_time = format_trigger_offset(trigger_offset, lang)
+
+    await edit_message(
+        message.bot,
+        message.chat.id,
+        last_message_id,
+        state,
+        t(
+            "reminders.create.confirm",
+            lang=lang,
+            event_title=event_title,
+            description=description,
+            time=formatted_time,
+        ),
+        parse_mode="HTML",
+        reply_markup=reminder_confirm_inline(lang=lang),
+    )
+
+
+@router.callback_query(
+    F.data == "reminder_confirm", StateFilter(ReminderManagementStates.waiting_for_reminder_confirmation)
+)
+async def reminder_confirm(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
+    """Confirm reminder creation."""
+    data = await state.get_data()
+    event_id = data.get("event_id")
+    description = data.get("description")
+    trigger_offset = data.get("trigger_offset")
+
+    if event_id is None or description is None or trigger_offset is None:
+        logger.error("Required data is not found", extra={"state": state})
+        await query.answer(t("reminders.create.error.missing_data", lang=lang), show_alert=True)
+        return
+
+    # Create reminder
+    try:
+        await store.ReminderService.create(
+            ReminderCreateSchema(
+                event_id=event_id,
+                description=description,
+                trigger_offset=trigger_offset,
+            )
+        )
+    except Exception as e:
+        logger.error(f"Error creating reminder: {e}", exc_info=e)
+        await query.answer(t("reminders.create.error.failed", lang=lang), show_alert=True)
+        return
+
+    await query.answer(t("reminders.create.success", lang=lang), show_alert=False)
+
+    # Clean all messages and return to main menu after successful creation
+    if query.bot is None or query.message is None:
+        logger.error("Query bot or message is None", extra={"query": query})
+        return
+
+    await clean_messages(query.bot, query.message.chat.id, state, delete_all=True)
+
+    # Return to main menu
+    from handlers.start import back_to_main
+
+    await back_to_main(
+        type(
+            "Query",
+            (),
+            {
+                "data": "back_to_main",
+                "from_user": query.from_user,
+                "bot": query.bot,
+                "message": query.message,
+            },
+        )(),
+        state,
+        lang,
+    )
+
+
+@router.callback_query(F.data.startswith("reminder_delete:"))
+async def reminder_delete(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
+    """Delete a reminder."""
+    if query.data is None or len(query.data) == 0:
+        logger.error("Query data is None or empty", extra={"query": query})
+        return
+
+    reminder_id = int(query.data.split(":")[1])
+    user_id = query.from_user.id
+
+    # Get reminder and verify it belongs to user's event
+    reminder = await store.ReminderService.get_by_id(reminder_id)
+    if reminder is None:
+        logger.error("Reminder is not found", extra={"reminder_id": reminder_id})
+        await query.answer(t("reminders.delete.error.not_found", lang=lang), show_alert=True)
+        return
+
+    event = await store.EventService.get_by_id(reminder.event_id)
+    if event is None or event.user_id != user_id:
+        logger.error("Event does not belong to user", extra={"reminder_id": reminder_id, "user_id": user_id})
+        await query.answer(t("reminders.delete.error.not_owner", lang=lang), show_alert=True)
+        return
+
+    # Delete reminder
+    await store.ReminderService.delete_by_id(reminder_id)
+
+    # Find and delete the message with this reminder
+    from utils.handlers import get_messages
+
+    messages = await get_messages(state)
+    message_to_delete = None
+    for msg in messages:
+        if msg.get("extra_data", {}) is None:
+            continue
+        if msg.get("extra_data", {}).get("reminder_id") == reminder_id:
+            message_to_delete = msg
+            break
+
+    if message_to_delete is not None and message_to_delete.get("message_id") is not None:
+        try:
+            await query.bot.delete_message(chat_id=query.message.chat.id, message_id=message_to_delete["message_id"])
+        except Exception as e:
+            logger.warning(f"Could not delete reminder message: {e}")
+
+    await query.answer(t("reminders.delete.success", lang=lang), show_alert=False)
+
+
+@router.callback_query(F.data.startswith("reminder_back"))
+async def reminder_back(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
+    """Go back from reminder creation to main menu."""
+    if query.data is None or len(query.data) == 0:
+        logger.error("Query data is None or empty", extra={"query": query})
+        return
+
+    if query.bot is None or query.message is None:
+        logger.error("Query bot or message is None", extra={"query": query})
+        return
+
+    current_state = await state.get_state()
+
+    # If in reminder creation flow, cancel and return to main menu
+    if current_state in [
+        ReminderManagementStates.waiting_for_reminder_description,
+        ReminderManagementStates.waiting_for_reminder_time,
+        ReminderManagementStates.waiting_for_reminder_confirmation,
+    ]:
+        # Clean all messages and return to main menu
+        await clean_messages(query.bot, query.message.chat.id, state, delete_all=True)
+
+        # Send main menu message
+        from handlers.start import back_to_main
+
+        await back_to_main(
+            type(
+                "Query",
+                (),
+                {
+                    "data": "back_to_main",
+                    "from_user": query.from_user,
+                    "bot": query.bot,
+                    "message": query.message,
+                },
+            )(),
+            state,
+            lang,
+        )
+    else:
+        # Return to main menu (from reminders list end message)
+        if query.bot is None or query.message is None:
+            logger.error("Query bot or message is None", extra={"query": query})
+            return
+        await clean_messages(query.bot, query.message.chat.id, state, delete_all=True)
+        from handlers.start import back_to_main
+
+        await back_to_main(
+            type(
+                "Query",
+                (),
+                {
+                    "data": "back_to_main",
+                    "from_user": query.from_user,
+                    "bot": query.bot,
+                    "message": query.message,
+                },
+            )(),
+            state,
+            lang,
+        )
+
+
+@router.callback_query(F.data.startswith("event_edit:"))
+async def event_edit_start(query: CallbackQuery, state: FSMContext, store: Store, lang: str) -> None:
+    """Start editing an event."""
+    if query.data is None or len(query.data) == 0:
+        logger.error("Query data is None or empty", extra={"query": query})
+        return
+
+    event_id = int(query.data.split(":")[1])
+    user_id = query.from_user.id
+
+    # Get event and verify it belongs to user and is local
+    event = await store.EventService.get_by_id(event_id)
+    if event is None:
+        logger.error("Event is not found", extra={"event_id": event_id})
+        await query.answer(t("events.edit.error.not_found", lang=lang), show_alert=True)
+        return
+
+    if event.user_id != user_id:
+        logger.error("Event does not belong to user", extra={"event_id": event_id, "user_id": user_id})
+        await query.answer(t("events.edit.error.not_owner", lang=lang), show_alert=True)
+        return
+
+    is_local = await is_local_event(event, store)
+    if not is_local:
+        logger.error("Event is not local", extra={"event_id": event_id})
+        await query.answer(t("events.edit.error.not_local", lang=lang), show_alert=True)
+        return
+
+    # Clean messages from event view context before starting edit dialog
+    if query.bot is None or query.message is None:
+        logger.error("Query bot or message is None", extra={"query": query})
+        return
+
+    await clean_messages(query.bot, query.message.chat.id, state, delete_all=True)
+
+    # Get user settings for timezone
+    from datetime import UTC
+
+    settings_data = await store.SettingsService.get_by_user_id(user_id)
+    if settings_data and settings_data.timezone:
+        user_tz = parse_user_timezone(settings_data.timezone)
+    else:
+        user_tz = UTC
+
+    # Store original event data
+    original_start_str = event.date_start.astimezone(user_tz).strftime("%d.%m.%Y") if event.date_start else None
+    original_start_time_str = (
+        event.date_start.astimezone(user_tz).strftime("%H:%M") if event.date_start and not event.all_day else None
+    )
+    original_end_str = event.date_end.astimezone(user_tz).strftime("%d.%m.%Y") if event.date_end else None
+    original_end_time_str = (
+        event.date_end.astimezone(user_tz).strftime("%H:%M") if event.date_end and not event.all_day else None
+    )
+
+    await state.update_data(
+        event_id=event_id,
+        original_title=event.title,
+        original_description=event.description,
+        original_start_date=original_start_str,
+        original_start_time=original_start_time_str,
+        original_end_date=original_end_str,
+        original_end_time=original_end_time_str,
+        original_date_start=event.date_start.isoformat() if event.date_start else None,
+        original_date_end=event.date_end.isoformat() if event.date_end else None,
+        original_all_day=event.all_day,
+    )
+
+    # Start sequential edit dialog - begin with title
+    await state.set_state(EditEventStates.waiting_for_new_title)
+    from keyboards.inline import skip_inline
+    from utils.handlers import send_message
+
+    await send_message(
+        query.bot,
+        query.message.chat.id,
+        state,
+        f"{t('events.edit.enter_title', lang=lang)}\n\n<i>{t('events.edit.skip_hint', lang=lang)}</i>",
+        skip_inline("edit_event_skip_title", "edit_event_cancel", lang=lang),
+        parse_mode="HTML",
+        delete_keyboard=False,
+        delete_message=True,
+    )

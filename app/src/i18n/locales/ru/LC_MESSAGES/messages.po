@@ -8,7 +8,7 @@ msgid "btn_accept"
 msgstr "✅ Принять"
 
 msgid "btn_add"
-msgstr "➕ Добавить"
+msgstr "✚  Добавить"
 
 msgid "btn_back"
 msgstr "« Назад"
@@ -163,6 +163,15 @@ msgstr "📄 Введите описание:\n\n"
 msgid "create_event_enter_time"
 msgstr "⏰ Введите время начала:\n\nФормат: ЧЧ:ММ (пример: 14:30)"
 
+msgid "create_event_enter_end_date"
+msgstr "Введите дату окончания события в формате ДД.ММ.ГГГГ (например, 25.12.2024):"
+
+msgid "create_event_end_date_before_start"
+msgstr "Дата окончания не может быть раньше даты начала. Пожалуйста, введите корректную дату окончания:"
+
+msgid "create_event_end_datetime_before_start"
+msgstr "Дата и время окончания не могут быть раньше или равны дате и времени начала. Пожалуйста, введите корректное время окончания:"
+
 msgid "create_event_enter_end_time"
 msgstr "⏰ Введите время окончания:\n\nФормат: ЧЧ:ММ (пример: 16:30)"
 
@@ -183,6 +192,9 @@ msgstr "(Нет)"
 
 msgid "create_event_preview_time_label"
 msgstr "⏰ <b>Время начала:</b> {time}"
+
+msgid "create_event_preview_end_date_label"
+msgstr "Дата окончания: {date}"
 
 msgid "create_event_preview_end_time_label"
 msgstr "⏰ <b>Время окончания:</b> {time}"
@@ -218,10 +230,10 @@ msgid "daily_plan_generating"
 msgstr "📋 Генерация ежедневного плана..."
 
 msgid "events_create_selected"
-msgstr "➕ Создание события выбрано"
+msgstr "✚ Создание события выбрано"
 
 msgid "events_create_title"
-msgstr "➕ <b>Создание событий</b>"
+msgstr "✚ <b>Создание событий</b>"
 
 msgid "events_export_description"
 msgstr "Это ваши события в формате .ics (только внутренние события)"
@@ -468,7 +480,7 @@ msgid "settings_default_reminder_time_accepted"
 msgstr "✅ Время напоминания изменено"
 
 msgid "start_welcome"
-msgstr "👋 <b>Добро пожаловать в Personal Calendar Reminder bot, {user_name}!</b>\n\nЯ могу управлять вашими событиями, отправлять вам напоминания о приближающихся событиях, синхронизироваться с внешними календарями.\n\n📋 <b>Команды:</b>\n/start - Показать это диалоговое окно\n/help - Получить помощь\n\n🎯 <b>Основные функции:</b>\n• 📅 Просмотр событий\n• ➕ Создание событий\n• ✏️ Редактирование и удаление событий\n• 🔗 Экспорт внешних календарей (google, outlook и т.д.)\n• ⏰ Напоминания о событиях\n• 📋 Ежедневные планы"
+msgstr "👋 <b>Добро пожаловать в Personal Calendar Reminder bot, {user_name}!</b>\n\nЯ могу управлять вашими событиями, отправлять вам напоминания о приближающихся событиях, синхронизироваться с внешними календарями.\n\n📋 <b>Команды:</b>\n/start - Показать это диалоговое окно\n/help - Получить помощь\n\n🎯 <b>Основные функции:</b>\n• 📅 Просмотр событий\n• ✚ Создание событий\n• ✏️ Редактирование и удаление событий\n• 🔗 Экспорт внешних календарей (google, outlook и т.д.)\n• ⏰ Напоминания о событиях\n• 📋 Ежедневные планы"
 
 msgid "daily_plan_no_events"
 msgstr "Сегодня у вас нет событий"
@@ -628,4 +640,193 @@ msgstr "субботам"
 
 msgid "daily_plan_event_recurrence_day_sunday"
 msgstr "воскресеньям"
+
+msgid "btn_delete"
+msgstr "🗑️ Удалить"
+
+msgid "btn_edit"
+msgstr "✏️ Изменить"
+
+msgid "btn_reminders"
+msgstr "🔔 Напоминания"
+
+msgid "btn_create_reminder"
+msgstr "✚ Создать напоминание"
+
+msgid "events_delete_success"
+msgstr "Событие успешно удалено"
+
+msgid "events_delete_error_not_found"
+msgstr "Событие не найдено"
+
+msgid "events_delete_error_not_owner"
+msgstr "Вы не являетесь владельцем этого события"
+
+msgid "events_delete_error_not_local"
+msgstr "Удалять можно только локальные события"
+
+msgid "reminders_list_title"
+msgstr "🔔 Напоминания для события: <b>{event_title}</b>"
+
+msgid "reminders_list_end"
+msgstr "Конец списка напоминаний"
+
+msgid "reminders_item_content"
+msgstr "🔔 <b>{description}</b>\n⏰ {time}"
+
+msgid "reminders_description_none"
+msgstr "Без описания"
+
+msgid "reminders_time_now"
+msgstr "Сейчас"
+
+msgid "reminders_error_event_not_found"
+msgstr "Событие не найдено"
+
+msgid "reminders_error_not_owner"
+msgstr "Вы не являетесь владельцем этого события"
+
+msgid "reminders_create_enter_description"
+msgstr "Создать напоминание для события: <b>{event_title}</b>\n\nВведите описание напоминания:\n\n(Разрешены все описания, кроме \"Default reminder\")"
+
+msgid "reminders_create_description_empty"
+msgstr "Описание не может быть пустым. Пожалуйста, введите описание:"
+
+msgid "reminders_create_description_invalid"
+msgstr "Описание не может быть \"Default reminder\". Пожалуйста, введите другое описание:"
+
+msgid "reminders_create_description_too_long"
+msgstr "Описание слишком длинное (максимум 1024 символа). Пожалуйста, введите более короткое описание:"
+
+msgid "reminders_create_enter_time"
+msgstr "Создать напоминание для события: <b>{event_title}</b>\n\nВведите время до события, за которое нужно отправить напоминание:\n\nФормат: ЧЧ:ММ:СС (например, \"01:30:00\" для 1 часа 30 минут до события)\n\nПримеры:\n- 00:30:00 (30 минут до события)\n- 01:00:00 (1 час до события)\n- 02:15:30 (2 часа 15 минут 30 секунд до события)"
+
+msgid "reminders_create_time_empty"
+msgstr "Создать напоминание для события: <b>{event_title}</b>\n\nВремя не может быть пустым. Пожалуйста, введите время до события, за которое нужно отправить напоминание:"
+
+msgid "reminders_create_time_invalid"
+msgstr "Создать напоминание для события: <b>{event_title}</b>\n\nНеверный формат времени. Пожалуйста, введите время до события в формате ЧЧ:ММ:СС (например, \"01:30:00\"):"
+
+msgid "reminders_create_confirm"
+msgstr "Создать напоминание?\n\nСобытие: <b>{event_title}</b>\nОписание: {description}\nВремя: {time}"
+
+msgid "reminders_create_success"
+msgstr "Напоминание успешно создано"
+
+msgid "reminders_create_error_missing_data"
+msgstr "Отсутствуют необходимые данные для создания напоминания"
+
+msgid "reminders_create_error_failed"
+msgstr "Не удалось создать напоминание"
+
+msgid "reminders_delete_success"
+msgstr "Напоминание успешно удалено"
+
+msgid "reminders_delete_error_not_found"
+msgstr "Напоминание не найдено"
+
+msgid "reminders_delete_error_not_owner"
+msgstr "Вы не являетесь владельцем этого напоминания"
+
+msgid "events_edit_start"
+msgstr "Начато редактирование события. Выберите поле для редактирования или подтвердите изменения."
+
+msgid "events_edit_error_not_found"
+msgstr "Событие не найдено"
+
+msgid "events_edit_error_not_owner"
+msgstr "Вы не являетесь владельцем этого события"
+
+msgid "events_edit_error_not_local"
+msgstr "Редактировать можно только локальные события"
+
+msgid "events_edit_enter_title"
+msgstr "Введите новое название события:"
+
+msgid "events_edit_skip_hint"
+msgstr "Вы можете пропустить любое поле, нажав кнопку 'Пропустить'"
+
+msgid "events_edit_skipped"
+msgstr "Поле пропущено"
+
+msgid "events_edit_title_saved"
+msgstr "Название сохранено. Выберите другое поле для редактирования или подтвердите изменения."
+
+msgid "events_edit_enter_description"
+msgstr "Введите новое описание события:"
+
+msgid "events_edit_description_saved"
+msgstr "Описание сохранено. Выберите другое поле для редактирования или подтвердите изменения."
+
+msgid "events_edit_enter_start_date"
+msgstr "Введите новую дату начала события в формате ДД.ММ.ГГГГ (например, 25.12.2024):"
+
+msgid "events_edit_start_date_saved"
+msgstr "Дата начала сохранена. Выберите другое поле для редактирования или подтвердите изменения."
+
+msgid "events_edit_enter_start_time"
+msgstr "Введите новое время начала события:\n\nФормат: ЧЧ:ММ (пример: 14:30)"
+
+msgid "events_edit_start_time_saved"
+msgstr "Время начала сохранено. Выберите другое поле для редактирования или подтвердите изменения."
+
+msgid "events_edit_enter_end_date"
+msgstr "Введите новую дату окончания события в формате ДД.ММ.ГГГГ (например, 25.12.2024):"
+
+msgid "events_edit_end_date_saved"
+msgstr "Дата окончания сохранена. Выберите другое поле для редактирования или подтвердите изменения."
+
+msgid "events_edit_enter_end_time"
+msgstr "Введите новое время окончания события:\n\nФормат: ЧЧ:ММ (пример: 16:30)"
+
+msgid "events_edit_end_time_saved"
+msgstr "Время окончания сохранено. Выберите другое поле для редактирования или подтвердите изменения."
+
+msgid "events_edit_no_changes"
+msgstr "Нет изменений для сохранения"
+
+msgid "events_edit_success"
+msgstr "Событие успешно обновлено"
+
+msgid "events_edit_error_failed"
+msgstr "Не удалось обновить событие"
+
+msgid "events_edit_preview_title"
+msgstr "📝 <b>Предпросмотр изменений события</b>"
+
+msgid "events_edit_preview_old_new"
+msgstr "Старое: {old_value}\nНовое: {new_value}"
+
+msgid "events_edit_preview_unchanged"
+msgstr "Без изменений: {value}"
+
+msgid "events_edit_select_field"
+msgstr "Выберите поле для редактирования:"
+
+msgid "events_edit_btn_title"
+msgstr "✏️ Название"
+
+msgid "events_edit_btn_description"
+msgstr "✏️ Описание"
+
+msgid "events_edit_btn_start_date"
+msgstr "✏️ Дата начала"
+
+msgid "events_edit_btn_start_time"
+msgstr "✏️ Время начала"
+
+msgid "events_edit_btn_end_date"
+msgstr "✏️ Дата окончания"
+
+msgid "events_edit_btn_end_time"
+msgstr "✏️ Время окончания"
+
+msgid "events_edit_btn_all_day"
+msgstr "✏️ Весь день"
+
+msgid "events_edit_btn_confirm"
+msgstr "✅ Подтвердить изменения"
+
+msgid "events_edit_all_day_saved"
+msgstr "Событие на весь день: {value}"
 

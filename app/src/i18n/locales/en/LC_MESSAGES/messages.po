@@ -8,7 +8,7 @@ msgid "btn_accept"
 msgstr "✅ Accept"
 
 msgid "btn_add"
-msgstr "➕ Add"
+msgstr "✚  Add"
 
 msgid "btn_back"
 msgstr "« Back"
@@ -225,6 +225,15 @@ msgstr "📄 Enter description:
 msgid "create_event_enter_time"
 msgstr "⏰ Enter start time:\n\nFormat: HH:MM (example: 14:30)"
 
+msgid "create_event_enter_end_date"
+msgstr "Enter event end date in DD.MM.YYYY format (e.g., 25.12.2024):"
+
+msgid "create_event_end_date_before_start"
+msgstr "End date cannot be before start date. Please enter a valid end date:"
+
+msgid "create_event_end_datetime_before_start"
+msgstr "End date and time cannot be before or equal to start date and time. Please enter a valid end time:"
+
 msgid "create_event_enter_end_time"
 msgstr "⏰ Enter end time:\n\nFormat: HH:MM (example: 16:30)"
 
@@ -247,6 +256,9 @@ msgstr "(None)"
 
 msgid "create_event_preview_time_label"
 msgstr "⏰ <b>Start time:</b> {time}"
+
+msgid "create_event_preview_end_date_label"
+msgstr "📅 <b>End date:</b> {date}"
 
 msgid "create_event_preview_end_time_label"
 msgstr "⏰ <b>End time:</b> {time}"
@@ -282,10 +294,10 @@ msgid "daily_plan_generating"
 msgstr "📋 Generating daily plan..."
 
 msgid "events_create_selected"
-msgstr "➕ Event creation selected"
+msgstr "✚ Event creation selected"
 
 msgid "events_create_title"
-msgstr "➕ <b>Events creation</b>"
+msgstr "✚ <b>Events creation</b>"
 
 msgid "events_export_description"
 msgstr "Your events exported in .ics format (only internal events)"
@@ -533,7 +545,7 @@ msgid "settings_default_reminder_time_accepted"
 msgstr "✅ Reminder time changed"
 
 msgid "start_welcome"
-msgstr "👋 <b>Welcome to the Personal Calendar Reminder bot, {user_name}!</b>\n\nI can manage your events, send reminders about upcoming ones, and synchronize with external calendars.\n\n📋 <b>Commands:</b>\n/start - Show this dialog\n/help - Get help\n\n🎯 <b>Main features:</b>\n• 📅 View events\n• ➕ Create events\n• ✏️ Edit and delete events\n• 🔗 Import external calendars (Google, Outlook, etc.)\n• ⏰ Event reminders\n• 📋 Daily plans"
+msgstr "👋 <b>Welcome to the Personal Calendar Reminder bot, {user_name}!</b>\n\nI can manage your events, send reminders about upcoming ones, and synchronize with external calendars.\n\n📋 <b>Commands:</b>\n/start - Show this dialog\n/help - Get help\n\n🎯 <b>Main features:</b>\n• 📅 View events\n• ✚ Create events\n• ✏️ Edit and delete events\n• 🔗 Import external calendars (Google, Outlook, etc.)\n• ⏰ Event reminders\n• 📋 Daily plans"
 
 msgid "daily_plan_no_events"
 msgstr "Today you have no events"
@@ -696,3 +708,192 @@ msgstr "Sunday"
 
 msgid "reminder_message"
 msgstr "🔔 Reminder: <b>{event_name}</b>\n\n🕒 starts: {start}"
+
+msgid "btn_delete"
+msgstr "🗑️ Delete"
+
+msgid "btn_edit"
+msgstr "✏️ Edit"
+
+msgid "btn_reminders"
+msgstr "🔔 Reminders"
+
+msgid "btn_create_reminder"
+msgstr "✚ Create Reminder"
+
+msgid "events_delete_success"
+msgstr "Event deleted successfully"
+
+msgid "events_delete_error_not_found"
+msgstr "Event not found"
+
+msgid "events_delete_error_not_owner"
+msgstr "You don't own this event"
+
+msgid "events_delete_error_not_local"
+msgstr "Only local events can be deleted"
+
+msgid "reminders_list_title"
+msgstr "🔔 Reminders for event: <b>{event_title}</b>"
+
+msgid "reminders_list_end"
+msgstr "End of reminders list"
+
+msgid "reminders_item_content"
+msgstr "🔔 <b>{description}</b>\n⏰ {time}"
+
+msgid "reminders_description_none"
+msgstr "No description"
+
+msgid "reminders_time_now"
+msgstr "Now"
+
+msgid "reminders_error_event_not_found"
+msgstr "Event not found"
+
+msgid "reminders_error_not_owner"
+msgstr "You don't own this event"
+
+msgid "reminders_create_enter_description"
+msgstr "Create reminder for event: <b>{event_title}</b>\n\nEnter reminder description:\n\n(All descriptions are allowed except \"Default reminder\")"
+
+msgid "reminders_create_description_empty"
+msgstr "Description cannot be empty. Please enter a description:"
+
+msgid "reminders_create_description_invalid"
+msgstr "Description cannot be \"Default reminder\". Please enter another description:"
+
+msgid "reminders_create_description_too_long"
+msgstr "Description is too long (max 1024 characters). Please enter a shorter description:"
+
+msgid "reminders_create_enter_time"
+msgstr "Create reminder for event: <b>{event_title}</b>\n\nEnter time before event when reminder should be sent:\n\nFormat: HH:MM:SS (e.g., \"01:30:00\" for 1 hour 30 minutes before event)\n\nExamples:\n- 00:30:00 (30 minutes before event)\n- 01:00:00 (1 hour before event)\n- 02:15:30 (2 hours 15 minutes 30 seconds before event)"
+
+msgid "reminders_create_time_empty"
+msgstr "Create reminder for event: <b>{event_title}</b>\n\nTime cannot be empty. Please enter time before event when reminder should be sent:"
+
+msgid "reminders_create_time_invalid"
+msgstr "Create reminder for event: <b>{event_title}</b>\n\nInvalid time format. Please enter time before event in HH:MM:SS format (e.g., \"01:30:00\"):"
+
+msgid "reminders_create_confirm"
+msgstr "Create reminder?\n\nEvent: <b>{event_title}</b>\nDescription: {description}\nTime: {time}"
+
+msgid "reminders_create_success"
+msgstr "Reminder created successfully"
+
+msgid "reminders_create_error_missing_data"
+msgstr "Missing required data to create reminder"
+
+msgid "reminders_create_error_failed"
+msgstr "Failed to create reminder"
+
+msgid "reminders_delete_success"
+msgstr "Reminder deleted successfully"
+
+msgid "reminders_delete_error_not_found"
+msgstr "Reminder not found"
+
+msgid "reminders_delete_error_not_owner"
+msgstr "You don't own this reminder"
+
+msgid "events_edit_start"
+msgstr "Event editing started. Select a field to edit or confirm changes."
+
+msgid "events_edit_error_not_found"
+msgstr "Event not found"
+
+msgid "events_edit_error_not_owner"
+msgstr "You don't own this event"
+
+msgid "events_edit_error_not_local"
+msgstr "Only local events can be edited"
+
+msgid "events_edit_enter_title"
+msgstr "Enter new event title:"
+
+msgid "events_edit_skip_hint"
+msgstr "You can skip any field by clicking 'Skip' button"
+
+msgid "events_edit_skipped"
+msgstr "Field skipped"
+
+msgid "events_edit_title_saved"
+msgstr "Title saved. Select another field to edit or confirm changes."
+
+msgid "events_edit_enter_description"
+msgstr "Enter new event description:"
+
+msgid "events_edit_description_saved"
+msgstr "Description saved. Select another field to edit or confirm changes."
+
+msgid "events_edit_enter_start_date"
+msgstr "Enter new event start date in DD.MM.YYYY format (e.g., 25.12.2024):"
+
+msgid "events_edit_start_date_saved"
+msgstr "Start date saved. Select another field to edit or confirm changes."
+
+msgid "events_edit_enter_start_time"
+msgstr "Enter new event start time:\n\nFormat: HH:MM (example: 14:30)"
+
+msgid "events_edit_start_time_saved"
+msgstr "Start time saved. Select another field to edit or confirm changes."
+
+msgid "events_edit_enter_end_date"
+msgstr "Enter new event end date in DD.MM.YYYY format (e.g., 25.12.2024):"
+
+msgid "events_edit_end_date_saved"
+msgstr "End date saved. Select another field to edit or confirm changes."
+
+msgid "events_edit_enter_end_time"
+msgstr "Enter new event end time:\n\nFormat: HH:MM (example: 16:30)"
+
+msgid "events_edit_end_time_saved"
+msgstr "End time saved. Select another field to edit or confirm changes."
+
+msgid "events_edit_no_changes"
+msgstr "No changes to save"
+
+msgid "events_edit_success"
+msgstr "Event updated successfully"
+
+msgid "events_edit_error_failed"
+msgstr "Failed to update event"
+
+msgid "events_edit_preview_title"
+msgstr "📝 <b>Event Edit Preview</b>"
+
+msgid "events_edit_preview_old_new"
+msgstr "Old: {old_value}\nNew: {new_value}"
+
+msgid "events_edit_preview_unchanged"
+msgstr "Unchanged: {value}"
+
+msgid "events_edit_select_field"
+msgstr "Select a field to edit:"
+
+msgid "events_edit_btn_title"
+msgstr "✏️ Title"
+
+msgid "events_edit_btn_description"
+msgstr "✏️ Description"
+
+msgid "events_edit_btn_start_date"
+msgstr "✏️ Start Date"
+
+msgid "events_edit_btn_start_time"
+msgstr "✏️ Start Time"
+
+msgid "events_edit_btn_end_date"
+msgstr "✏️ End Date"
+
+msgid "events_edit_btn_end_time"
+msgstr "✏️ End Time"
+
+msgid "events_edit_btn_all_day"
+msgstr "✏️ All Day"
+
+msgid "events_edit_btn_confirm"
+msgstr "✅ Confirm Changes"
+
+msgid "events_edit_all_day_saved"
+msgstr "All day event: {value}"
