@@ -1,8 +1,7 @@
 """Export service for exporting events to icalendar files."""
 
 import tempfile
-from datetime import UTC, date, datetime
-from pathlib import Path
+from datetime import UTC, datetime
 
 import icalendar
 from icalendar import Event as ICalEvent
@@ -132,4 +131,3 @@ class ExportService:
         vevent.add("dtstamp", datetime.now(UTC))
 
         return vevent
-

@@ -560,7 +560,7 @@ async def process_daily_plans_time(message: Message, state: FSMContext, settings
         return
 
     await state.update_data(daily_plans_time=daily_plans_time)
-    await state.set_state(SettingsStates.in_settings)
+    await state.set_state(SettingsStates.editing_daily_plans_time)
     text = (
         f"{t('settings.daily.plans.time.title', lang=settings.lang)}\n\n"
         f"<i>{t('settings.daily.plans.time.accept.reject', lang=settings.lang, daily_plan=daily_plans_time)}</i>"
