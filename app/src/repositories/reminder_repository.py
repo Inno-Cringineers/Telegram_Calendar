@@ -113,16 +113,19 @@ class ReminderRepository:
             The list of reminders as responses if found, empty list otherwise.
         """
         if filter.user_id is not NOT_SET:
+            # Filter by user_id requires join with Event table
             stmt = select(Reminder).join(Event).where(Event.user_id == filter.user_id)
+        else:
+            stmt = select(Reminder)
 
-        stmt = select(Reminder)
         conditions = [
             getattr(Reminder, field) == value
             for field, value in vars(filter).items()
             if value is not NOT_SET and field != "user_id"
         ]
 
-        stmt = stmt.where(*conditions)
+        if conditions:
+            stmt = stmt.where(*conditions)
 
         result = await self.session.execute(stmt)
         return [ReminderResponse.from_model(reminder) for reminder in result.scalars().all()]

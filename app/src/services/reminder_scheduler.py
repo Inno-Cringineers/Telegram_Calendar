@@ -261,6 +261,12 @@ class ReminderScheduler:
             logger.info("Stopping reminder worker for user %s", user_id)
 
     async def _send_reminder_message(self, user_id: int, reminder_id: int):
+        """Send reminder message to user.
+
+        Args:
+            user_id: User ID to send reminder to.
+            reminder_id: Reminder ID to send.
+        """
         logger.debug("Sending reminder message for user %s, reminder_id: %s", user_id, reminder_id)
         async with UnitOfWork(self.session_maker) as uow:
             session = uow.session
@@ -269,12 +275,27 @@ class ReminderScheduler:
             store = Store(session)
             reminder = await store.ReminderService.get_by_id(reminder_id)
             if reminder is None:
+                logger.warning("Reminder %s not found", reminder_id)
                 return
             event = await store.EventService.get_by_id(reminder.event_id)
             if event is None:
+                logger.warning("Event %s not found for reminder %s", reminder.event_id, reminder_id)
                 return
+
+            # Security check: ensure event belongs to the user
+            if event.user_id != user_id:
+                logger.error(
+                    "Security violation: Attempted to send reminder %s for event %s (user_id=%s) to user %s",
+                    reminder_id,
+                    event.id,
+                    event.user_id,
+                    user_id,
+                )
+                return
+
             settings = await store.SettingsService.get_by_user_id(user_id)
             if settings is None:
+                logger.warning("Settings not found for user %s", user_id)
                 return
         name = self._format_name(event.title, settings)
         start = self._format_start(event.date_start, settings)

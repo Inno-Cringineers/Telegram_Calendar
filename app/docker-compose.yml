@@ -42,6 +42,9 @@ services:
       - TZ=${TZ:-}
       - SYNC_INTERVAL=${SYNC_INTERVAL:-10}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
+      # User restriction settings
+      - USER_RESTRICTION_ENABLED=${USER_RESTRICTION_ENABLED:-true}
+      - WHITELIST_PATH=${WHITELIST_PATH:-/app/whitelist.json}
     depends_on:
       postgres:
         condition: service_healthy
@@ -49,6 +52,8 @@ services:
     volumes:
       # Mount source code for hot reload in development
       - ./src:/app/src
+      # Mount whitelist.json for hot reload (changes apply without restart)
+      - ./whitelist.json:/app/whitelist.json:ro
       # Sync timezone with host machine
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro

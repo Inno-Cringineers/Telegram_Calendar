@@ -94,8 +94,9 @@ class ImportService:
             calendar: CalendarResponse to create the event for.
             schema: VEventSchema to create the event from.
         """
-        # check if event already exists - then update it
-        event = await self.store.EventService.find(EventFilter(uid=schema.uid))
+        # check if event already exists in this calendar - then update it
+        # Filter by both uid and calendar_id to ensure events are user-specific
+        event = await self.store.EventService.find(EventFilter(uid=schema.uid, calendar_id=calendar.id))  # type: ignore[call-arg]
         if event != []:
             updated_event = await self.store.EventService.update_by_id(
                 event[0].id,
@@ -124,7 +125,7 @@ class ImportService:
         event = EventCreateSchema(
             user_id=calendar.user_id,
             calendar_id=calendar.id,
-            uid=schema.uid if schema.uid is not None else await self._generate_uid(),
+            uid=schema.uid if schema.uid is not None else await self._generate_uid(calendar.id),
             date_start=schema.date_start,
             date_end=schema.date_end,
             all_day=self._is_all_day(schema.date_start, schema.date_end),
@@ -209,14 +210,17 @@ class ImportService:
             schema.alarms = None
             await self._create_event(calendar, schema)
 
-    async def _generate_uid(self) -> str:
-        """Generate a unique UID for an event.
+    async def _generate_uid(self, calendar_id: int) -> str:
+        """Generate a unique UID for an event within a calendar.
 
-        Generates UUID4 and checks if it already exists in the database.
+        Generates UUID4 and checks if it already exists in the specified calendar.
         Retries up to 1000 times before raising an error.
 
+        Args:
+            calendar_id: The calendar ID to check uniqueness within.
+
         Returns:
-            Unique UID string.
+            Unique UID string within the calendar.
 
         Raises:
             ValueError: If unable to generate a unique UID after 1000 attempts.
@@ -224,7 +228,8 @@ class ImportService:
         event_service = self.store.EventService
         for _ in range(1000):
             uid = str(uuid.uuid4())
-            if not await event_service.find(EventFilter(uid=uid)):
+            # Check uniqueness within the calendar, not globally
+            if not await event_service.find(EventFilter(uid=uid, calendar_id=calendar_id)):  # type: ignore[call-arg]
                 return uid
         raise ValueError("Failed to generate unique ID for event")
 

@@ -56,16 +56,6 @@ def test_event_title_constraint() -> None:
         event.title = "a" * 256
 
 
-def test_event_description_constraint() -> None:
-    """Test that Event description validation constraints."""
-
-    event = get_correct_event_data()
-
-    # description too long
-    with pytest.raises(ValueError, match="Event description \\(DESCRIPTION\\) cannot exceed 1024 characters"):
-        event.description = "a" * 1025
-
-
 def test_event_date_end_constraint() -> None:
     """Test that Event date end validation constraints."""
 

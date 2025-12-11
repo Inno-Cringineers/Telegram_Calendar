@@ -33,6 +33,8 @@ class BotConfig:
     sync_workers: int
     sync_interval: timedelta
     metrics_interval: timedelta
+    user_restriction_enabled: bool
+    whitelist_path: str
 
 
 @dataclass
@@ -187,6 +189,10 @@ def load_config() -> Config:
         sync_workers=int(yaml_config.get("bot", {}).get("sync_workers", 2)),
         sync_interval=timedelta(seconds=int(yaml_config.get("bot", {}).get("sync_interval", 60))),
         metrics_interval=timedelta(seconds=int(yaml_config.get("bot", {}).get("metrics_interval", 300))),
+        user_restriction_enabled=str_to_bool(
+            yaml_config.get("bot", {}).get("user_restriction_enabled", os.getenv("USER_RESTRICTION_ENABLED", "false"))
+        ),
+        whitelist_path=yaml_config.get("bot", {}).get("whitelist_path", os.getenv("WHITELIST_PATH", "whitelist.json")),
     )
 
     settings_config_data = yaml_config.get("settings", {})

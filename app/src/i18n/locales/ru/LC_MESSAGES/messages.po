@@ -149,7 +149,7 @@ msgid "create_event_confirmed"
 msgstr "✅ Событие создано!"
 
 msgid "create_event_date_format_error"
-msgstr "❌ Неверный формат даты\n\nФормат: ДД.ММ.ГГГГ (пример: 25.12.2025)"
+msgstr "❌ Неверный формат даты.\n\nВы ввели: <b>{user_input}</b>\n\nФормат: ДД.ММ.ГГГГ (пример: 25.12.2025)"
 
 msgid "create_event_enter_date"
 msgstr "📅 Введите дату начала:\n\nФормат: ДД.ММ.ГГГГ (пример: 25.12.2025)"
@@ -188,13 +188,16 @@ msgid "create_event_success"
 msgstr "✅ <b>Событие успешно создано</b>"
 
 msgid "create_event_time_format_error"
-msgstr "❌ Неверный формат времени\n\nИспользуйте формат: ЧЧ:ММ (пример: 14:30)"
+msgstr "❌ Неверный формат времени.\n\nВы ввели: <b>{user_input}</b>\n\nИспользуйте формат: ЧЧ:ММ (пример: 14:30)"
 
 msgid "create_event_title_empty"
 msgstr "❌ Название не должно быть пустым"
 
 msgid "create_event_title_too_long"
 msgstr "❌ Название слишком длинное (максимум 100 символов)"
+
+msgid "create_event_error"
+msgstr "❌ Ошибка при создании события. Пожалуйста, попробуйте еще раз."
 
 msgid "daily_plan_end"
 msgstr "Конец ежедневного плана"
@@ -237,6 +240,72 @@ msgstr "🔍 Просмотр событий выбран"
 
 msgid "events_view_title"
 msgstr "🔍 <b>Просмотр событий</b>"
+
+msgid "events_view_select_start_date"
+msgstr "Выберите начальную дату:"
+
+msgid "events_view_select_end_date"
+msgstr "Выберите конечную дату:"
+
+msgid "events_view_select_complete"
+msgstr "Диапазон дат выбран. Выберите конечную дату или выберите новую начальную дату:"
+
+msgid "events_view_date_before_start"
+msgstr "❌ Конечная дата должна быть после начальной даты"
+
+msgid "events_view_range"
+msgstr "📅 <b>Диапазон дат:</b> {start} - {end}"
+
+msgid "events_view_no_events"
+msgstr "❌ События не найдены в этом диапазоне"
+
+msgid "events_view_end"
+msgstr "Конец списка событий"
+
+msgid "events_view_event_content"
+msgstr "🗓️ <b>{title}</b>\nописание: {description}\n{duration}\n{source}"
+
+msgid "events_view_event_title_none"
+msgstr "без названия"
+
+msgid "events_view_event_description_none"
+msgstr "пусто"
+
+msgid "events_view_event_duration_all_day"
+msgstr "событие на весь день"
+
+msgid "events_view_event_duration_not_all_day"
+msgstr "{date} {start} - {end}"
+
+msgid "events_view_event_source_external"
+msgstr "источник: <a href=\"{link}\">{name}</a>"
+
+msgid "events_view_event_source_local"
+msgstr "источник: локальное хранилище бота"
+
+msgid "events_import_success"
+msgstr "✅ События успешно импортированы в локальный календарь"
+
+msgid "events_import_error"
+msgstr "❌ Ошибка при импорте событий. Пожалуйста, проверьте формат файла."
+
+msgid "events_import_error_no_file"
+msgstr "❌ Файл не найден. Пожалуйста, загрузите файл в формате .ics"
+
+msgid "events_import_error_invalid_format"
+msgstr "❌ Неверный формат файла. Пожалуйста, загрузите файл в формате .ics"
+
+msgid "events_export_success"
+msgstr "✅ Календарь успешно экспортирован"
+
+msgid "events_export_error"
+msgstr "❌ Ошибка при экспорте календаря"
+
+msgid "events_export_error_no_calendar"
+msgstr "❌ Локальный календарь не найден"
+
+msgid "events_export_error_no_events"
+msgstr "❌ В локальном календаре нет событий"
 
 msgid "menu_main_title"
 msgstr "🏠 <b>Главное меню</b>\n\nВыберите опцию:"
@@ -352,39 +421,6 @@ msgstr "✅ Часовой пояс успешно обновлен на <b>{tim
 
 msgid "settings_title"
 msgstr "⚙️ <b>Настройки</b>\n\n<u>Ваши текущие настройки:</u>\n\n🌍 Часовой пояс: <b>{timezone}</b>\n\n🇷🇺 Язык: <b>{language}</b>\n\n🔇 Тихие часы: <b>{quiet_hours}</b>\n\n⏰ Время ежедневного плана: <b>{daily_plan}</b>\n\n⏰ Напоминание до события: <b>{reminder}</b>"
-
-msgid "settings_daily_plans_enabled"
-msgstr "✅ Ежедневные планы включены"
-
-msgid "settings_daily_plans_disabled"
-msgstr "❌ Ежедневные планы выключены"
-
-msgid "settings_default_reminder_title"
-msgstr "⏰ <b>Напоминание по умолчанию</b>"
-
-msgid "settings_default_reminder_current"
-msgstr "Текущее время напоминания: <b>{reminder}</b>"
-
-msgid "settings_default_reminder_description"
-msgstr "Напоминание по умолчанию будет отправляться перед началом каждого события."
-
-msgid "settings_default_reminder_enabled"
-msgstr "✅ Напоминание по умолчанию включено"
-
-msgid "settings_default_reminder_disabled"
-msgstr "❌ Напоминание по умолчанию выключено"
-
-msgid "settings_default_reminder_time_enter"
-msgstr "Введите время напоминания в формате ЧЧ:ММ:СС (например, 00:15:00 для 15 минут)"
-
-msgid "settings_default_reminder_time_format_error"
-msgstr "❌ Неверный формат времени.\n\nВы ввели: <b>{user_input}</b>\n"
-
-msgid "settings_default_reminder_time_accept_reject"
-msgstr "Время напоминания будет изменено на:\n<b>{reminder}</b>"
-
-msgid "settings_default_reminder_time_accepted"
-msgstr "✅ Время напоминания изменено"
 
 msgid "settings_daily_plans_enabled"
 msgstr "✅ Ежедневные планы включены"

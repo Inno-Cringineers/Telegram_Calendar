@@ -54,10 +54,10 @@ def settings_menu_inline(lang: str = "en") -> InlineKeyboardMarkup:
 def events_menu_inline(lang: str = "en") -> InlineKeyboardMarkup:
     """Create events menu inline keyboard."""
     buttons = [
-        [InlineKeyboardButton(text=t("btn.import", lang=lang), callback_data="events_import")],
-        [InlineKeyboardButton(text=t("btn.export", lang=lang), callback_data="events_export")],
         [InlineKeyboardButton(text=t("btn.add", lang=lang), callback_data="events_create")],
         [InlineKeyboardButton(text=t("btn.view", lang=lang), callback_data="events_view")],
+        [InlineKeyboardButton(text=t("btn.import", lang=lang), callback_data="events_import")],
+        [InlineKeyboardButton(text=t("btn.export", lang=lang), callback_data="events_export")],
         [InlineKeyboardButton(text=t("btn.back", lang=lang), callback_data="back_to_main")],
     ]
     return _mk_markup(buttons)
@@ -221,19 +221,27 @@ def event_confirmation_inline(lang: str = "ru") -> InlineKeyboardMarkup:
     buttons = [
         [
             InlineKeyboardButton(text=t("btn.accept", lang=lang), callback_data="confirm_event"),
-            InlineKeyboardButton(text=t("btn.reject", lang=lang), callback_data="events_cancel"),
+            InlineKeyboardButton(text=t("btn.reject", lang=lang), callback_data="reject_event"),
         ]
     ]
     return _mk_markup(buttons)
 
 
-def create_calendar(year: int | None = None, month: int | None = None, lang: str = "ru") -> InlineKeyboardMarkup:
+def create_calendar(
+    year: int | None = None,
+    month: int | None = None,
+    lang: str = "ru",
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+) -> InlineKeyboardMarkup:
     """Create an interactive calendar inline keyboard.
 
     Args:
         year: Year to display. If None, uses current year.
         month: Month to display (1-12). If None, uses current month.
         lang: Language code for weekday labels. Defaults to "ru".
+        start_date: Selected start date. Dates before this will be hidden.
+        end_date: Selected end date.
 
     Returns:
         InlineKeyboardMarkup representing a calendar for the specified month and year.
@@ -265,8 +273,18 @@ def create_calendar(year: int | None = None, month: int | None = None, lang: str
             if day == 0:
                 row.append(InlineKeyboardButton(text=" ", callback_data="ignore"))
             else:
-                day_str = str(day).rjust(2, "0")
-                row.append(InlineKeyboardButton(text=day_str, callback_data=f"day_{day}"))
+                day_date = datetime(year, month, day)
+                # Hide dates before start_date if it's selected
+                if start_date is not None and day_date.date() < start_date.date():
+                    row.append(InlineKeyboardButton(text=" ", callback_data="ignore"))
+                else:
+                    day_str = str(day).rjust(2, "0")
+                    # Mark selected dates with brackets
+                    if start_date is not None and day_date.date() == start_date.date():
+                        day_str = f"[{day_str}"
+                    elif end_date is not None and day_date.date() == end_date.date():
+                        day_str = f"{day_str}]"
+                    row.append(InlineKeyboardButton(text=day_str, callback_data=f"day_{day}"))
         calendar_rows.append(row)
     cancel_row = [InlineKeyboardButton(text="❌", callback_data="menu_events")]
     calendar_rows.append(cancel_row)

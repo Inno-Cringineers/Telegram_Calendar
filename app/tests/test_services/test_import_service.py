@@ -606,5 +606,5 @@ async def test_generate_uid_uniqueness(
 
     monkeypatch.setattr(uuid, "uuid4", mock_uuid4)
 
-    uid = await service._generate_uid()
+    uid = await service._generate_uid(calendar_id=1)
     assert uid == "3"
