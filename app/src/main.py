@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from config.config import Config, load_config
 from database.database import create_engine, create_session_maker, create_tables
 from logger.logger import logger, setup_logger
-from storage.postgres_storage import PostgresStorage
 from middlewares.logging_middleware import (
     CallbackQueryLoggingMiddleware,
     MessageLoggingMiddleware,
@@ -19,6 +18,7 @@ from services.daily_plan_scheduler import init_daily_plan_scheduler
 from services.metrics_service import MetricsService
 from services.reminder_scheduler import init_reminder_scheduler
 from services.sync_service import SyncService
+from storage.postgres_storage import PostgresStorage
 
 
 async def setup_database_and_store(db_url: str) -> async_sessionmaker[AsyncSession]:

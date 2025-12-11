@@ -704,10 +704,7 @@ def build_preview_text(data: dict, event, user_tz, lang: str) -> str:
         )
     else:
         all_day_str = "Yes" if original_all_day else "No"
-        preview_lines.append(
-            f"<b>All Day:</b>\n"
-            f"{t('events.edit.preview.unchanged', lang=lang, value=all_day_str)}"
-        )
+        preview_lines.append(f"<b>All Day:</b>\n{t('events.edit.preview.unchanged', lang=lang, value=all_day_str)}")
 
     preview_text = "\n".join(preview_lines)
     preview_text += f"\n\n<i>{t('create_event.preview.confirm', lang=lang)}</i>"

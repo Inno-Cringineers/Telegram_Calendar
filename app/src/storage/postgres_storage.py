@@ -1,10 +1,11 @@
 """PostgreSQL storage for aiogram FSM."""
 
+from collections.abc import Mapping
 from typing import Any
 
 from aiogram.fsm.state import State
-from aiogram.fsm.storage.base import BaseStorage, StorageKey, StateType
-from sqlalchemy import select
+from aiogram.fsm.storage.base import BaseStorage, StateType, StorageKey
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from logger.logger import logger
@@ -87,14 +88,16 @@ class PostgresStorage(BaseStorage):
             logger.debug("FSM state retrieved: key=%s, state=%s", db_key, state_str)
             return state_str
 
-    async def set_data(self, key: StorageKey, data: dict[str, Any]) -> None:
+    async def set_data(self, key: StorageKey, data: Mapping[str, Any]) -> None:
         """Set data for a key.
 
         Args:
             key: Storage key.
-            data: Data dictionary to store.
+            data: Data mapping to store.
         """
         db_key = self._make_key(key)
+        # Convert Mapping to dict for storage
+        data_dict = dict(data)
 
         async with self.session_maker() as session:
             async with session.begin():
@@ -103,12 +106,12 @@ class PostgresStorage(BaseStorage):
                 fsm_state = result.scalar_one_or_none()
 
                 if fsm_state:
-                    fsm_state.data = data
+                    fsm_state.data = data_dict
                 else:
-                    fsm_state = FSMState(key=db_key, state=None, data=data)
+                    fsm_state = FSMState(key=db_key, state=None, data=data_dict)
                     session.add(fsm_state)
 
-                logger.debug("FSM data set: key=%s, data_keys=%s", db_key, list(data.keys()))
+                logger.debug("FSM data set: key=%s, data_keys=%s", db_key, list(data_dict.keys()))
 
     async def get_data(self, key: StorageKey) -> dict[str, Any]:
         """Get data for a key.
@@ -130,16 +133,20 @@ class PostgresStorage(BaseStorage):
             logger.debug("FSM data retrieved: key=%s, data_keys=%s", db_key, list(data.keys()) if data else [])
             return data
 
-    async def update_data(self, key: StorageKey, data: dict[str, Any]) -> None:
+    async def update_data(self, key: StorageKey, data: Mapping[str, Any]) -> dict[str, Any]:
         """Update data for a key (merge with existing).
 
         Args:
             key: Storage key.
-            data: Data dictionary to merge with existing data.
+            data: Data mapping to merge with existing data.
+
+        Returns:
+            Updated data dictionary.
         """
         current_data = await self.get_data(key)
         current_data.update(data)
         await self.set_data(key, current_data)
+        return current_data
 
     async def close(self) -> None:
         """Close storage (no-op for PostgreSQL).
@@ -159,11 +166,6 @@ class PostgresStorage(BaseStorage):
 
         async with self.session_maker() as session:
             async with session.begin():
-                stmt = select(FSMState).where(FSMState.key == db_key)
-                result = await session.execute(stmt)
-                fsm_state = result.scalar_one_or_none()
-
-                if fsm_state:
-                    session.delete(fsm_state)
-                    logger.debug("FSM state cleared: key=%s", db_key)
-
+                stmt = delete(FSMState).where(FSMState.key == db_key)
+                await session.execute(stmt)
+                logger.debug("FSM state cleared: key=%s", db_key)

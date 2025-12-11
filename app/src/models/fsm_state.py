@@ -25,4 +25,3 @@ class FSMState(Base):
     key: Mapped[str] = mapped_column(String, primary_key=True)
     state: Mapped[str | None] = mapped_column(String, nullable=True)
     data: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
-
