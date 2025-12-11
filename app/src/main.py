@@ -19,6 +19,7 @@ from services.metrics_service import MetricsService
 from services.reminder_scheduler import init_reminder_scheduler
 from services.sync_service import SyncService
 from storage.postgres_storage import PostgresStorage
+from utils.bot_commands import setup_bot_commands
 
 
 async def setup_database_and_store(db_url: str) -> async_sessionmaker[AsyncSession]:
@@ -136,6 +137,9 @@ async def main() -> None:
     # Start whitelist file watcher if enabled
     if whitelist_middleware:
         await whitelist_middleware.start_file_watcher()
+
+    # Setup bot commands menu
+    await setup_bot_commands(bot)
 
     # Include router
     dp.include_router(router)

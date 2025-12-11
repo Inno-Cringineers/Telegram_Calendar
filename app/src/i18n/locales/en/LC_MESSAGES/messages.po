@@ -718,6 +718,12 @@ msgstr "✏️ Edit"
 msgid "btn_reminders"
 msgstr "🔔 Reminders"
 
+msgid "command_start_description"
+msgstr "Start the bot and show main menu"
+
+msgid "command_help_description"
+msgstr "Show help information"
+
 msgid "btn_create_reminder"
 msgstr "✚ Create Reminder"
 
@@ -897,3 +903,6 @@ msgstr "✅ Confirm Changes"
 
 msgid "events_edit_all_day_saved"
 msgstr "All day event: {value}"
+
+msgid "help_in_development"
+msgstr "Help section is under development."

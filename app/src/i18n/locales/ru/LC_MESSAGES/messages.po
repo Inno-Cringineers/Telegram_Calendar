@@ -106,8 +106,23 @@ msgstr "Выключить напоминания"
 msgid "btn_default_reminder_time_enter"
 msgstr "Ввести время напоминания"
 
+msgid "btn_calendar_unlink"
+msgstr "🔗 Отключить"
+
+msgid "btn_calendar_link"
+msgstr "🔗 Включить"
+
+msgid "btn_calendar_delete"
+msgstr "❌ Удалить"
+
+msgid "btn_calendar_rename"
+msgstr "✏️ Переименовать"
+
 msgid "calendar_link_title"
 msgstr "🔗 <b>Связать календарь</b>\n\nВыберите действие:"
+
+msgid "calendar_link_description"
+msgstr "Здесь вы можете просмотреть список связанных календарей или связать внешний календарь (например, Google, Outlook и т.д.), используя ссылку ics"
 
 msgid "calendar_list_answer"
 msgstr "📑 Ваши календари"
@@ -121,6 +136,15 @@ msgstr "<b>Связанные календари:</b>"
 msgid "calendar_list_title"
 msgstr "📑 <b>Ваши календари</b>"
 
+msgid "calendar_list_no_calendars"
+msgstr "❌ У вас нет связанных календарей"
+
+msgid "calendar_list_end"
+msgstr "конец списка"
+
+msgid "calendar_message"
+msgstr "📅 Название календаря: {calendar_name}\n\n <a href=\"{link}\">ссылка на ics</a>\n\nСинхронизация: {enabled}"
+
 msgid "calendar_new_answer"
 msgstr "🔗 Связать новый календарь"
 
@@ -130,8 +154,44 @@ msgstr "<b>Введите ссылку на ical:</b>"
 msgid "calendar_new_title"
 msgstr "🔗 <b>Связать новый календарь</b>"
 
+msgid "calendar_link_enter_name"
+msgstr "введите название календаря"
+
+msgid "calendar_link_confirm_message"
+msgstr "будет создан календарь с:\nназвание: <b>{name}</b>\n<a href=\"{link}\">ссылка</a>"
+
+msgid "calendar_link_url_empty"
+msgstr "❌ URL пустой"
+
+msgid "calendar_link_name_empty"
+msgstr "❌ название пустое"
+
+msgid "calendar_link_name_too_long"
+msgstr "❌ название слишком длинное"
+
 msgid "calendar_link_error"
 msgstr "❌ Ошибка связывания, возможно, URL неверный"
+
+msgid "calendar_link_url_exists"
+msgstr "❌ календарь с таким URL уже существует"
+
+msgid "calendar_link_url_invalid"
+msgstr "❌ URL недействителен"
+
+msgid "calendar_link_success"
+msgstr "✅ календарь успешно связан"
+
+msgid "calendar_rename_title"
+msgstr "✏️ Переименовать календарь: <b>{old_name}</b>"
+
+msgid "calendar_rename_enter_new_name"
+msgstr "Введите новое название календаря"
+
+msgid "calendar_rename_confirm_message"
+msgstr "Название будет изменено на: <b>{name}</b>"
+
+msgid "calendar_rename_success"
+msgstr "✅ Календарь успешно переименован"
 
 msgid "calendar_sync_error"
 msgstr "❌ Не удалось синхронизировать календарь. Ссылка может быть недействительной или недоступной."
@@ -650,6 +710,12 @@ msgstr "✏️ Изменить"
 msgid "btn_reminders"
 msgstr "🔔 Напоминания"
 
+msgid "command_start_description"
+msgstr "Запустить бота и показать главное меню"
+
+msgid "command_help_description"
+msgstr "Показать справочную информацию"
+
 msgid "btn_create_reminder"
 msgstr "✚ Создать напоминание"
 
@@ -829,4 +895,10 @@ msgstr "✅ Подтвердить изменения"
 
 msgid "events_edit_all_day_saved"
 msgstr "Событие на весь день: {value}"
+
+msgid "help_in_development"
+msgstr "Раздел помощи находится в разработке."
+
+msgid "reminder_message"
+msgstr "🔔 Напоминание: <b>{event_name}</b>\n\n🕒 начинается: {start}"
 

@@ -10,7 +10,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from i18n.strings import t
-from keyboards.inline import main_menu_inline
+from keyboards.inline import back_button, main_menu_inline
 from states.states import MainMenuStates
 from utils.handlers import (
     clean_messages,
@@ -18,6 +18,26 @@ from utils.handlers import (
 )
 
 router = Router()
+
+
+@router.message(Command("help"))
+async def help_handler(message: Message, state: FSMContext, lang: str) -> None:
+    """Handle /help command. Shows help placeholder message."""
+    await state.set_state(MainMenuStates.in_main_menu)
+
+    await clean_messages(message.bot, message.chat.id, state, delete_all=True)
+
+    help_text = t("help.in.development", lang=lang)
+
+    await send_message(
+        message.bot,
+        message.chat.id,
+        state,
+        help_text,
+        back_button("back_to_main", lang=lang),
+        parse_mode="HTML",
+        delete_keyboard=True,
+    )
 
 
 @router.message(Command("start"))
