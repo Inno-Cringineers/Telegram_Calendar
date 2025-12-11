@@ -227,6 +227,15 @@ def event_confirmation_inline(lang: str = "ru") -> InlineKeyboardMarkup:
     return _mk_markup(buttons)
 
 
+def start_time_inline(cancel_callback: str, lang: str = "ru") -> InlineKeyboardMarkup:
+    """Create start time input inline keyboard with all day option."""
+    buttons = [
+        [InlineKeyboardButton(text=t("btn.all_day", lang=lang), callback_data="event_all_day")],
+        [InlineKeyboardButton(text=t("btn.cancel", lang=lang), callback_data=cancel_callback)],
+    ]
+    return _mk_markup(buttons)
+
+
 def create_calendar(
     year: int | None = None,
     month: int | None = None,

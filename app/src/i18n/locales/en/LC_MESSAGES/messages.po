@@ -79,6 +79,9 @@ msgstr "⚙️ Settings"
 msgid "btn_skip"
 msgstr "⏭ Skip"
 
+msgid "btn_all_day"
+msgstr "📅 All day"
+
 msgid "btn_timezone"
 msgstr "🌍 Timezone"
 
@@ -209,7 +212,7 @@ msgid "create_event_confirmed"
 msgstr "✅ Event created!"
 
 msgid "create_event_date_format_error"
-msgstr "❌ Incorrect date format.\n\nYou entered: <b>{user_input}</b>\n\nFormat: DD.MM.YYYY (example: 25.12.2025)"
+msgstr "❌ Incorrect date format.\n\nYou entered: <b>{user_input}</b>"
 
 msgid "create_event_enter_date"
 msgstr "📅 Enter start date:\n\nFormat: DD.MM.YYYY (example: 25.12.2025)"
@@ -221,6 +224,9 @@ msgstr "📄 Enter description:
 
 msgid "create_event_enter_time"
 msgstr "⏰ Enter start time:\n\nFormat: HH:MM (example: 14:30)"
+
+msgid "create_event_enter_end_time"
+msgstr "⏰ Enter end time:\n\nFormat: HH:MM (example: 16:30)"
 
 msgid "create_event_enter_title"
 msgstr "📝 Enter event title:
@@ -242,6 +248,12 @@ msgstr "(None)"
 msgid "create_event_preview_time_label"
 msgstr "⏰ <b>Start time:</b> {time}"
 
+msgid "create_event_preview_end_time_label"
+msgstr "⏰ <b>End time:</b> {time}"
+
+msgid "create_event_preview_all_day_label"
+msgstr "📅 <b>All day event</b>"
+
 msgid "create_event_preview_title"
 msgstr "📋 Check event data:"
 
@@ -252,7 +264,7 @@ msgid "create_event_success"
 msgstr "✅ <b>Event successfully created</b>"
 
 msgid "create_event_time_format_error"
-msgstr "❌ Incorrect time format.\n\nYou entered: <b>{user_input}</b>\n\nUse format: HH:MM (example: 14:30)"
+msgstr "❌ Incorrect time format.\n\nYou entered: <b>{user_input}</b>"
 
 msgid "create_event_title_empty"
 msgstr "❌ Title should not be empty"
@@ -327,7 +339,7 @@ msgid "events_view_end"
 msgstr "End of events list"
 
 msgid "events_view_event_content"
-msgstr "🗓️ <b>{title}</b>\ndescription: {description}\n{duration}\n{source}"
+msgstr "🗓️ <b>{title}</b>\ndescription: {description}\n{duration}\n{recurrence}\n{source}"
 
 msgid "events_view_event_title_none"
 msgstr "unnamed"
@@ -336,7 +348,7 @@ msgid "events_view_event_description_none"
 msgstr "empty"
 
 msgid "events_view_event_duration_all_day"
-msgstr "all day event"
+msgstr "all day event {date}"
 
 msgid "events_view_event_duration_not_all_day"
 msgstr "{date} {start} - {end}"
@@ -527,10 +539,10 @@ msgid "daily_plan_no_events"
 msgstr "Today you have no events"
 
 msgid "daily_plan_event_content"
-msgstr "🗓️ <b>{title}</b>\ndescription: {description}\n{duration}\n{source}"
+msgstr "🗓️ <b>{title}</b>\ndescription: {description}\n{duration}\n{recurrence}\n{source}"
 
 msgid "daily_plan_event_duration_all_day"
-msgstr "all day event"
+msgstr "all day event {date}"
 
 msgid "daily_plan_event_duration_not_all_day"
 msgstr "{start} - {end}"
@@ -549,6 +561,138 @@ msgstr "empty"
 
 msgid "daily_plan_event_title_none"
 msgstr "unnamed"
+
+msgid "events_view_event_recurrence_daily"
+msgstr "🔄 Repeats daily"
+
+msgid "events_view_event_recurrence_daily_interval"
+msgstr "🔄 Repeats every {interval} days"
+
+msgid "events_view_event_recurrence_weekly"
+msgstr "🔄 Repeats weekly"
+
+msgid "events_view_event_recurrence_weekly_interval"
+msgstr "🔄 Repeats every {interval} weeks"
+
+msgid "events_view_event_recurrence_weekly_day"
+msgstr "🔄 Repeats weekly on {day}"
+
+msgid "events_view_event_recurrence_weekly_day_interval"
+msgstr "🔄 Repeats every {interval} weeks on {day}"
+
+msgid "events_view_event_recurrence_weekly_days"
+msgstr "🔄 Repeats weekly on {days}"
+
+msgid "events_view_event_recurrence_weekly_days_interval"
+msgstr "🔄 Repeats every {interval} weeks on {days}"
+
+msgid "events_view_event_recurrence_monthly"
+msgstr "🔄 Repeats monthly"
+
+msgid "events_view_event_recurrence_monthly_interval"
+msgstr "🔄 Repeats every {interval} months"
+
+msgid "events_view_event_recurrence_yearly"
+msgstr "🔄 Repeats yearly"
+
+msgid "events_view_event_recurrence_yearly_interval"
+msgstr "🔄 Repeats every {interval} years"
+
+msgid "events_view_event_recurrence_rdate_single"
+msgstr "🔄 Repeats on a specific date"
+
+msgid "events_view_event_recurrence_rdate_multiple"
+msgstr "🔄 Repeats on {count} specific dates"
+
+msgid "events_view_event_recurrence_custom"
+msgstr "🔄 Repeats"
+
+msgid "events_view_event_recurrence_day_monday"
+msgstr "Monday"
+
+msgid "events_view_event_recurrence_day_tuesday"
+msgstr "Tuesday"
+
+msgid "events_view_event_recurrence_day_wednesday"
+msgstr "Wednesday"
+
+msgid "events_view_event_recurrence_day_thursday"
+msgstr "Thursday"
+
+msgid "events_view_event_recurrence_day_friday"
+msgstr "Friday"
+
+msgid "events_view_event_recurrence_day_saturday"
+msgstr "Saturday"
+
+msgid "events_view_event_recurrence_day_sunday"
+msgstr "Sunday"
+
+msgid "daily_plan_event_recurrence_daily"
+msgstr "🔄 Repeats daily"
+
+msgid "daily_plan_event_recurrence_daily_interval"
+msgstr "🔄 Repeats every {interval} days"
+
+msgid "daily_plan_event_recurrence_weekly"
+msgstr "🔄 Repeats weekly"
+
+msgid "daily_plan_event_recurrence_weekly_interval"
+msgstr "🔄 Repeats every {interval} weeks"
+
+msgid "daily_plan_event_recurrence_weekly_day"
+msgstr "🔄 Repeats weekly on {day}"
+
+msgid "daily_plan_event_recurrence_weekly_day_interval"
+msgstr "🔄 Repeats every {interval} weeks on {day}"
+
+msgid "daily_plan_event_recurrence_weekly_days"
+msgstr "🔄 Repeats weekly on {days}"
+
+msgid "daily_plan_event_recurrence_weekly_days_interval"
+msgstr "🔄 Repeats every {interval} weeks on {days}"
+
+msgid "daily_plan_event_recurrence_monthly"
+msgstr "🔄 Repeats monthly"
+
+msgid "daily_plan_event_recurrence_monthly_interval"
+msgstr "🔄 Repeats every {interval} months"
+
+msgid "daily_plan_event_recurrence_yearly"
+msgstr "🔄 Repeats yearly"
+
+msgid "daily_plan_event_recurrence_yearly_interval"
+msgstr "🔄 Repeats every {interval} years"
+
+msgid "daily_plan_event_recurrence_rdate_single"
+msgstr "🔄 Repeats on a specific date"
+
+msgid "daily_plan_event_recurrence_rdate_multiple"
+msgstr "🔄 Repeats on {count} specific dates"
+
+msgid "daily_plan_event_recurrence_custom"
+msgstr "🔄 Repeats"
+
+msgid "daily_plan_event_recurrence_day_monday"
+msgstr "Monday"
+
+msgid "daily_plan_event_recurrence_day_tuesday"
+msgstr "Tuesday"
+
+msgid "daily_plan_event_recurrence_day_wednesday"
+msgstr "Wednesday"
+
+msgid "daily_plan_event_recurrence_day_thursday"
+msgstr "Thursday"
+
+msgid "daily_plan_event_recurrence_day_friday"
+msgstr "Friday"
+
+msgid "daily_plan_event_recurrence_day_saturday"
+msgstr "Saturday"
+
+msgid "daily_plan_event_recurrence_day_sunday"
+msgstr "Sunday"
 
 msgid "reminder_message"
 msgstr "🔔 Reminder: <b>{event_name}</b>\n\n🕒 starts: {start}"

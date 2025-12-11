@@ -19,6 +19,7 @@ class CreateEventStates(StatesGroup):
     waiting_for_description = State()
     waiting_for_start_date = State()
     waiting_for_start_time = State()
+    waiting_for_end_time = State()
     waiting_for_confirmation = State()
 
 

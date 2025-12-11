@@ -79,6 +79,9 @@ msgstr "⚙️ Настройки"
 msgid "btn_skip"
 msgstr "⏭ Пропустить"
 
+msgid "btn_all_day"
+msgstr "📅 Весь день"
+
 msgid "btn_timezone"
 msgstr "🌍 Часовой пояс"
 
@@ -160,6 +163,9 @@ msgstr "📄 Введите описание:\n\n"
 msgid "create_event_enter_time"
 msgstr "⏰ Введите время начала:\n\nФормат: ЧЧ:ММ (пример: 14:30)"
 
+msgid "create_event_enter_end_time"
+msgstr "⏰ Введите время окончания:\n\nФормат: ЧЧ:ММ (пример: 16:30)"
+
 msgid "create_event_enter_title"
 msgstr "📝 Введите название события:\n\n"
 
@@ -177,6 +183,12 @@ msgstr "(Нет)"
 
 msgid "create_event_preview_time_label"
 msgstr "⏰ <b>Время начала:</b> {time}"
+
+msgid "create_event_preview_end_time_label"
+msgstr "⏰ <b>Время окончания:</b> {time}"
+
+msgid "create_event_preview_all_day_label"
+msgstr "📅 <b>Событие на весь день</b>"
 
 msgid "create_event_preview_title"
 msgstr "📋 Проверьте данные события:"
@@ -263,7 +275,7 @@ msgid "events_view_end"
 msgstr "Конец списка событий"
 
 msgid "events_view_event_content"
-msgstr "🗓️ <b>{title}</b>\nописание: {description}\n{duration}\n{source}"
+msgstr "🗓️ <b>{title}</b>\nописание: {description}\n{duration}\n{recurrence}\n{source}"
 
 msgid "events_view_event_title_none"
 msgstr "без названия"
@@ -272,7 +284,7 @@ msgid "events_view_event_description_none"
 msgstr "пусто"
 
 msgid "events_view_event_duration_all_day"
-msgstr "событие на весь день"
+msgstr "событие на весь день {date}"
 
 msgid "events_view_event_duration_not_all_day"
 msgstr "{date} {start} - {end}"
@@ -457,4 +469,163 @@ msgstr "✅ Время напоминания изменено"
 
 msgid "start_welcome"
 msgstr "👋 <b>Добро пожаловать в Personal Calendar Reminder bot, {user_name}!</b>\n\nЯ могу управлять вашими событиями, отправлять вам напоминания о приближающихся событиях, синхронизироваться с внешними календарями.\n\n📋 <b>Команды:</b>\n/start - Показать это диалоговое окно\n/help - Получить помощь\n\n🎯 <b>Основные функции:</b>\n• 📅 Просмотр событий\n• ➕ Создание событий\n• ✏️ Редактирование и удаление событий\n• 🔗 Экспорт внешних календарей (google, outlook и т.д.)\n• ⏰ Напоминания о событиях\n• 📋 Ежедневные планы"
+
+msgid "daily_plan_no_events"
+msgstr "Сегодня у вас нет событий"
+
+msgid "daily_plan_event_content"
+msgstr "🗓️ <b>{title}</b>\nописание: {description}\n{duration}\n{recurrence}\n{source}"
+
+msgid "daily_plan_event_duration_all_day"
+msgstr "событие на весь день {date}"
+
+msgid "daily_plan_event_duration_not_all_day"
+msgstr "{start} - {end}"
+
+msgid "daily_plan_event_source_external"
+msgstr "источник: <a href=\"{link}\">{name}</a>"
+
+msgid "daily_plan_event_source_local"
+msgstr "источник: локальное хранилище бота"
+
+msgid "daily_plan_title"
+msgstr "📋 <b>Ваш ежедневный план на день - {today}</b>"
+
+msgid "daily_plan_event_description_none"
+msgstr "пусто"
+
+msgid "daily_plan_event_title_none"
+msgstr "без названия"
+
+msgid "events_view_event_recurrence_daily"
+msgstr "🔄 Повторяется ежедневно"
+
+msgid "events_view_event_recurrence_daily_interval"
+msgstr "🔄 Повторяется каждые {interval} дней"
+
+msgid "events_view_event_recurrence_weekly"
+msgstr "🔄 Повторяется еженедельно"
+
+msgid "events_view_event_recurrence_weekly_interval"
+msgstr "🔄 Повторяется каждые {interval} недель"
+
+msgid "events_view_event_recurrence_weekly_day"
+msgstr "🔄 Повторяется еженедельно по {day}"
+
+msgid "events_view_event_recurrence_weekly_day_interval"
+msgstr "🔄 Повторяется каждые {interval} недель по {day}"
+
+msgid "events_view_event_recurrence_weekly_days"
+msgstr "🔄 Повторяется еженедельно по {days}"
+
+msgid "events_view_event_recurrence_weekly_days_interval"
+msgstr "🔄 Повторяется каждые {interval} недель по {days}"
+
+msgid "events_view_event_recurrence_monthly"
+msgstr "🔄 Повторяется ежемесячно"
+
+msgid "events_view_event_recurrence_monthly_interval"
+msgstr "🔄 Повторяется каждые {interval} месяцев"
+
+msgid "events_view_event_recurrence_yearly"
+msgstr "🔄 Повторяется ежегодно"
+
+msgid "events_view_event_recurrence_yearly_interval"
+msgstr "🔄 Повторяется каждые {interval} лет"
+
+msgid "events_view_event_recurrence_rdate_single"
+msgstr "🔄 Повторяется в определенную дату"
+
+msgid "events_view_event_recurrence_rdate_multiple"
+msgstr "🔄 Повторяется в {count} определенных дат"
+
+msgid "events_view_event_recurrence_custom"
+msgstr "🔄 Повторяется"
+
+msgid "events_view_event_recurrence_day_monday"
+msgstr "понедельникам"
+
+msgid "events_view_event_recurrence_day_tuesday"
+msgstr "вторникам"
+
+msgid "events_view_event_recurrence_day_wednesday"
+msgstr "средам"
+
+msgid "events_view_event_recurrence_day_thursday"
+msgstr "четвергам"
+
+msgid "events_view_event_recurrence_day_friday"
+msgstr "пятницам"
+
+msgid "events_view_event_recurrence_day_saturday"
+msgstr "субботам"
+
+msgid "events_view_event_recurrence_day_sunday"
+msgstr "воскресеньям"
+
+msgid "daily_plan_event_recurrence_daily"
+msgstr "🔄 Повторяется ежедневно"
+
+msgid "daily_plan_event_recurrence_daily_interval"
+msgstr "🔄 Повторяется каждые {interval} дней"
+
+msgid "daily_plan_event_recurrence_weekly"
+msgstr "🔄 Повторяется еженедельно"
+
+msgid "daily_plan_event_recurrence_weekly_interval"
+msgstr "🔄 Повторяется каждые {interval} недель"
+
+msgid "daily_plan_event_recurrence_weekly_day"
+msgstr "🔄 Повторяется еженедельно по {day}"
+
+msgid "daily_plan_event_recurrence_weekly_day_interval"
+msgstr "🔄 Повторяется каждые {interval} недель по {day}"
+
+msgid "daily_plan_event_recurrence_weekly_days"
+msgstr "🔄 Повторяется еженедельно по {days}"
+
+msgid "daily_plan_event_recurrence_weekly_days_interval"
+msgstr "🔄 Повторяется каждые {interval} недель по {days}"
+
+msgid "daily_plan_event_recurrence_monthly"
+msgstr "🔄 Повторяется ежемесячно"
+
+msgid "daily_plan_event_recurrence_monthly_interval"
+msgstr "🔄 Повторяется каждые {interval} месяцев"
+
+msgid "daily_plan_event_recurrence_yearly"
+msgstr "🔄 Повторяется ежегодно"
+
+msgid "daily_plan_event_recurrence_yearly_interval"
+msgstr "🔄 Повторяется каждые {interval} лет"
+
+msgid "daily_plan_event_recurrence_rdate_single"
+msgstr "🔄 Повторяется в определенную дату"
+
+msgid "daily_plan_event_recurrence_rdate_multiple"
+msgstr "🔄 Повторяется в {count} определенных дат"
+
+msgid "daily_plan_event_recurrence_custom"
+msgstr "🔄 Повторяется"
+
+msgid "daily_plan_event_recurrence_day_monday"
+msgstr "понедельникам"
+
+msgid "daily_plan_event_recurrence_day_tuesday"
+msgstr "вторникам"
+
+msgid "daily_plan_event_recurrence_day_wednesday"
+msgstr "средам"
+
+msgid "daily_plan_event_recurrence_day_thursday"
+msgstr "четвергам"
+
+msgid "daily_plan_event_recurrence_day_friday"
+msgstr "пятницам"
+
+msgid "daily_plan_event_recurrence_day_saturday"
+msgstr "субботам"
+
+msgid "daily_plan_event_recurrence_day_sunday"
+msgstr "воскресеньям"
 
