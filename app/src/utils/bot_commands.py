@@ -39,4 +39,3 @@ async def setup_bot_commands(bot: Bot) -> None:
 
     except Exception as e:
         logger.error("Failed to set bot commands: %s", e, exc_info=True)
-
