@@ -1,7 +1,6 @@
 import asyncio
 
 from aiogram import Bot, Dispatcher
-from aiogram.fsm.storage.memory import MemoryStorage
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from config.config import Config, load_config
@@ -19,6 +18,8 @@ from services.daily_plan_scheduler import init_daily_plan_scheduler
 from services.metrics_service import MetricsService
 from services.reminder_scheduler import init_reminder_scheduler
 from services.sync_service import SyncService
+from storage.postgres_storage import PostgresStorage
+from utils.bot_commands import setup_bot_commands
 
 
 async def setup_database_and_store(db_url: str) -> async_sessionmaker[AsyncSession]:
@@ -107,11 +108,11 @@ async def main() -> None:
 
     # Create bot
     bot = Bot(token=cfg.bot.telegram_token)
-    # Create dispatcher
-    dp = Dispatcher(storage=MemoryStorage())
-    # TODO: Add Redis storage for FSM
     # Setup database
     session_maker = await setup_database_and_store(cfg.database.url)
+    # Create dispatcher with PostgreSQL storage
+    storage = PostgresStorage(session_maker)
+    dp = Dispatcher(storage=storage)
     # Setup reminder scheduler
     reminder_scheduler = init_reminder_scheduler(session_maker, bot)
     daily_plan_scheduler = init_daily_plan_scheduler(session_maker, bot)
@@ -136,6 +137,9 @@ async def main() -> None:
     # Start whitelist file watcher if enabled
     if whitelist_middleware:
         await whitelist_middleware.start_file_watcher()
+
+    # Setup bot commands menu
+    await setup_bot_commands(bot)
 
     # Include router
     dp.include_router(router)

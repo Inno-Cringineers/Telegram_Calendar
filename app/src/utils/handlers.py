@@ -54,8 +54,22 @@ async def send_message(
     delete_keyboard: bool = False,
     delete_message: bool = False,
     extra_data: dict | None = None,
+    context: str | None = None,
 ):
-    """Send message to chat. Used to clean up messages after state is cleared."""
+    """Send message to chat. Used to clean up messages after state is cleared.
+
+    Args:
+        bot: Bot instance.
+        chat_id: Chat ID.
+        state: FSM context.
+        text: Message text.
+        reply_markup: Optional reply markup.
+        parse_mode: Parse mode for text.
+        delete_keyboard: Whether to delete keyboard when cleaning.
+        delete_message: Whether to delete message when cleaning.
+        extra_data: Extra data to store with message.
+        context: Optional context name for grouping messages (e.g., "daily_plan", "events", "reminders").
+    """
 
     new_message = await bot.send_message(chat_id=chat_id, text=text, parse_mode=parse_mode, reply_markup=reply_markup)
     if not isinstance(new_message, Message):
@@ -63,6 +77,13 @@ async def send_message(
 
     data = await state.get_data()
     sent = data.get("sent_messages", [])
+
+    # Add context to extra_data if provided
+    if extra_data is None:
+        extra_data = {}
+    if context is not None:
+        extra_data["context"] = context
+
     sent.append(
         {
             "message_id": new_message.message_id,
@@ -96,6 +117,7 @@ async def edit_message(
     delete_keyboard: bool | None = None,
     delete_message: bool | None = None,
     extra_data: dict | None = None,
+    context: str | None = None,
 ):
     """Edit message in chat. Used to clean up messages after state is cleared.
 
@@ -110,6 +132,7 @@ async def edit_message(
         delete_keyboard: Whether to delete keyboard.
         delete_message: Whether to delete message.
         extra_data: Extra data to store.
+        context: Optional context name for grouping messages.
 
     Note:
         If the message content and reply markup are exactly the same as current,
@@ -130,18 +153,30 @@ async def edit_message(
                 msg["message_id"] = new_message.message_id
                 msg["delete_keyboard"] = delete_keyboard if delete_keyboard is not None else msg["delete_keyboard"]
                 msg["delete_message"] = delete_message if delete_message is not None else msg["delete_message"]
-                msg["extra_data"] = extra_data if extra_data is not None else msg["extra_data"]
+                # Update extra_data, preserving context if it exists
+                if extra_data is not None:
+                    if context is not None:
+                        extra_data["context"] = context
+                    msg["extra_data"] = extra_data
+                elif context is not None:
+                    if msg.get("extra_data") is None:
+                        msg["extra_data"] = {}
+                    msg["extra_data"]["context"] = context
                 msg["text"] = text
                 is_in_sent = True
                 await state.update_data(sent_messages=sent)
 
         if not is_in_sent:
+            # Add context to extra_data if provided
+            msg_extra_data = extra_data if extra_data is not None else {}
+            if context is not None:
+                msg_extra_data["context"] = context
             sent.append(
                 {
                     "message_id": new_message.message_id,
                     "delete_keyboard": delete_keyboard if delete_keyboard is not None else False,
                     "delete_message": delete_message if delete_message is not None else False,
-                    "extra_data": extra_data if extra_data is not None else None,
+                    "extra_data": msg_extra_data,
                     "text": text,
                 }
             )
@@ -160,13 +195,36 @@ async def edit_message(
             raise
 
 
-async def clean_messages(bot: Bot, chat_id: int, state: FSMContext, delete_all: bool = False):
-    """Clean up messages from chat. Used to clean up messages after state is cleared."""
+async def clean_messages(
+    bot: Bot, chat_id: int, state: FSMContext, delete_all: bool = False, context: str | None = None
+):
+    """Clean up messages from chat. Used to clean up messages after state is cleared.
+
+    Args:
+        bot: Bot instance.
+        chat_id: Chat ID.
+        state: FSM context.
+        delete_all: If True, delete all messages regardless of delete_message flag.
+        context: Optional context name. If provided, delete all messages from this context.
+    """
     data = await state.get_data()
     sent = data.get("sent_messages", [])
     removed = []
     for msg in sent:
         logger.debug(f"Cleaning message {msg['message_id']}")
+
+        # If context is specified, delete all messages from that context
+        if context is not None:
+            msg_context = msg.get("extra_data", {}).get("context") if msg.get("extra_data") else None
+            if msg_context == context:
+                try:
+                    await bot.delete_message(chat_id=chat_id, message_id=msg["message_id"])
+                    logger.debug(f"Deleted message {msg['message_id']} from context {context}")
+                    removed.append(msg)
+                except Exception as e:
+                    logger.error(f"Error deleting message {msg['message_id']}: {e}")
+                continue
+
         if msg["delete_message"] is True or delete_all is True:
             try:
                 await bot.delete_message(chat_id=chat_id, message_id=msg["message_id"])

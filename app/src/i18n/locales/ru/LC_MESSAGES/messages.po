@@ -8,7 +8,7 @@ msgid "btn_accept"
 msgstr "✅ Принять"
 
 msgid "btn_add"
-msgstr "➕ Добавить"
+msgstr "✚  Добавить"
 
 msgid "btn_back"
 msgstr "« Назад"
@@ -79,6 +79,9 @@ msgstr "⚙️ Настройки"
 msgid "btn_skip"
 msgstr "⏭ Пропустить"
 
+msgid "btn_all_day"
+msgstr "📅 Весь день"
+
 msgid "btn_timezone"
 msgstr "🌍 Часовой пояс"
 
@@ -103,8 +106,23 @@ msgstr "Выключить напоминания"
 msgid "btn_default_reminder_time_enter"
 msgstr "Ввести время напоминания"
 
+msgid "btn_calendar_unlink"
+msgstr "🔗 Отключить"
+
+msgid "btn_calendar_link"
+msgstr "🔗 Включить"
+
+msgid "btn_calendar_delete"
+msgstr "❌ Удалить"
+
+msgid "btn_calendar_rename"
+msgstr "✏️ Переименовать"
+
 msgid "calendar_link_title"
 msgstr "🔗 <b>Связать календарь</b>\n\nВыберите действие:"
+
+msgid "calendar_link_description"
+msgstr "Здесь вы можете просмотреть список связанных календарей или связать внешний календарь (например, Google, Outlook и т.д.), используя ссылку ics"
 
 msgid "calendar_list_answer"
 msgstr "📑 Ваши календари"
@@ -118,6 +136,15 @@ msgstr "<b>Связанные календари:</b>"
 msgid "calendar_list_title"
 msgstr "📑 <b>Ваши календари</b>"
 
+msgid "calendar_list_no_calendars"
+msgstr "❌ У вас нет связанных календарей"
+
+msgid "calendar_list_end"
+msgstr "конец списка"
+
+msgid "calendar_message"
+msgstr "📅 Название календаря: {calendar_name}\n\n <a href=\"{link}\">ссылка на ics</a>\n\nСинхронизация: {enabled}"
+
 msgid "calendar_new_answer"
 msgstr "🔗 Связать новый календарь"
 
@@ -127,8 +154,44 @@ msgstr "<b>Введите ссылку на ical:</b>"
 msgid "calendar_new_title"
 msgstr "🔗 <b>Связать новый календарь</b>"
 
+msgid "calendar_link_enter_name"
+msgstr "введите название календаря"
+
+msgid "calendar_link_confirm_message"
+msgstr "будет создан календарь с:\nназвание: <b>{name}</b>\n<a href=\"{link}\">ссылка</a>"
+
+msgid "calendar_link_url_empty"
+msgstr "❌ URL пустой"
+
+msgid "calendar_link_name_empty"
+msgstr "❌ название пустое"
+
+msgid "calendar_link_name_too_long"
+msgstr "❌ название слишком длинное"
+
 msgid "calendar_link_error"
 msgstr "❌ Ошибка связывания, возможно, URL неверный"
+
+msgid "calendar_link_url_exists"
+msgstr "❌ календарь с таким URL уже существует"
+
+msgid "calendar_link_url_invalid"
+msgstr "❌ URL недействителен"
+
+msgid "calendar_link_success"
+msgstr "✅ календарь успешно связан"
+
+msgid "calendar_rename_title"
+msgstr "✏️ Переименовать календарь: <b>{old_name}</b>"
+
+msgid "calendar_rename_enter_new_name"
+msgstr "Введите новое название календаря"
+
+msgid "calendar_rename_confirm_message"
+msgstr "Название будет изменено на: <b>{name}</b>"
+
+msgid "calendar_rename_success"
+msgstr "✅ Календарь успешно переименован"
 
 msgid "calendar_sync_error"
 msgstr "❌ Не удалось синхронизировать календарь. Ссылка может быть недействительной или недоступной."
@@ -160,6 +223,18 @@ msgstr "📄 Введите описание:\n\n"
 msgid "create_event_enter_time"
 msgstr "⏰ Введите время начала:\n\nФормат: ЧЧ:ММ (пример: 14:30)"
 
+msgid "create_event_enter_end_date"
+msgstr "Введите дату окончания события в формате ДД.ММ.ГГГГ (например, 25.12.2024):"
+
+msgid "create_event_end_date_before_start"
+msgstr "Дата окончания не может быть раньше даты начала. Пожалуйста, введите корректную дату окончания:"
+
+msgid "create_event_end_datetime_before_start"
+msgstr "Дата и время окончания не могут быть раньше или равны дате и времени начала. Пожалуйста, введите корректное время окончания:"
+
+msgid "create_event_enter_end_time"
+msgstr "⏰ Введите время окончания:\n\nФормат: ЧЧ:ММ (пример: 16:30)"
+
 msgid "create_event_enter_title"
 msgstr "📝 Введите название события:\n\n"
 
@@ -177,6 +252,15 @@ msgstr "(Нет)"
 
 msgid "create_event_preview_time_label"
 msgstr "⏰ <b>Время начала:</b> {time}"
+
+msgid "create_event_preview_end_date_label"
+msgstr "Дата окончания: {date}"
+
+msgid "create_event_preview_end_time_label"
+msgstr "⏰ <b>Время окончания:</b> {time}"
+
+msgid "create_event_preview_all_day_label"
+msgstr "📅 <b>Событие на весь день</b>"
 
 msgid "create_event_preview_title"
 msgstr "📋 Проверьте данные события:"
@@ -206,10 +290,10 @@ msgid "daily_plan_generating"
 msgstr "📋 Генерация ежедневного плана..."
 
 msgid "events_create_selected"
-msgstr "➕ Создание события выбрано"
+msgstr "✚ Создание события выбрано"
 
 msgid "events_create_title"
-msgstr "➕ <b>Создание событий</b>"
+msgstr "✚ <b>Создание событий</b>"
 
 msgid "events_export_description"
 msgstr "Это ваши события в формате .ics (только внутренние события)"
@@ -263,7 +347,7 @@ msgid "events_view_end"
 msgstr "Конец списка событий"
 
 msgid "events_view_event_content"
-msgstr "🗓️ <b>{title}</b>\nописание: {description}\n{duration}\n{source}"
+msgstr "🗓️ <b>{title}</b>\nописание: {description}\n{duration}\n{recurrence}\n{source}"
 
 msgid "events_view_event_title_none"
 msgstr "без названия"
@@ -272,7 +356,7 @@ msgid "events_view_event_description_none"
 msgstr "пусто"
 
 msgid "events_view_event_duration_all_day"
-msgstr "событие на весь день"
+msgstr "событие на весь день {date}"
 
 msgid "events_view_event_duration_not_all_day"
 msgstr "{date} {start} - {end}"
@@ -456,5 +540,365 @@ msgid "settings_default_reminder_time_accepted"
 msgstr "✅ Время напоминания изменено"
 
 msgid "start_welcome"
-msgstr "👋 <b>Добро пожаловать в Personal Calendar Reminder bot, {user_name}!</b>\n\nЯ могу управлять вашими событиями, отправлять вам напоминания о приближающихся событиях, синхронизироваться с внешними календарями.\n\n📋 <b>Команды:</b>\n/start - Показать это диалоговое окно\n/help - Получить помощь\n\n🎯 <b>Основные функции:</b>\n• 📅 Просмотр событий\n• ➕ Создание событий\n• ✏️ Редактирование и удаление событий\n• 🔗 Экспорт внешних календарей (google, outlook и т.д.)\n• ⏰ Напоминания о событиях\n• 📋 Ежедневные планы"
+msgstr "👋 <b>Добро пожаловать в Personal Calendar Reminder bot, {user_name}!</b>\n\nЯ могу управлять вашими событиями, отправлять вам напоминания о приближающихся событиях, синхронизироваться с внешними календарями.\n\n📋 <b>Команды:</b>\n/start - Показать это диалоговое окно\n/help - Получить помощь\n\n🎯 <b>Основные функции:</b>\n• 📅 Просмотр событий\n• ✚ Создание событий\n• ✏️ Редактирование и удаление событий\n• 🔗 Экспорт внешних календарей (google, outlook и т.д.)\n• ⏰ Напоминания о событиях\n• 📋 Ежедневные планы"
+
+msgid "daily_plan_no_events"
+msgstr "Сегодня у вас нет событий"
+
+msgid "daily_plan_event_content"
+msgstr "🗓️ <b>{title}</b>\nописание: {description}\n{duration}\n{recurrence}\n{source}"
+
+msgid "daily_plan_event_duration_all_day"
+msgstr "событие на весь день {date}"
+
+msgid "daily_plan_event_duration_not_all_day"
+msgstr "{start} - {end}"
+
+msgid "daily_plan_event_source_external"
+msgstr "источник: <a href=\"{link}\">{name}</a>"
+
+msgid "daily_plan_event_source_local"
+msgstr "источник: локальное хранилище бота"
+
+msgid "daily_plan_title"
+msgstr "📋 <b>Ваш ежедневный план на день - {today}</b>"
+
+msgid "daily_plan_event_description_none"
+msgstr "пусто"
+
+msgid "daily_plan_event_title_none"
+msgstr "без названия"
+
+msgid "events_view_event_recurrence_daily"
+msgstr "🔄 Повторяется ежедневно"
+
+msgid "events_view_event_recurrence_daily_interval"
+msgstr "🔄 Повторяется каждые {interval} дней"
+
+msgid "events_view_event_recurrence_weekly"
+msgstr "🔄 Повторяется еженедельно"
+
+msgid "events_view_event_recurrence_weekly_interval"
+msgstr "🔄 Повторяется каждые {interval} недель"
+
+msgid "events_view_event_recurrence_weekly_day"
+msgstr "🔄 Повторяется еженедельно по {day}"
+
+msgid "events_view_event_recurrence_weekly_day_interval"
+msgstr "🔄 Повторяется каждые {interval} недель по {day}"
+
+msgid "events_view_event_recurrence_weekly_days"
+msgstr "🔄 Повторяется еженедельно по {days}"
+
+msgid "events_view_event_recurrence_weekly_days_interval"
+msgstr "🔄 Повторяется каждые {interval} недель по {days}"
+
+msgid "events_view_event_recurrence_monthly"
+msgstr "🔄 Повторяется ежемесячно"
+
+msgid "events_view_event_recurrence_monthly_interval"
+msgstr "🔄 Повторяется каждые {interval} месяцев"
+
+msgid "events_view_event_recurrence_yearly"
+msgstr "🔄 Повторяется ежегодно"
+
+msgid "events_view_event_recurrence_yearly_interval"
+msgstr "🔄 Повторяется каждые {interval} лет"
+
+msgid "events_view_event_recurrence_rdate_single"
+msgstr "🔄 Повторяется в определенную дату"
+
+msgid "events_view_event_recurrence_rdate_multiple"
+msgstr "🔄 Повторяется в {count} определенных дат"
+
+msgid "events_view_event_recurrence_custom"
+msgstr "🔄 Повторяется"
+
+msgid "events_view_event_recurrence_day_monday"
+msgstr "понедельникам"
+
+msgid "events_view_event_recurrence_day_tuesday"
+msgstr "вторникам"
+
+msgid "events_view_event_recurrence_day_wednesday"
+msgstr "средам"
+
+msgid "events_view_event_recurrence_day_thursday"
+msgstr "четвергам"
+
+msgid "events_view_event_recurrence_day_friday"
+msgstr "пятницам"
+
+msgid "events_view_event_recurrence_day_saturday"
+msgstr "субботам"
+
+msgid "events_view_event_recurrence_day_sunday"
+msgstr "воскресеньям"
+
+msgid "daily_plan_event_recurrence_daily"
+msgstr "🔄 Повторяется ежедневно"
+
+msgid "daily_plan_event_recurrence_daily_interval"
+msgstr "🔄 Повторяется каждые {interval} дней"
+
+msgid "daily_plan_event_recurrence_weekly"
+msgstr "🔄 Повторяется еженедельно"
+
+msgid "daily_plan_event_recurrence_weekly_interval"
+msgstr "🔄 Повторяется каждые {interval} недель"
+
+msgid "daily_plan_event_recurrence_weekly_day"
+msgstr "🔄 Повторяется еженедельно по {day}"
+
+msgid "daily_plan_event_recurrence_weekly_day_interval"
+msgstr "🔄 Повторяется каждые {interval} недель по {day}"
+
+msgid "daily_plan_event_recurrence_weekly_days"
+msgstr "🔄 Повторяется еженедельно по {days}"
+
+msgid "daily_plan_event_recurrence_weekly_days_interval"
+msgstr "🔄 Повторяется каждые {interval} недель по {days}"
+
+msgid "daily_plan_event_recurrence_monthly"
+msgstr "🔄 Повторяется ежемесячно"
+
+msgid "daily_plan_event_recurrence_monthly_interval"
+msgstr "🔄 Повторяется каждые {interval} месяцев"
+
+msgid "daily_plan_event_recurrence_yearly"
+msgstr "🔄 Повторяется ежегодно"
+
+msgid "daily_plan_event_recurrence_yearly_interval"
+msgstr "🔄 Повторяется каждые {interval} лет"
+
+msgid "daily_plan_event_recurrence_rdate_single"
+msgstr "🔄 Повторяется в определенную дату"
+
+msgid "daily_plan_event_recurrence_rdate_multiple"
+msgstr "🔄 Повторяется в {count} определенных дат"
+
+msgid "daily_plan_event_recurrence_custom"
+msgstr "🔄 Повторяется"
+
+msgid "daily_plan_event_recurrence_day_monday"
+msgstr "понедельникам"
+
+msgid "daily_plan_event_recurrence_day_tuesday"
+msgstr "вторникам"
+
+msgid "daily_plan_event_recurrence_day_wednesday"
+msgstr "средам"
+
+msgid "daily_plan_event_recurrence_day_thursday"
+msgstr "четвергам"
+
+msgid "daily_plan_event_recurrence_day_friday"
+msgstr "пятницам"
+
+msgid "daily_plan_event_recurrence_day_saturday"
+msgstr "субботам"
+
+msgid "daily_plan_event_recurrence_day_sunday"
+msgstr "воскресеньям"
+
+msgid "btn_delete"
+msgstr "🗑️ Удалить"
+
+msgid "btn_edit"
+msgstr "✏️ Изменить"
+
+msgid "btn_reminders"
+msgstr "🔔 Напоминания"
+
+msgid "command_start_description"
+msgstr "Запустить бота и показать главное меню"
+
+msgid "command_help_description"
+msgstr "Показать справочную информацию"
+
+msgid "btn_create_reminder"
+msgstr "✚ Создать напоминание"
+
+msgid "events_delete_success"
+msgstr "Событие успешно удалено"
+
+msgid "events_delete_error_not_found"
+msgstr "Событие не найдено"
+
+msgid "events_delete_error_not_owner"
+msgstr "Вы не являетесь владельцем этого события"
+
+msgid "events_delete_error_not_local"
+msgstr "Удалять можно только локальные события"
+
+msgid "reminders_list_title"
+msgstr "🔔 Напоминания для события: <b>{event_title}</b>"
+
+msgid "reminders_list_end"
+msgstr "Конец списка напоминаний"
+
+msgid "reminders_item_content"
+msgstr "🔔 <b>{description}</b>\n⏰ {time}"
+
+msgid "reminders_description_none"
+msgstr "Без описания"
+
+msgid "reminders_time_now"
+msgstr "Сейчас"
+
+msgid "reminders_error_event_not_found"
+msgstr "Событие не найдено"
+
+msgid "reminders_error_not_owner"
+msgstr "Вы не являетесь владельцем этого события"
+
+msgid "reminders_create_enter_description"
+msgstr "Создать напоминание для события: <b>{event_title}</b>\n\nВведите описание напоминания:\n\n(Разрешены все описания, кроме \"Default reminder\")"
+
+msgid "reminders_create_description_empty"
+msgstr "Описание не может быть пустым. Пожалуйста, введите описание:"
+
+msgid "reminders_create_description_invalid"
+msgstr "Описание не может быть \"Default reminder\". Пожалуйста, введите другое описание:"
+
+msgid "reminders_create_description_too_long"
+msgstr "Описание слишком длинное (максимум 1024 символа). Пожалуйста, введите более короткое описание:"
+
+msgid "reminders_create_enter_time"
+msgstr "Создать напоминание для события: <b>{event_title}</b>\n\nВведите время до события, за которое нужно отправить напоминание:\n\nФормат: ЧЧ:ММ:СС (например, \"01:30:00\" для 1 часа 30 минут до события)\n\nПримеры:\n- 00:30:00 (30 минут до события)\n- 01:00:00 (1 час до события)\n- 02:15:30 (2 часа 15 минут 30 секунд до события)"
+
+msgid "reminders_create_time_empty"
+msgstr "Создать напоминание для события: <b>{event_title}</b>\n\nВремя не может быть пустым. Пожалуйста, введите время до события, за которое нужно отправить напоминание:"
+
+msgid "reminders_create_time_invalid"
+msgstr "Создать напоминание для события: <b>{event_title}</b>\n\nНеверный формат времени. Пожалуйста, введите время до события в формате ЧЧ:ММ:СС (например, \"01:30:00\"):"
+
+msgid "reminders_create_confirm"
+msgstr "Создать напоминание?\n\nСобытие: <b>{event_title}</b>\nОписание: {description}\nВремя: {time}"
+
+msgid "reminders_create_success"
+msgstr "Напоминание успешно создано"
+
+msgid "reminders_create_error_missing_data"
+msgstr "Отсутствуют необходимые данные для создания напоминания"
+
+msgid "reminders_create_error_failed"
+msgstr "Не удалось создать напоминание"
+
+msgid "reminders_delete_success"
+msgstr "Напоминание успешно удалено"
+
+msgid "reminders_delete_error_not_found"
+msgstr "Напоминание не найдено"
+
+msgid "reminders_delete_error_not_owner"
+msgstr "Вы не являетесь владельцем этого напоминания"
+
+msgid "events_edit_start"
+msgstr "Начато редактирование события. Выберите поле для редактирования или подтвердите изменения."
+
+msgid "events_edit_error_not_found"
+msgstr "Событие не найдено"
+
+msgid "events_edit_error_not_owner"
+msgstr "Вы не являетесь владельцем этого события"
+
+msgid "events_edit_error_not_local"
+msgstr "Редактировать можно только локальные события"
+
+msgid "events_edit_enter_title"
+msgstr "Введите новое название события:"
+
+msgid "events_edit_skip_hint"
+msgstr "Вы можете пропустить любое поле, нажав кнопку 'Пропустить'"
+
+msgid "events_edit_skipped"
+msgstr "Поле пропущено"
+
+msgid "events_edit_title_saved"
+msgstr "Название сохранено. Выберите другое поле для редактирования или подтвердите изменения."
+
+msgid "events_edit_enter_description"
+msgstr "Введите новое описание события:"
+
+msgid "events_edit_description_saved"
+msgstr "Описание сохранено. Выберите другое поле для редактирования или подтвердите изменения."
+
+msgid "events_edit_enter_start_date"
+msgstr "Введите новую дату начала события в формате ДД.ММ.ГГГГ (например, 25.12.2024):"
+
+msgid "events_edit_start_date_saved"
+msgstr "Дата начала сохранена. Выберите другое поле для редактирования или подтвердите изменения."
+
+msgid "events_edit_enter_start_time"
+msgstr "Введите новое время начала события:\n\nФормат: ЧЧ:ММ (пример: 14:30)"
+
+msgid "events_edit_start_time_saved"
+msgstr "Время начала сохранено. Выберите другое поле для редактирования или подтвердите изменения."
+
+msgid "events_edit_enter_end_date"
+msgstr "Введите новую дату окончания события в формате ДД.ММ.ГГГГ (например, 25.12.2024):"
+
+msgid "events_edit_end_date_saved"
+msgstr "Дата окончания сохранена. Выберите другое поле для редактирования или подтвердите изменения."
+
+msgid "events_edit_enter_end_time"
+msgstr "Введите новое время окончания события:\n\nФормат: ЧЧ:ММ (пример: 16:30)"
+
+msgid "events_edit_end_time_saved"
+msgstr "Время окончания сохранено. Выберите другое поле для редактирования или подтвердите изменения."
+
+msgid "events_edit_no_changes"
+msgstr "Нет изменений для сохранения"
+
+msgid "events_edit_success"
+msgstr "Событие успешно обновлено"
+
+msgid "events_edit_error_failed"
+msgstr "Не удалось обновить событие"
+
+msgid "events_edit_preview_title"
+msgstr "📝 <b>Предпросмотр изменений события</b>"
+
+msgid "events_edit_preview_old_new"
+msgstr "Старое: {old_value}\nНовое: {new_value}"
+
+msgid "events_edit_preview_unchanged"
+msgstr "Без изменений: {value}"
+
+msgid "events_edit_select_field"
+msgstr "Выберите поле для редактирования:"
+
+msgid "events_edit_btn_title"
+msgstr "✏️ Название"
+
+msgid "events_edit_btn_description"
+msgstr "✏️ Описание"
+
+msgid "events_edit_btn_start_date"
+msgstr "✏️ Дата начала"
+
+msgid "events_edit_btn_start_time"
+msgstr "✏️ Время начала"
+
+msgid "events_edit_btn_end_date"
+msgstr "✏️ Дата окончания"
+
+msgid "events_edit_btn_end_time"
+msgstr "✏️ Время окончания"
+
+msgid "events_edit_btn_all_day"
+msgstr "✏️ Весь день"
+
+msgid "events_edit_btn_confirm"
+msgstr "✅ Подтвердить изменения"
+
+msgid "events_edit_all_day_saved"
+msgstr "Событие на весь день: {value}"
+
+msgid "help_in_development"
+msgstr "Раздел помощи находится в разработке."
+
+msgid "reminder_message"
+msgstr "🔔 Напоминание: <b>{event_name}</b>\n\n🕒 начинается: {start}"
 

@@ -9,7 +9,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from i18n.strings import t
-from keyboards.inline import back_button, cancel_inline, event_confirmation_inline, skip_inline
+from keyboards.inline import back_button, cancel_inline, event_confirmation_inline, skip_inline, start_time_inline
 from logger.logger import logger
 from middlewares.settings_middleware import SettingsData
 from repositories.schemas import CalendarCreateSchema, EventCreateSchema
@@ -220,7 +220,40 @@ async def process_event_date(message: Message, state: FSMContext, store: Store, 
         last_message,
         state,
         text,
-        cancel_inline("events_cancel", lang=settings.lang),
+        start_time_inline("events_cancel", lang=settings.lang),
+        parse_mode="HTML",
+    )
+
+
+@router.callback_query(F.data == "event_all_day", StateFilter(CreateEventStates.waiting_for_start_time))
+async def process_event_all_day(query: CallbackQuery, state: FSMContext, settings: SettingsData) -> None:
+    """Process all day event selection."""
+    await state.update_data(all_day=True, start_time=None, end_time=None)
+    await state.set_state(CreateEventStates.waiting_for_confirmation)
+
+    # Show preview of the event
+    data = await state.get_data()
+    description_text = (
+        data.get("description")
+        if data.get("description")
+        else t("create_event.preview.description_none", lang=settings.lang)
+    )
+    preview_text = (
+        f"{t('create_event.preview.title', lang=settings.lang)}\n\n"
+        f"{t('create_event.preview.title_label', lang=settings.lang, title=data['title'])}\n"
+        f"{t('create_event.preview.description_label', lang=settings.lang, description=description_text)}\n"
+        f"{t('create_event.preview.date_label', lang=settings.lang, date=data['start_date'])}\n"
+        f"{t('create_event.preview.all_day_label', lang=settings.lang)}\n\n"
+        f"<i>{t('create_event.preview.confirm', lang=settings.lang)}</i>"
+    )
+
+    await edit_message(
+        query.bot,
+        query.message.chat.id,
+        query.message.message_id,
+        state,
+        preview_text,
+        event_confirmation_inline(lang=settings.lang),
         parse_mode="HTML",
     )
 
@@ -251,12 +284,157 @@ async def process_event_time(message: Message, state: FSMContext, store: Store, 
             last_message,
             state,
             text,
-            cancel_inline("events_cancel", lang=settings.lang),
+            start_time_inline("events_cancel", lang=settings.lang),
             parse_mode="HTML",
         )
         return
 
     await state.update_data(start_time=time_str.strip())
+    await state.set_state(CreateEventStates.waiting_for_end_date)
+
+    text = t("create_event.enter_end_date", lang=settings.lang)
+    await edit_message(
+        message.bot,
+        message.chat.id,
+        last_message,
+        state,
+        text,
+        cancel_inline("events_cancel", lang=settings.lang),
+        parse_mode="HTML",
+    )
+
+
+@router.message(StateFilter(CreateEventStates.waiting_for_end_date))
+async def process_event_end_date(message: Message, state: FSMContext, store: Store, settings: SettingsData) -> None:
+    """Process event end date with validation."""
+    date_str = message.text
+
+    # Delete user message
+    await message.delete()
+    last_message = await get_last_message_id(state)
+    if last_message is None:
+        logger.error("Last message is not found", extra={"state": await state.get_data()})
+        return
+
+    if date_str is None:
+        date_str = "nothing" if settings.lang == "en" else "ничего"
+
+    if date_str is None or not is_valid_date(date_str.strip()):
+        text = (
+            f"{t('create_event.enter_end_date', lang=settings.lang)}\n\n"
+            f"<i>{t('create_event.date_format_error', lang=settings.lang, user_input=date_str)}</i>"
+        )
+        await edit_message(
+            message.bot,
+            message.chat.id,
+            last_message,
+            state,
+            text,
+            cancel_inline("events_cancel", lang=settings.lang),
+            parse_mode="HTML",
+        )
+        return
+
+    # Validate that end date is not before start date
+    data = await state.get_data()
+    start_date_str = data.get("start_date")
+    if start_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, "%d.%m.%Y").date()
+            end_date = datetime.strptime(date_str.strip(), "%d.%m.%Y").date()
+            if end_date < start_date:
+                text = (
+                    f"{t('create_event.enter_end_date', lang=settings.lang)}\n\n"
+                    f"<i>{t('create_event.end_date_before_start', lang=settings.lang)}</i>"
+                )
+                await edit_message(
+                    message.bot,
+                    message.chat.id,
+                    last_message,
+                    state,
+                    text,
+                    cancel_inline("events_cancel", lang=settings.lang),
+                    parse_mode="HTML",
+                )
+                return
+        except ValueError:
+            pass
+
+    await state.update_data(end_date=date_str.strip())
+    await state.set_state(CreateEventStates.waiting_for_end_time)
+
+    text = t("create_event.enter_end_time", lang=settings.lang)
+    await edit_message(
+        message.bot,
+        message.chat.id,
+        last_message,
+        state,
+        text,
+        cancel_inline("events_cancel", lang=settings.lang),
+        parse_mode="HTML",
+    )
+
+
+@router.message(StateFilter(CreateEventStates.waiting_for_end_time))
+async def process_event_end_time(message: Message, state: FSMContext, store: Store, settings: SettingsData) -> None:
+    """Process event end time with validation."""
+    time_str = message.text
+
+    # Delete user message
+    await message.delete()
+    last_message = await get_last_message_id(state)
+    if last_message is None:
+        logger.error("Last message is not found", extra={"state": await state.get_data()})
+        return
+
+    if time_str is None:
+        time_str = "nothing" if settings.lang == "en" else "ничего"
+
+    if time_str is None or not is_valid_time_hhmm(time_str.strip()):
+        text = (
+            f"{t('create_event.enter_end_time', lang=settings.lang)}\n\n"
+            f"<i>{t('create_event.time_format_error', lang=settings.lang, user_input=time_str)}</i>"
+        )
+        await edit_message(
+            message.bot,
+            message.chat.id,
+            last_message,
+            state,
+            text,
+            cancel_inline("events_cancel", lang=settings.lang),
+            parse_mode="HTML",
+        )
+        return
+
+    # Validate that end datetime is not before start datetime
+    data = await state.get_data()
+    start_date_str = data.get("start_date")
+    start_time_str = data.get("start_time")
+    end_date_str = data.get("end_date")
+
+    if start_date_str and start_time_str and end_date_str:
+        try:
+            start_datetime = datetime.strptime(f"{start_date_str} {start_time_str}", "%d.%m.%Y %H:%M")
+            end_datetime = datetime.strptime(f"{end_date_str} {time_str.strip()}", "%d.%m.%Y %H:%M")
+            if end_datetime <= start_datetime:
+                text = (
+                    f"{t('create_event.enter_end_time', lang=settings.lang)}\n\n"
+                    f"<i>{t('create_event.end_datetime_before_start', lang=settings.lang)}</i>"
+                )
+                await edit_message(
+                    message.bot,
+                    message.chat.id,
+                    last_message,
+                    state,
+                    text,
+                    cancel_inline("events_cancel", lang=settings.lang),
+                    parse_mode="HTML",
+                )
+                return
+        except ValueError:
+            pass
+
+    await state.update_data(end_time=time_str.strip())
     await state.set_state(CreateEventStates.waiting_for_confirmation)
 
     # Show preview of the event
@@ -266,12 +444,15 @@ async def process_event_time(message: Message, state: FSMContext, store: Store, 
         if data.get("description")
         else t("create_event.preview.description_none", lang=settings.lang)
     )
+    end_date_str = data.get("end_date", data.get("start_date"))
     preview_text = (
         f"{t('create_event.preview.title', lang=settings.lang)}\n\n"
         f"{t('create_event.preview.title_label', lang=settings.lang, title=data['title'])}\n"
         f"{t('create_event.preview.description_label', lang=settings.lang, description=description_text)}\n"
         f"{t('create_event.preview.date_label', lang=settings.lang, date=data['start_date'])}\n"
-        f"{t('create_event.preview.time_label', lang=settings.lang, time=time_str.strip())}\n\n"
+        f"{t('create_event.preview.time_label', lang=settings.lang, time=data['start_time'])}\n"
+        f"{t('create_event.preview.end_date_label', lang=settings.lang, date=end_date_str)}\n"
+        f"{t('create_event.preview.end_time_label', lang=settings.lang, time=time_str.strip())}\n\n"
         f"<i>{t('create_event.preview.confirm', lang=settings.lang)}</i>"
     )
 
@@ -292,10 +473,11 @@ async def confirm_event(query: CallbackQuery, state: FSMContext, store: Store, s
     data = await state.get_data()
     user_id = query.from_user.id
 
+    all_day = data.get("all_day", False)
     logger.info(
         f"User {user_id} confirmed event creation: "
         f"title={data['title']}, date={data['start_date']}, "
-        f"time={data['start_time']}"
+        f"all_day={all_day}, start_time={data.get('start_time')}, end_time={data.get('end_time')}"
     )
 
     try:
@@ -312,19 +494,32 @@ async def confirm_event(query: CallbackQuery, state: FSMContext, store: Store, s
                 CalendarCreateSchema(user_id=user_id, name="local calendar", url=None)
             )
 
-        # Parse date and time
-        date_obj = datetime.strptime(data["start_date"], "%d.%m.%Y")
-        time_obj = datetime.strptime(data["start_time"], "%H:%M").time()
-
-        # Combine date and time
         user_tz = parse_user_timezone(settings.timezone)
-        local_datetime = datetime.combine(date_obj.date(), time_obj).replace(tzinfo=user_tz)
+        start_date_obj = datetime.strptime(data["start_date"], "%d.%m.%Y")
+        end_date_obj = datetime.strptime(data.get("end_date", data["start_date"]), "%d.%m.%Y")
+
+        if all_day:
+            # For all day events, start at 00:00:00 and end at 23:59:59 of the end date
+            local_datetime_start = datetime.combine(start_date_obj.date(), datetime.min.time()).replace(tzinfo=user_tz)
+            max_time = datetime.max.time().replace(microsecond=0)
+            local_datetime_end = datetime.combine(end_date_obj.date(), max_time).replace(tzinfo=user_tz)
+        else:
+            # Parse start and end times
+            start_time_obj = datetime.strptime(data["start_time"], "%H:%M").time()
+            end_time_obj = datetime.strptime(data["end_time"], "%H:%M").time()
+
+            # Combine dates and times
+            local_datetime_start = datetime.combine(start_date_obj.date(), start_time_obj).replace(tzinfo=user_tz)
+            local_datetime_end = datetime.combine(end_date_obj.date(), end_time_obj).replace(tzinfo=user_tz)
+
+            # Validate that end datetime is after start datetime
+            if local_datetime_end <= local_datetime_start:
+                # This should not happen due to validation, but handle it just in case
+                local_datetime_end = local_datetime_start + timedelta(hours=1)
 
         # Convert to UTC
-        utc_datetime = local_datetime.astimezone(UTC)
-
-        # Create event (duration is 1 hour by default)
-        event_end = utc_datetime + timedelta(hours=1)
+        utc_datetime_start = local_datetime_start.astimezone(UTC)
+        utc_datetime_end = local_datetime_end.astimezone(UTC)
 
         # Generate UID
         event_uid = str(uuid.uuid4())
@@ -334,9 +529,9 @@ async def confirm_event(query: CallbackQuery, state: FSMContext, store: Store, s
             user_id=user_id,
             uid=event_uid,
             calendar_id=local_calendar.id,
-            date_start=utc_datetime,
-            date_end=event_end,
-            all_day=False,
+            date_start=utc_datetime_start,
+            date_end=utc_datetime_end,
+            all_day=all_day,
             need_to_remind=True,
             rrule=None,
             rdate=None,

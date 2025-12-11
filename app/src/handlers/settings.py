@@ -80,17 +80,18 @@ async def open_settings_menu(query: CallbackQuery, state: FSMContext, settings: 
     """Open settings menu."""
     await state.set_state(SettingsStates.in_settings)
 
-    message_id = query.message.message_id
-    chat_id = query.message.chat.id
-    await edit_message(
-        query.bot,
-        chat_id,
-        message_id,
-        state,
-        await get_settings_title(settings),
-        settings_menu_inline(lang=settings.lang),
-        parse_mode="HTML",
-    )
+    message_id = query.message.message_id if query.message else None
+    chat_id = query.message.chat.id if query.message else 0
+    if query.bot and query.message:
+        await edit_message(
+            query.bot,
+            chat_id,
+            message_id,
+            state,
+            await get_settings_title(settings),
+            settings_menu_inline(lang=settings.lang),
+            parse_mode="HTML",
+        )
 
 
 @router.callback_query(F.data == "settings_timezone", StateFilter(SettingsStates.in_settings))
