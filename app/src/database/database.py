@@ -108,6 +108,7 @@ async def create_tables(engine: AsyncEngine) -> None:
         # Import known models (if they exist in your project)
         from models.calendar import Calendar  # noqa: F401 # pyright: ignore[reportUnusedImport]
         from models.event import Event  # noqa: F401 # pyright: ignore[reportUnusedImport]
+        from models.fsm_state import FSMState  # noqa: F401 # pyright: ignore[reportUnusedImport]
         from models.reminder import Reminder  # noqa: F401 # pyright: ignore[reportUnusedImport]
         from models.settings import Settings  # noqa: F401 # pyright: ignore[reportUnusedImport]
     except Exception:

@@ -1,12 +1,12 @@
 import asyncio
 
 from aiogram import Bot, Dispatcher
-from aiogram.fsm.storage.memory import MemoryStorage
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from config.config import Config, load_config
 from database.database import create_engine, create_session_maker, create_tables
 from logger.logger import logger, setup_logger
+from storage.postgres_storage import PostgresStorage
 from middlewares.logging_middleware import (
     CallbackQueryLoggingMiddleware,
     MessageLoggingMiddleware,
@@ -107,11 +107,11 @@ async def main() -> None:
 
     # Create bot
     bot = Bot(token=cfg.bot.telegram_token)
-    # Create dispatcher
-    dp = Dispatcher(storage=MemoryStorage())
-    # TODO: Add Redis storage for FSM
     # Setup database
     session_maker = await setup_database_and_store(cfg.database.url)
+    # Create dispatcher with PostgreSQL storage
+    storage = PostgresStorage(session_maker)
+    dp = Dispatcher(storage=storage)
     # Setup reminder scheduler
     reminder_scheduler = init_reminder_scheduler(session_maker, bot)
     daily_plan_scheduler = init_daily_plan_scheduler(session_maker, bot)
