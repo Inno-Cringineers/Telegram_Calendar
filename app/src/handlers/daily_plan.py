@@ -211,11 +211,11 @@ def _get_next_occurrence_date(event: EventResponse, tz_info: timezone) -> dateti
 
 def get_event_recurrence_info(event: EventResponse, lang: str) -> str:
     """Format event recurrence information for display.
-    
+
     Args:
         event: Event to get recurrence info for.
         lang: Language code.
-        
+
     Returns:
         Formatted recurrence string, or empty string if event doesn't repeat.
     """
@@ -224,16 +224,16 @@ def get_event_recurrence_info(event: EventResponse, lang: str) -> str:
         count = len(event.rdate)
         if count == 1:
             return t("daily.plan.event.recurrence.rdate.single", lang=lang)
-        return t("daily.plan.event.recurrence.rdate.multiple", lang=lang, count=count)
-    
+        return t("daily.plan.event.recurrence.rdate.multiple", lang=lang, count=str(count))
+
     # Check if event has RRULE
     if not event.rrule:
         return ""
-    
+
     try:
         # Parse RRULE to extract information
         rule_str = event.rrule.upper()
-        
+
         # Extract FREQ
         if "FREQ=DAILY" in rule_str:
             # Check for interval
@@ -244,11 +244,11 @@ def get_event_recurrence_info(event: EventResponse, lang: str) -> str:
                     interval = int(interval_part)
                 except (ValueError, IndexError):
                     pass
-            
+
             if interval == 1:
                 return t("daily.plan.event.recurrence.daily", lang=lang)
-            return t("daily.plan.event.recurrence.daily.interval", lang=lang, interval=interval)
-        
+            return t("daily.plan.event.recurrence.daily.interval", lang=lang, interval=str(interval))
+
         elif "FREQ=WEEKLY" in rule_str:
             # Extract BYDAY if present
             byday = None
@@ -258,7 +258,7 @@ def get_event_recurrence_info(event: EventResponse, lang: str) -> str:
                     byday = byday_part.split(",")
                 except (ValueError, IndexError):
                     pass
-            
+
             # Map day abbreviations to localized names
             day_map = {
                 "MO": t("daily.plan.event.recurrence.day.monday", lang=lang),
@@ -269,7 +269,7 @@ def get_event_recurrence_info(event: EventResponse, lang: str) -> str:
                 "SA": t("daily.plan.event.recurrence.day.saturday", lang=lang),
                 "SU": t("daily.plan.event.recurrence.day.sunday", lang=lang),
             }
-            
+
             interval = 1
             if "INTERVAL=" in rule_str:
                 try:
@@ -277,13 +277,18 @@ def get_event_recurrence_info(event: EventResponse, lang: str) -> str:
                     interval = int(interval_part)
                 except (ValueError, IndexError):
                     pass
-            
+
             if byday:
                 day_names = [day_map.get(day, day) for day in byday]
                 if len(day_names) == 1:
                     if interval == 1:
                         return t("daily.plan.event.recurrence.weekly.day", lang=lang, day=day_names[0])
-                    return t("daily.plan.event.recurrence.weekly.day.interval", lang=lang, day=day_names[0], interval=interval)
+                    return t(
+                        "daily.plan.event.recurrence.weekly.day.interval",
+                        lang=lang,
+                        day=day_names[0],
+                        interval=str(interval),
+                    )
                 else:
                     # Join day names with commas and "and" for the last one
                     if lang == "ru":
@@ -292,12 +297,17 @@ def get_event_recurrence_info(event: EventResponse, lang: str) -> str:
                         days_str = ", ".join(day_names[:-1]) + " and " + day_names[-1]
                     if interval == 1:
                         return t("daily.plan.event.recurrence.weekly.days", lang=lang, days=days_str)
-                    return t("daily.plan.event.recurrence.weekly.days.interval", lang=lang, days=days_str, interval=interval)
+                    return t(
+                        "daily.plan.event.recurrence.weekly.days.interval",
+                        lang=lang,
+                        days=days_str,
+                        interval=str(interval),
+                    )
             else:
                 if interval == 1:
                     return t("daily.plan.event.recurrence.weekly", lang=lang)
-                return t("daily.plan.event.recurrence.weekly.interval", lang=lang, interval=interval)
-        
+                return t("daily.plan.event.recurrence.weekly.interval", lang=lang, interval=str(interval))
+
         elif "FREQ=MONTHLY" in rule_str:
             interval = 1
             if "INTERVAL=" in rule_str:
@@ -306,11 +316,11 @@ def get_event_recurrence_info(event: EventResponse, lang: str) -> str:
                     interval = int(interval_part)
                 except (ValueError, IndexError):
                     pass
-            
+
             if interval == 1:
                 return t("daily.plan.event.recurrence.monthly", lang=lang)
-            return t("daily.plan.event.recurrence.monthly.interval", lang=lang, interval=interval)
-        
+            return t("daily.plan.event.recurrence.monthly.interval", lang=lang, interval=str(interval))
+
         elif "FREQ=YEARLY" in rule_str:
             interval = 1
             if "INTERVAL=" in rule_str:
@@ -319,14 +329,14 @@ def get_event_recurrence_info(event: EventResponse, lang: str) -> str:
                     interval = int(interval_part)
                 except (ValueError, IndexError):
                     pass
-            
+
             if interval == 1:
                 return t("daily.plan.event.recurrence.yearly", lang=lang)
-            return t("daily.plan.event.recurrence.yearly.interval", lang=lang, interval=interval)
-        
+            return t("daily.plan.event.recurrence.yearly.interval", lang=lang, interval=str(interval))
+
         # Fallback for other frequencies
         return t("daily.plan.event.recurrence.custom", lang=lang)
-    
+
     except Exception as e:
         logger.error("Failed to parse recurrence info: %s", e)
         return t("daily.plan.event.recurrence.custom", lang=lang)

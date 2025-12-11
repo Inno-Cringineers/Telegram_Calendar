@@ -1,10 +1,14 @@
 import os
 from datetime import UTC, datetime, timezone
+from typing import TYPE_CHECKING
 
 from aiogram import F, Router
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, FSInputFile, Message
+
+if TYPE_CHECKING:
+    pass
 from dateutil.rrule import rrulestr
 
 from i18n.strings import t
@@ -18,7 +22,7 @@ from logger.logger import logger
 from repositories.schemas import EventDurationFilter, EventResponse
 from states.states import EventsMenuStates
 from store.store import Store
-from utils.handlers import clean_messages, edit_message, parse_user_timezone, send_message
+from utils.handlers import clean_messages, edit_message, get_last_message_id, parse_user_timezone, send_message
 
 router = Router()
 
@@ -29,19 +33,57 @@ async def open_events_menu(query: CallbackQuery, state: FSMContext, lang: str) -
 
     await state.set_state(EventsMenuStates.in_events_menu)
 
+    if query.bot is None or query.message is None:
+        logger.error("Query bot or message is None", extra={"query": query})
+        return
+
     await clean_messages(query.bot, query.message.chat.id, state)
 
-    await edit_message(
-        query.bot,
-        query.message.chat.id,
-        query.message.message_id,
-        state,
-        t("events.title", lang=lang),
-        events_menu_inline(lang=lang),
-        parse_mode="HTML",
-        delete_keyboard=True,
-        delete_message=False,
-    )
+    # Check if message contains a document (file) - cannot edit such messages
+    # Need to check if message is a Message instance (not InaccessibleMessage)
+    if isinstance(query.message, Message) and query.message.document is not None:
+        # Delete message with file and send new text message
+        try:
+            await query.bot.delete_message(chat_id=query.message.chat.id, message_id=query.message.message_id)
+        except Exception as e:
+            logger.warning(f"Could not delete message with file: {e}")
+
+        await send_message(
+            query.bot,
+            query.message.chat.id,
+            state,
+            t("events.title", lang=lang),
+            reply_markup=events_menu_inline(lang=lang),
+            parse_mode="HTML",
+            delete_keyboard=True,
+            delete_message=False,
+        )
+    else:
+        # Regular text message - can be edited
+        if isinstance(query.message, Message):
+            await edit_message(
+                query.bot,
+                query.message.chat.id,
+                query.message.message_id,
+                state,
+                t("events.title", lang=lang),
+                events_menu_inline(lang=lang),
+                parse_mode="HTML",
+                delete_keyboard=True,
+                delete_message=False,
+            )
+        else:
+            # Fallback if message is not accessible
+            await send_message(
+                query.bot,
+                query.message.chat.id,
+                state,
+                t("events.title", lang=lang),
+                reply_markup=events_menu_inline(lang=lang),
+                parse_mode="HTML",
+                delete_keyboard=True,
+                delete_message=False,
+            )
 
 
 @router.callback_query(F.data == "events_import", StateFilter(EventsMenuStates.in_events_menu))
@@ -83,12 +125,20 @@ async def events_export(query: CallbackQuery, state: FSMContext, store: Store, l
         # Generate .ics file
         file_path = await store.ExportService.export_local_calendar_to_file(user_id)
 
-        # Send file to user
+        # Delete old message before sending file
+        try:
+            await query.bot.delete_message(chat_id=query.message.chat.id, message_id=query.message.message_id)
+        except Exception as e:
+            logger.warning(f"Could not delete old message: {e}")
+
+        # Send file to user with caption
         document = FSInputFile(file_path, filename="calendar.ics")
         await query.bot.send_document(
             chat_id=query.message.chat.id,
             document=document,
-            caption=t("events_export_success", lang=lang),
+            caption=f"{t('events.export.title', lang=lang)}\n\n{t('events_export_success', lang=lang)}",
+            reply_markup=back_button("menu_events", lang=lang),
+            parse_mode="HTML",
         )
 
         # Clean up temporary file
@@ -96,18 +146,6 @@ async def events_export(query: CallbackQuery, state: FSMContext, store: Store, l
             os.remove(file_path)
         except Exception as e:
             logger.error(f"Error deleting temporary file {file_path}: {e}", exc_info=e)
-
-        # Update message
-        await edit_message(
-            query.bot,
-            query.message.chat.id,
-            query.message.message_id,
-            state,
-            text=f"{t('events.export.title', lang=lang)}\n\n{t('events_export_success', lang=lang)}",
-            reply_markup=back_button("menu_events", lang=lang),
-            parse_mode="HTML",
-            delete_keyboard=True,
-        )
 
     except ValueError as e:
         error_msg = str(e)
@@ -540,11 +578,11 @@ def _get_next_occurrence_date(event: EventResponse, tz_info: timezone) -> dateti
 
 def get_event_recurrence_info(event: EventResponse, lang: str) -> str:
     """Format event recurrence information for display.
-    
+
     Args:
         event: Event to get recurrence info for.
         lang: Language code.
-        
+
     Returns:
         Formatted recurrence string, or empty string if event doesn't repeat.
     """
@@ -553,16 +591,16 @@ def get_event_recurrence_info(event: EventResponse, lang: str) -> str:
         count = len(event.rdate)
         if count == 1:
             return t("events.view.event.recurrence.rdate.single", lang=lang)
-        return t("events.view.event.recurrence.rdate.multiple", lang=lang, count=count)
-    
+        return t("events.view.event.recurrence.rdate.multiple", lang=lang, count=str(count))
+
     # Check if event has RRULE
     if not event.rrule:
         return ""
-    
+
     try:
         # Parse RRULE to extract information
         rule_str = event.rrule.upper()
-        
+
         # Extract FREQ
         if "FREQ=DAILY" in rule_str:
             # Check for interval
@@ -573,11 +611,11 @@ def get_event_recurrence_info(event: EventResponse, lang: str) -> str:
                     interval = int(interval_part)
                 except (ValueError, IndexError):
                     pass
-            
+
             if interval == 1:
                 return t("events.view.event.recurrence.daily", lang=lang)
-            return t("events.view.event.recurrence.daily.interval", lang=lang, interval=interval)
-        
+            return t("events.view.event.recurrence.daily.interval", lang=lang, interval=str(interval))
+
         elif "FREQ=WEEKLY" in rule_str:
             # Extract BYDAY if present
             byday = None
@@ -587,7 +625,7 @@ def get_event_recurrence_info(event: EventResponse, lang: str) -> str:
                     byday = byday_part.split(",")
                 except (ValueError, IndexError):
                     pass
-            
+
             # Map day abbreviations to localized names
             day_map = {
                 "MO": t("events.view.event.recurrence.day.monday", lang=lang),
@@ -598,7 +636,7 @@ def get_event_recurrence_info(event: EventResponse, lang: str) -> str:
                 "SA": t("events.view.event.recurrence.day.saturday", lang=lang),
                 "SU": t("events.view.event.recurrence.day.sunday", lang=lang),
             }
-            
+
             interval = 1
             if "INTERVAL=" in rule_str:
                 try:
@@ -606,13 +644,18 @@ def get_event_recurrence_info(event: EventResponse, lang: str) -> str:
                     interval = int(interval_part)
                 except (ValueError, IndexError):
                     pass
-            
+
             if byday:
                 day_names = [day_map.get(day, day) for day in byday]
                 if len(day_names) == 1:
                     if interval == 1:
                         return t("events.view.event.recurrence.weekly.day", lang=lang, day=day_names[0])
-                    return t("events.view.event.recurrence.weekly.day.interval", lang=lang, day=day_names[0], interval=interval)
+                    return t(
+                        "events.view.event.recurrence.weekly.day.interval",
+                        lang=lang,
+                        day=day_names[0],
+                        interval=str(interval),
+                    )
                 else:
                     # Join day names with commas and "and" for the last one
                     if lang == "ru":
@@ -621,12 +664,17 @@ def get_event_recurrence_info(event: EventResponse, lang: str) -> str:
                         days_str = ", ".join(day_names[:-1]) + " and " + day_names[-1]
                     if interval == 1:
                         return t("events.view.event.recurrence.weekly.days", lang=lang, days=days_str)
-                    return t("events.view.event.recurrence.weekly.days.interval", lang=lang, days=days_str, interval=interval)
+                    return t(
+                        "events.view.event.recurrence.weekly.days.interval",
+                        lang=lang,
+                        days=days_str,
+                        interval=str(interval),
+                    )
             else:
                 if interval == 1:
                     return t("events.view.event.recurrence.weekly", lang=lang)
-                return t("events.view.event.recurrence.weekly.interval", lang=lang, interval=interval)
-        
+                return t("events.view.event.recurrence.weekly.interval", lang=lang, interval=str(interval))
+
         elif "FREQ=MONTHLY" in rule_str:
             interval = 1
             if "INTERVAL=" in rule_str:
@@ -635,11 +683,11 @@ def get_event_recurrence_info(event: EventResponse, lang: str) -> str:
                     interval = int(interval_part)
                 except (ValueError, IndexError):
                     pass
-            
+
             if interval == 1:
                 return t("events.view.event.recurrence.monthly", lang=lang)
-            return t("events.view.event.recurrence.monthly.interval", lang=lang, interval=interval)
-        
+            return t("events.view.event.recurrence.monthly.interval", lang=lang, interval=str(interval))
+
         elif "FREQ=YEARLY" in rule_str:
             interval = 1
             if "INTERVAL=" in rule_str:
@@ -648,14 +696,14 @@ def get_event_recurrence_info(event: EventResponse, lang: str) -> str:
                     interval = int(interval_part)
                 except (ValueError, IndexError):
                     pass
-            
+
             if interval == 1:
                 return t("events.view.event.recurrence.yearly", lang=lang)
-            return t("events.view.event.recurrence.yearly.interval", lang=lang, interval=interval)
-        
+            return t("events.view.event.recurrence.yearly.interval", lang=lang, interval=str(interval))
+
         # Fallback for other frequencies
         return t("events.view.event.recurrence.custom", lang=lang)
-    
+
     except Exception as e:
         logger.error("Failed to parse recurrence info: %s", e)
         return t("events.view.event.recurrence.custom", lang=lang)
@@ -706,21 +754,65 @@ async def process_ics_file(message: Message, state: FSMContext, store: Store, la
         logger.error("Message bot is None", extra={"message": message})
         return
 
+    # Delete user message with file
+    try:
+        await message.delete()
+    except Exception as e:
+        logger.warning(f"Could not delete user message: {e}")
+
+    # Get last message ID to edit it
+    last_message_id = await get_last_message_id(state)
+
     # Check if message has document
     if message.document is None:
-        await message.answer(t("events_import_error_no_file", lang=lang), parse_mode="HTML")
+        if last_message_id is not None:
+            await edit_message(
+                message.bot,
+                message.chat.id,
+                last_message_id,
+                state,
+                f"{t('events.import.title', lang=lang)}\n\n{t('events_import_error_no_file', lang=lang)}",
+                reply_markup=back_button("menu_events", lang=lang),
+                parse_mode="HTML",
+            )
+        else:
+            await message.answer(t("events_import_error_no_file", lang=lang), parse_mode="HTML")
         return
 
     # Check if file is .ics
     file_name = message.document.file_name
     if file_name is None or not file_name.endswith(".ics"):
-        await message.answer(t("events_import_error_invalid_format", lang=lang), parse_mode="HTML")
+        if last_message_id is not None:
+            await edit_message(
+                message.bot,
+                message.chat.id,
+                last_message_id,
+                state,
+                f"{t('events.import.title', lang=lang)}\n\n{t('events_import_error_invalid_format', lang=lang)}",
+                reply_markup=back_button("menu_events", lang=lang),
+                parse_mode="HTML",
+            )
+        else:
+            await message.answer(t("events_import_error_invalid_format", lang=lang), parse_mode="HTML")
         return
 
     try:
         # Import file using UploadService
         await store.UploadService.upload_ics_file(message, message.bot)
-        await message.answer(t("events_import_success", lang=lang), parse_mode="HTML")
+
+        # Edit last message with success text
+        if last_message_id is not None:
+            await edit_message(
+                message.bot,
+                message.chat.id,
+                last_message_id,
+                state,
+                f"{t('events.import.title', lang=lang)}\n\n{t('events_import_success', lang=lang)}",
+                reply_markup=back_button("menu_events", lang=lang),
+                parse_mode="HTML",
+            )
+        else:
+            await message.answer(t("events_import_success", lang=lang), parse_mode="HTML")
 
         # Return to events menu
         await state.set_state(EventsMenuStates.in_events_menu)
@@ -732,7 +824,29 @@ async def process_ics_file(message: Message, state: FSMContext, store: Store, la
         else:
             error_text = t("events_import_error", lang=lang)
         logger.error(f"Error importing calendar for user {user_id}: {e}", exc_info=e)
-        await message.answer(error_text, parse_mode="HTML")
+        if last_message_id is not None:
+            await edit_message(
+                message.bot,
+                message.chat.id,
+                last_message_id,
+                state,
+                f"{t('events.import.title', lang=lang)}\n\n{error_text}",
+                reply_markup=back_button("menu_events", lang=lang),
+                parse_mode="HTML",
+            )
+        else:
+            await message.answer(error_text, parse_mode="HTML")
     except Exception as e:
         logger.error(f"Unexpected error importing calendar for user {user_id}: {e}", exc_info=e)
-        await message.answer(t("events_import_error", lang=lang), parse_mode="HTML")
+        if last_message_id is not None:
+            await edit_message(
+                message.bot,
+                message.chat.id,
+                last_message_id,
+                state,
+                f"{t('events.import.title', lang=lang)}\n\n{t('events_import_error', lang=lang)}",
+                reply_markup=back_button("menu_events", lang=lang),
+                parse_mode="HTML",
+            )
+        else:
+            await message.answer(t("events_import_error", lang=lang), parse_mode="HTML")
