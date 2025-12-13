@@ -35,6 +35,15 @@ class SettingsRepository:
             return None
         return SettingsResponse.from_model(result)
 
+    async def get_all_user_ids(self) -> list[int]:
+        """Retrieve all user IDs.
+
+        Returns:
+            The list of user IDs.
+        """
+        result = await self.session.execute(select(Settings.user_id))
+        return list(result.scalars().all())
+
     async def create_one(self, data: SettingsCreateSchema) -> SettingsResponse:
         """Create a new settings.
 
@@ -53,6 +62,7 @@ class SettingsRepository:
             quiet_hours_end=data.quiet_hours_end,
             daily_plans_enabled=data.daily_plans_enabled,
             daily_plans_time=data.daily_plans_time,
+            default_reminder_enabled=data.default_reminder_enabled,
             default_reminder_offset=data.default_reminder_offset,
         )
         self.session.add(settings)

@@ -1,4 +1,7 @@
+from datetime import UTC, datetime
+
 from aiogram import F, Router
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
@@ -24,21 +27,20 @@ router = Router()
 async def open_calendar_menu(query: CallbackQuery, state: FSMContext, settings: SettingsData) -> None:
     """Open calendar linking menu."""
     await state.set_state(CalendarLinkingStates.in_calendar_menu)
+    await clean_messages(query.bot, query.message.chat.id, state, delete_all=True)
 
-    await clean_messages(query.bot, query.message.chat.id, state)
-
-    await edit_message(
+    await send_message(
         query.bot,
         query.message.chat.id,
-        query.message.message_id,
         state,
         f"{t('calendar_link_title', lang=settings.lang)}\n\n{t('calendar_link_description', lang=settings.lang)}",
         calendar_menu_inline(lang=settings.lang),
         parse_mode="HTML",
+        delete_keyboard=True,
     )
 
 
-@router.callback_query(F.data == "calendar_list", CalendarLinkingStates.in_calendar_menu)
+@router.callback_query(F.data == "calendar_list", StateFilter(CalendarLinkingStates.in_calendar_menu))
 async def calendar_list(query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData) -> None:
     """Show list of linked calendars."""
     calendars = await store.CalendarService.get_external_calendars_by_user_id(query.from_user.id)
@@ -100,24 +102,61 @@ async def calendar_list(query: CallbackQuery, state: FSMContext, store: Store, s
     )
 
 
-@router.callback_query(F.data.startswith("calendar_unlink:"), CalendarLinkingStates.in_calendar_menu)
+@router.callback_query(F.data.startswith("calendar_unlink:"), StateFilter(CalendarLinkingStates.in_calendar_menu))
 async def calendar_unlink(query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData) -> None:
-    """Unlink a calendar."""
+    """Unlink or link a calendar with immediate sync on enable."""
     if query.data is None or len(query.data) == 0:
         logger.error("Query data is None or empty", extra={"query": query})
         return
 
     calendar_id = int(query.data.split(":")[1])
+    user_id = query.from_user.id
 
     calendar = await store.CalendarService.get_by_id(calendar_id)
     if calendar is None:
         logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
         return
 
-    calendar = await store.CalendarService.unlink_calendar(calendar_id)
-    if calendar is None:
-        logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
+    # Verify calendar belongs to the user
+    if calendar.user_id != user_id:
+        logger.error("Calendar does not belong to user", extra={"calendar_id": calendar_id, "user_id": user_id})
         return
+
+    # Check if we're enabling sync (was False, will be True)
+    was_sync_enabled = calendar.sync_enabled
+    will_enable_sync = not was_sync_enabled
+
+    # If enabling sync, try to synchronize immediately (only for external calendars with URL)
+    if will_enable_sync:
+        if calendar.url is not None:
+            try:
+                # Try to synchronize the calendar
+                await store.UploadService.upload_ical_url(calendar.user_id, calendar.name, calendar.url)
+                # If successful, enable sync and update last_sync
+                # Remove timezone info as database expects naive datetime
+                now_utc = datetime.now(UTC).replace(tzinfo=None)
+                calendar = await store.CalendarService.update(
+                    calendar_id,
+                    CalendarUpdateSchema(sync_enabled=True, last_sync=now_utc),
+                )
+                logger.info(f"Calendar {calendar_id} synchronized successfully and enabled")
+            except Exception as e:
+                logger.error(f"Error synchronizing calendar {calendar_id}: {e}", exc_info=e)
+                # Show popup error message and keep sync_enabled=False
+                await query.answer(t("calendar.sync.error", lang=settings.lang), show_alert=True)
+                return
+        else:
+            # For local calendars (no URL), just enable sync without synchronization
+            calendar = await store.CalendarService.update(
+                calendar_id,
+                CalendarUpdateSchema(sync_enabled=True),
+            )
+    else:
+        # If disabling sync, just toggle it
+        calendar = await store.CalendarService.unlink_calendar(calendar_id)
+        if calendar is None:
+            logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
+            return
 
     messages = await get_messages(state)
 
@@ -151,7 +190,7 @@ async def calendar_unlink(query: CallbackQuery, state: FSMContext, store: Store,
     )
 
 
-@router.callback_query(F.data.startswith("calendar_delete:"), CalendarLinkingStates.in_calendar_menu)
+@router.callback_query(F.data.startswith("calendar_delete:"), StateFilter(CalendarLinkingStates.in_calendar_menu))
 async def calendar_delete(query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData) -> None:
     """Delete a calendar."""
     if query.data is None or len(query.data) == 0:
@@ -159,6 +198,16 @@ async def calendar_delete(query: CallbackQuery, state: FSMContext, store: Store,
         return
 
     calendar_id = int(query.data.split(":")[1])
+    user_id = query.from_user.id
+
+    # Verify calendar belongs to the user before deletion
+    calendar = await store.CalendarService.get_by_id(calendar_id)
+    if calendar is None:
+        logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
+        return
+    if calendar.user_id != user_id:
+        logger.error("Calendar does not belong to user", extra={"calendar_id": calendar_id, "user_id": user_id})
+        return
 
     messages = await get_messages(state)
 
@@ -178,24 +227,24 @@ async def calendar_delete(query: CallbackQuery, state: FSMContext, store: Store,
     await query.bot.delete_message(chat_id=query.message.chat.id, message_id=message["message_id"])
 
 
-@router.callback_query(F.data == "calendar_new", CalendarLinkingStates.in_calendar_menu)
+@router.callback_query(F.data == "calendar_new", StateFilter(CalendarLinkingStates.in_calendar_menu))
 async def calendar_new(query: CallbackQuery, state: FSMContext, settings: SettingsData) -> None:
     """Link a new calendar."""
     await state.set_state(CalendarLinkingStates.waiting_for_calendar_link)
+    await clean_messages(query.bot, query.message.chat.id, state, delete_all=True)
 
     text = f"{t('calendar.new.title', lang=settings.lang)}\n\n{t('calendar.new.enter_link', lang=settings.lang)}\n\n"
-    await edit_message(
+    await send_message(
         query.bot,
         query.message.chat.id,
-        query.message.message_id,
         state,
         text=text,
         parse_mode="HTML",
-        reply_markup=back_button(lang=settings.lang),
+        reply_markup=back_button("menu_link_calendar", lang=settings.lang),
     )
 
 
-@router.message(CalendarLinkingStates.waiting_for_calendar_link)
+@router.message(StateFilter(CalendarLinkingStates.waiting_for_calendar_link))
 async def process_calendar_link(message: Message, state: FSMContext, settings: SettingsData, store: Store) -> None:
     """Process calendar link."""
 
@@ -219,7 +268,7 @@ async def process_calendar_link(message: Message, state: FSMContext, settings: S
                 f"{t('calendar.link.url.empty', lang=settings.lang)}\n\n"
             ),
             parse_mode="HTML",
-            reply_markup=back_button(lang=settings.lang),
+            reply_markup=back_button("menu_link_calendar", lang=settings.lang),
         )
         return
     if len(url) > 255:
@@ -233,7 +282,7 @@ async def process_calendar_link(message: Message, state: FSMContext, settings: S
                 f"{t('calendar.link.url_too_long', lang=settings.lang)}\n\n"
             ),
             parse_mode="HTML",
-            reply_markup=back_button(lang=settings.lang),
+            reply_markup=back_button("menu_link_calendar", lang=settings.lang),
         )
         return
 
@@ -248,7 +297,7 @@ async def process_calendar_link(message: Message, state: FSMContext, settings: S
                 f"{t('calendar.link.url.invalid', lang=settings.lang)}\n\n"
             ),
             parse_mode="HTML",
-            reply_markup=back_button(lang=settings.lang),
+            reply_markup=back_button("menu_link_calendar", lang=settings.lang),
         )
         return
 
@@ -265,7 +314,7 @@ async def process_calendar_link(message: Message, state: FSMContext, settings: S
                 f"{t('calendar.link.url.exists', lang=settings.lang)}\n\n"
             ),
             parse_mode="HTML",
-            reply_markup=back_button(lang=settings.lang),
+            reply_markup=back_button("menu_link_calendar", lang=settings.lang),
         )
         return
 
@@ -280,11 +329,11 @@ async def process_calendar_link(message: Message, state: FSMContext, settings: S
             f"{t('calendar.new.title', lang=settings.lang)}\n\n{t('calendar.link.enter_name', lang=settings.lang)}\n\n"
         ),
         parse_mode="HTML",
-        reply_markup=back_button(lang=settings.lang),
+        reply_markup=back_button("menu_link_calendar", lang=settings.lang),
     )
 
 
-@router.message(CalendarLinkingStates.waiting_for_calendar_name)
+@router.message(StateFilter(CalendarLinkingStates.waiting_for_calendar_name))
 async def process_calendar_name(message: Message, state: FSMContext, settings: SettingsData) -> None:
     """Process calendar name."""
     last_message_id = await get_last_message_id(state)
@@ -306,7 +355,7 @@ async def process_calendar_name(message: Message, state: FSMContext, settings: S
                 f"{t('calendar.link.name.empty', lang=settings.lang)}\n\n"
             ),
             parse_mode="HTML",
-            reply_markup=back_button(lang=settings.lang),
+            reply_markup=back_button("menu_link_calendar", lang=settings.lang),
         )
         return
 
@@ -321,7 +370,7 @@ async def process_calendar_name(message: Message, state: FSMContext, settings: S
                 f"{t('calendar.link.name.too.long', lang=settings.lang)}\n\n"
             ),
             parse_mode="HTML",
-            reply_markup=back_button(lang=settings.lang),
+            reply_markup=back_button("menu_link_calendar", lang=settings.lang),
         )
         return
 
@@ -343,7 +392,9 @@ async def process_calendar_name(message: Message, state: FSMContext, settings: S
     )
 
 
-@router.callback_query(F.data == "calendar_confirm", CalendarLinkingStates.waiting_for_calendar_confirmation)
+@router.callback_query(
+    F.data == "calendar_confirm", StateFilter(CalendarLinkingStates.waiting_for_calendar_confirmation)
+)
 async def calendar_confirm(query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData) -> None:
     """Confirm calendar linking."""
 
@@ -354,7 +405,7 @@ async def calendar_confirm(query: CallbackQuery, state: FSMContext, store: Store
 
     # Get user_id
     user_id = query.from_user.id
-
+    logger.debug("Calendar confirm: user_id", extra={"user_id": user_id})
     # Upload calendar if we have all required data
     if url and name:
         try:
@@ -388,7 +439,7 @@ async def calendar_confirm(query: CallbackQuery, state: FSMContext, store: Store
     )
 
 
-@router.callback_query(F.data.startswith("calendar_rename:"), CalendarLinkingStates.in_calendar_menu)
+@router.callback_query(F.data.startswith("calendar_rename:"), StateFilter(CalendarLinkingStates.in_calendar_menu))
 async def calendar_rename(query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData) -> None:
     """Rename a calendar."""
     if query.data is None or len(query.data) == 0:
@@ -396,10 +447,16 @@ async def calendar_rename(query: CallbackQuery, state: FSMContext, store: Store,
         return
 
     calendar_id = int(query.data.split(":")[1])
+    user_id = query.from_user.id
 
     calendar = await store.CalendarService.get_by_id(calendar_id)
     if calendar is None:
         logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
+        return
+
+    # Verify calendar belongs to the user
+    if calendar.user_id != user_id:
+        logger.error("Calendar does not belong to user", extra={"calendar_id": calendar_id, "user_id": user_id})
         return
 
     await clean_messages(query.bot, query.message.chat.id, state)
@@ -425,11 +482,11 @@ async def calendar_rename(query: CallbackQuery, state: FSMContext, store: Store,
         state,
         text=text,
         parse_mode="HTML",
-        reply_markup=back_button(lang=settings.lang),
+        reply_markup=back_button("menu_link_calendar", lang=settings.lang),
     )
 
 
-@router.message(CalendarLinkingStates.waiting_for_calendar_name_rename)
+@router.message(StateFilter(CalendarLinkingStates.waiting_for_calendar_name_rename))
 async def process_calendar_name_rename(
     message: Message, state: FSMContext, store: Store, settings: SettingsData
 ) -> None:
@@ -444,9 +501,16 @@ async def process_calendar_name_rename(
     if calendar_id is None:
         logger.error("Calendar id is not found", extra={"state": state})
         return
+    user_id = message.from_user.id
+
     calendar = await store.CalendarService.get_by_id(calendar_id)
     if calendar is None:
         logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
+        return
+
+    # Verify calendar belongs to the user
+    if calendar.user_id != user_id:
+        logger.error("Calendar does not belong to user", extra={"calendar_id": calendar_id, "user_id": user_id})
         return
 
     name = message.text
@@ -463,7 +527,7 @@ async def process_calendar_name_rename(
                 f"{t('calendar.rename.name.empty', lang=settings.lang)}\n\n"
             ),
             parse_mode="HTML",
-            reply_markup=back_button(lang=settings.lang),
+            reply_markup=back_button("menu_link_calendar", lang=settings.lang),
         )
         return
 
@@ -478,7 +542,7 @@ async def process_calendar_name_rename(
                 f"{t('calendar.link.name.too.long', lang=settings.lang)}\n\n"
             ),
             parse_mode="HTML",
-            reply_markup=back_button(lang=settings.lang),
+            reply_markup=back_button("menu_link_calendar", lang=settings.lang),
         )
         return
 
@@ -499,7 +563,9 @@ async def process_calendar_name_rename(
     )
 
 
-@router.callback_query(F.data == "calendar_rename_confirm", CalendarLinkingStates.waiting_for_calendar_confirmation)
+@router.callback_query(
+    F.data == "calendar_rename_confirm", StateFilter(CalendarLinkingStates.waiting_for_calendar_confirmation)
+)
 async def calendar_rename_confirm(
     query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData
 ) -> None:
@@ -509,6 +575,17 @@ async def calendar_rename_confirm(
     if calendar_id is None:
         logger.error("Calendar id is not found", extra={"state": state})
         return
+    user_id = query.from_user.id
+
+    # Verify calendar belongs to the user
+    calendar = await store.CalendarService.get_by_id(calendar_id)
+    if calendar is None:
+        logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
+        return
+    if calendar.user_id != user_id:
+        logger.error("Calendar does not belong to user", extra={"calendar_id": calendar_id, "user_id": user_id})
+        return
+
     name = data.get("name")
     if name is None:
         logger.error("New name is not found", extra={"state": state})

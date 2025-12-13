@@ -1,13 +1,35 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import UTC, datetime, time
+from datetime import UTC, datetime, time, timedelta, timezone
 
 from aiogram.client.bot import Bot
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from logger.logger import logger
+
+
+def parse_user_timezone(tz_str: str) -> timezone:
+    """
+    Convert strings like 'UTC+3', 'UTC+5:30', 'UTC-4:45' -> timezone object.
+    """
+    if not tz_str.startswith("UTC"):
+        raise ValueError("Invalid timezone format")
+
+    if tz_str == "UTC":
+        return UTC
+
+    sign = 1 if "+" in tz_str else -1
+    _, offset_str = tz_str.split("UTC")[1].split(sign == 1 and "+" or "-")
+
+    if ":" in offset_str:
+        hours, minutes = map(int, offset_str.split(":"))
+    else:
+        hours, minutes = int(offset_str), 0
+
+    return timezone(timedelta(hours=sign * hours, minutes=sign * minutes))
 
 
 def is_valid_query(query: CallbackQuery) -> bool:
@@ -32,8 +54,22 @@ async def send_message(
     delete_keyboard: bool = False,
     delete_message: bool = False,
     extra_data: dict | None = None,
+    context: str | None = None,
 ):
-    """Send message to chat. Used to clean up messages after state is cleared."""
+    """Send message to chat. Used to clean up messages after state is cleared.
+
+    Args:
+        bot: Bot instance.
+        chat_id: Chat ID.
+        state: FSM context.
+        text: Message text.
+        reply_markup: Optional reply markup.
+        parse_mode: Parse mode for text.
+        delete_keyboard: Whether to delete keyboard when cleaning.
+        delete_message: Whether to delete message when cleaning.
+        extra_data: Extra data to store with message.
+        context: Optional context name for grouping messages (e.g., "daily_plan", "events", "reminders").
+    """
 
     new_message = await bot.send_message(chat_id=chat_id, text=text, parse_mode=parse_mode, reply_markup=reply_markup)
     if not isinstance(new_message, Message):
@@ -41,6 +77,13 @@ async def send_message(
 
     data = await state.get_data()
     sent = data.get("sent_messages", [])
+
+    # Add context to extra_data if provided
+    if extra_data is None:
+        extra_data = {}
+    if context is not None:
+        extra_data["context"] = context
+
     sent.append(
         {
             "message_id": new_message.message_id,
@@ -74,39 +117,115 @@ async def edit_message(
     delete_keyboard: bool | None = None,
     delete_message: bool | None = None,
     extra_data: dict | None = None,
+    context: str | None = None,
 ):
-    """Edit message in chat. Used to clean up messages after state is cleared."""
+    """Edit message in chat. Used to clean up messages after state is cleared.
 
-    new_message = await bot.edit_message_text(
-        chat_id=chat_id, message_id=message_id, text=text, parse_mode=parse_mode, reply_markup=reply_markup
-    )
-    if not isinstance(new_message, Message):
-        raise ValueError(f"New message is not a Message, bot returned {new_message}")
+    Args:
+        bot: Bot instance.
+        chat_id: Chat ID.
+        message_id: Message ID to edit.
+        state: FSM context.
+        text: New message text.
+        reply_markup: Optional reply markup.
+        parse_mode: Parse mode for text.
+        delete_keyboard: Whether to delete keyboard.
+        delete_message: Whether to delete message.
+        extra_data: Extra data to store.
+        context: Optional context name for grouping messages.
 
-    data = await state.get_data()
-    sent = data.get("sent_messages", [])
-    for msg in sent:
-        if msg["message_id"] == message_id:
-            msg["message_id"] = new_message.message_id
-            msg["delete_keyboard"] = delete_keyboard if delete_keyboard is not None else msg["delete_keyboard"]
-            msg["delete_message"] = delete_message if delete_message is not None else msg["delete_message"]
-            msg["extra_data"] = extra_data if extra_data is not None else msg["extra_data"]
-            msg["text"] = text
-            await state.update_data(sent_messages=sent)
+    Note:
+        If the message content and reply markup are exactly the same as current,
+        TelegramBadRequest exception is caught and logged as a warning.
+    """
+    try:
+        new_message = await bot.edit_message_text(
+            chat_id=chat_id, message_id=message_id, text=text, parse_mode=parse_mode, reply_markup=reply_markup
+        )
+        if not isinstance(new_message, Message):
+            raise ValueError(f"New message is not a Message, bot returned {new_message}")
 
-    await state.update_data(last_message=new_message.message_id)
-    logger.debug(f"Edited message {new_message.message_id} to {text}")
-    logger.debug(f"Edited messages: {sent}")
+        data = await state.get_data()
+        is_in_sent = False
+        sent = data.get("sent_messages", [])
+        for msg in sent:
+            if msg["message_id"] == message_id:
+                msg["message_id"] = new_message.message_id
+                msg["delete_keyboard"] = delete_keyboard if delete_keyboard is not None else msg["delete_keyboard"]
+                msg["delete_message"] = delete_message if delete_message is not None else msg["delete_message"]
+                # Update extra_data, preserving context if it exists
+                if extra_data is not None:
+                    if context is not None:
+                        extra_data["context"] = context
+                    msg["extra_data"] = extra_data
+                elif context is not None:
+                    if msg.get("extra_data") is None:
+                        msg["extra_data"] = {}
+                    msg["extra_data"]["context"] = context
+                msg["text"] = text
+                is_in_sent = True
+                await state.update_data(sent_messages=sent)
+
+        if not is_in_sent:
+            # Add context to extra_data if provided
+            msg_extra_data = extra_data if extra_data is not None else {}
+            if context is not None:
+                msg_extra_data["context"] = context
+            sent.append(
+                {
+                    "message_id": new_message.message_id,
+                    "delete_keyboard": delete_keyboard if delete_keyboard is not None else False,
+                    "delete_message": delete_message if delete_message is not None else False,
+                    "extra_data": msg_extra_data,
+                    "text": text,
+                }
+            )
+
+        await state.update_data(last_message=new_message.message_id)
+        logger.debug(f"Edited message {new_message.message_id} to {text}")
+        logger.debug(f"Edited messages: {sent}")
+    except TelegramBadRequest as e:
+        # Handle case when message content and reply markup are exactly the same
+        if "message is not modified" in str(e).lower():
+            logger.debug(
+                f"Message {message_id} in chat {chat_id} was not modified (content is the same). This is not an error."
+            )
+        else:
+            # Re-raise if it's a different TelegramBadRequest
+            raise
 
 
-async def clean_messages(bot: Bot, chat_id: int, state: FSMContext):
-    """Clean up messages from chat. Used to clean up messages after state is cleared."""
+async def clean_messages(
+    bot: Bot, chat_id: int, state: FSMContext, delete_all: bool = False, context: str | None = None
+):
+    """Clean up messages from chat. Used to clean up messages after state is cleared.
+
+    Args:
+        bot: Bot instance.
+        chat_id: Chat ID.
+        state: FSM context.
+        delete_all: If True, delete all messages regardless of delete_message flag.
+        context: Optional context name. If provided, delete all messages from this context.
+    """
     data = await state.get_data()
     sent = data.get("sent_messages", [])
     removed = []
     for msg in sent:
         logger.debug(f"Cleaning message {msg['message_id']}")
-        if msg["delete_message"] is True:
+
+        # If context is specified, delete all messages from that context
+        if context is not None:
+            msg_context = msg.get("extra_data", {}).get("context") if msg.get("extra_data") else None
+            if msg_context == context:
+                try:
+                    await bot.delete_message(chat_id=chat_id, message_id=msg["message_id"])
+                    logger.debug(f"Deleted message {msg['message_id']} from context {context}")
+                    removed.append(msg)
+                except Exception as e:
+                    logger.error(f"Error deleting message {msg['message_id']}: {e}")
+                continue
+
+        if msg["delete_message"] is True or delete_all is True:
             try:
                 await bot.delete_message(chat_id=chat_id, message_id=msg["message_id"])
                 logger.debug(f"Deleted message {msg['message_id']}")
@@ -159,6 +278,12 @@ def is_valid_time_hhmm(value: str) -> bool:
 
 
     Accepts leading zeros (e.g., '09:05').
+
+    Args:
+        value: Time string to validate.
+
+    Returns:
+        True if valid, False otherwise.
     """
     if not isinstance(value, str):
         return False
@@ -181,6 +306,41 @@ def is_valid_time_hhmm(value: str) -> bool:
         return False
 
     return 0 <= h <= 23 and 0 <= m <= 59
+
+
+def is_valid_time_hhmmss(value: str) -> bool:
+    """Validate time string in HH:MM:SS (24-hour) format.
+
+    Accepts leading zeros (e.g., '09:05:30').
+
+    Args:
+        value: Time string to validate.
+
+    Returns:
+        True if valid, False otherwise.
+    """
+    if not isinstance(value, str):
+        return False
+
+    parts = value.split(":")
+    if len(parts) != 3:
+        return False
+    for part in parts:
+        if not part.isdigit() or len(part) != 2:
+            return False
+
+    hour, minute, second = parts
+    if not (hour.isdigit() and minute.isdigit() and second.isdigit()):
+        return False
+
+    try:
+        h = int(hour)
+        m = int(minute)
+        s = int(second)
+    except ValueError:
+        return False
+
+    return 0 <= h <= 23 and 0 <= m <= 59 and 0 <= s <= 59
 
 
 def _time_to_minutes(t: time) -> int:

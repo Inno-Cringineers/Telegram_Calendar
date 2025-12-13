@@ -119,7 +119,15 @@ class EventService:
         Raises:
             EventNotFoundError: If event with given ID are not found.
         """
-        return await self.store.EventRepository.update_by_id(event_id, data)
+        # Get event before update to get user_id
+        event = await self.store.EventRepository.get_by_id(event_id)
+        if event is None:
+            raise ValueError(f"Event with id {event_id} not found")
+
+        updated_event = await self.store.EventRepository.update_by_id(event_id, data)
+        # TODO: update reminders if needed
+
+        return updated_event
 
     async def delete_by_id(self, event_id: int) -> None:
         """Delete event by ID.
@@ -130,6 +138,11 @@ class EventService:
         Raises:
             EventNotFoundError: If event with given ID are not found.
         """
+        # Get event before delete to get user_id
+        event = await self.store.EventRepository.get_by_id(event_id)
+        if event is None:
+            raise ValueError(f"Event with id {event_id} not found")
+
         # delete reminders associated with the event
         await self.store.ReminderService.delete_by_event_id(event_id)
         await self.store.EventRepository.delete_by_id(event_id)

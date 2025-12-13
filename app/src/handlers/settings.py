@@ -1,13 +1,17 @@
 from datetime import time
 
 from aiogram import F, Router
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from i18n.strings import t
 from keyboards.inline import (
     back_button,
+    daily_plan_time_menu_inline,
     daily_plans_time_accept_reject_inline,
+    default_reminder_menu_inline,
+    default_reminder_time_accept_reject_inline,
     language_menu_inline,
     quiet_hours_accept_reject_inline,
     quiet_hours_menu_inline,
@@ -23,12 +27,10 @@ from utils.handlers import (
     edit_message,
     get_last_message_id,
     is_valid_time_hhmm,
+    is_valid_time_hhmmss,
 )
 
 router = Router()
-
-
-# TODO: enable/disable daily plans
 
 
 async def get_settings_title(settings: SettingsData) -> str:
@@ -40,10 +42,20 @@ async def get_settings_title(settings: SettingsData) -> str:
         quiet_hours = "Disabled" if settings.lang == "en" else "Отключено"
 
     daily_plan = None
-    if settings.daily_plans_time:
+    if settings.daily_plans_enabled and settings.daily_plans_time:
         daily_plan = f"{settings.daily_plans_time.strftime('%H:%M')}"
     else:
         daily_plan = "Disabled" if settings.lang == "en" else "Отключено"
+
+    reminder = None
+    if settings.default_reminder_enabled:
+        # Convert offset (seconds) to time format (HH:MM:SS)
+        hours = settings.default_reminder_offset // 3600
+        minutes = (settings.default_reminder_offset % 3600) // 60
+        seconds = settings.default_reminder_offset % 60
+        reminder = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    else:
+        reminder = "Disabled" if settings.lang == "en" else "Отключено"
 
     return t(
         "settings.title",
@@ -51,6 +63,7 @@ async def get_settings_title(settings: SettingsData) -> str:
         language=language,
         quiet_hours=quiet_hours,
         daily_plan=daily_plan,
+        reminder=reminder,
         lang=settings.lang,
     )
 
@@ -67,20 +80,21 @@ async def open_settings_menu(query: CallbackQuery, state: FSMContext, settings: 
     """Open settings menu."""
     await state.set_state(SettingsStates.in_settings)
 
-    message_id = query.message.message_id
-    chat_id = query.message.chat.id
-    await edit_message(
-        query.bot,
-        chat_id,
-        message_id,
-        state,
-        await get_settings_title(settings),
-        settings_menu_inline(lang=settings.lang),
-        parse_mode="HTML",
-    )
+    message_id = query.message.message_id if query.message else None
+    chat_id = query.message.chat.id if query.message else 0
+    if query.bot and query.message:
+        await edit_message(
+            query.bot,
+            chat_id,
+            message_id,
+            state,
+            await get_settings_title(settings),
+            settings_menu_inline(lang=settings.lang),
+            parse_mode="HTML",
+        )
 
 
-@router.callback_query(F.data == "settings_timezone", SettingsStates.in_settings)
+@router.callback_query(F.data == "settings_timezone", StateFilter(SettingsStates.in_settings))
 async def settings_timezone(query: CallbackQuery, state: FSMContext, settings: SettingsData) -> None:
     """Handle timezone setting - ask user for current time."""
 
@@ -96,7 +110,7 @@ async def settings_timezone(query: CallbackQuery, state: FSMContext, settings: S
     )
 
 
-@router.message(SettingsStates.waiting_for_time)
+@router.message(StateFilter(SettingsStates.waiting_for_time))
 async def process_timezone_time(message: Message, state: FSMContext, store: Store, settings: SettingsData) -> None:
     """Process user's current time and set timezone automatically."""
 
@@ -151,7 +165,7 @@ async def process_timezone_time(message: Message, state: FSMContext, store: Stor
     )
 
 
-@router.callback_query(F.data == "settings_language", SettingsStates.in_settings)
+@router.callback_query(F.data == "settings_language", StateFilter(SettingsStates.in_settings))
 async def settings_language(query: CallbackQuery, state: FSMContext, settings: SettingsData) -> None:
     """Handle language setting."""
 
@@ -174,7 +188,7 @@ async def settings_language(query: CallbackQuery, state: FSMContext, settings: S
     )
 
 
-@router.callback_query(F.data == "language_en", SettingsStates.editing_language)
+@router.callback_query(F.data == "language_en", StateFilter(SettingsStates.editing_language))
 async def language_en(query: CallbackQuery, state: FSMContext, store: Store) -> None:
     """Handle language change to English."""
     user_id = query.from_user.id
@@ -196,7 +210,7 @@ async def language_en(query: CallbackQuery, state: FSMContext, store: Store) -> 
     )
 
 
-@router.callback_query(F.data == "language_ru", SettingsStates.editing_language)
+@router.callback_query(F.data == "language_ru", StateFilter(SettingsStates.editing_language))
 async def language_ru(query: CallbackQuery, state: FSMContext, store: Store) -> None:
     """Handle language change to Russian."""
     user_id = query.from_user.id
@@ -218,7 +232,7 @@ async def language_ru(query: CallbackQuery, state: FSMContext, store: Store) -> 
     )
 
 
-@router.callback_query(F.data == "settings_quiet_hours", SettingsStates.in_settings)
+@router.callback_query(F.data == "settings_quiet_hours", StateFilter(SettingsStates.in_settings))
 async def settings_quiet_hours(query: CallbackQuery, state: FSMContext, settings: SettingsData) -> None:
     """Handle quiet hours setting."""
 
@@ -242,7 +256,7 @@ async def settings_quiet_hours(query: CallbackQuery, state: FSMContext, settings
     )
 
 
-@router.callback_query(F.data == "enable_disable_quiet_hours", SettingsStates.in_quiet_hours_menu)
+@router.callback_query(F.data == "enable_disable_quiet_hours", StateFilter(SettingsStates.in_quiet_hours_menu))
 async def enable_disable_quiet_hours(query: CallbackQuery, state: FSMContext, store: Store) -> None:
     """Handle enabling/disabling quiet hours."""
     user_id = query.from_user.id
@@ -265,7 +279,7 @@ async def enable_disable_quiet_hours(query: CallbackQuery, state: FSMContext, st
     )
 
 
-@router.callback_query(F.data == "set_quite_hours", SettingsStates.in_quiet_hours_menu)
+@router.callback_query(F.data == "set_quite_hours", StateFilter(SettingsStates.in_quiet_hours_menu))
 async def set_quite_hours(query: CallbackQuery, state: FSMContext, settings: SettingsData) -> None:
     """Handle setting quiet hours."""
 
@@ -287,7 +301,7 @@ async def set_quite_hours(query: CallbackQuery, state: FSMContext, settings: Set
     )
 
 
-@router.message(SettingsStates.waiting_for_quiet_hours_start)
+@router.message(StateFilter(SettingsStates.waiting_for_quiet_hours_start))
 async def process_quiet_hours_start_time(message: Message, state: FSMContext, settings: SettingsData) -> None:
     """Process user's quiet hours start time and set quiet hours."""
     quiet_hours_start_time = message.text
@@ -337,7 +351,7 @@ async def process_quiet_hours_start_time(message: Message, state: FSMContext, se
     )
 
 
-@router.message(SettingsStates.waiting_for_quiet_hours_end)
+@router.message(StateFilter(SettingsStates.waiting_for_quiet_hours_end))
 async def process_quiet_hours_end(message: Message, state: FSMContext, settings: SettingsData) -> None:
     """Process user's quiet hours end time and set quiet hours."""
     quiet_hours_end = message.text
@@ -409,7 +423,7 @@ async def process_quiet_hours_end(message: Message, state: FSMContext, settings:
     )
 
 
-@router.callback_query(F.data == "accept_quiet_hours", SettingsStates.in_settings)
+@router.callback_query(F.data == "accept_quiet_hours", StateFilter(SettingsStates.in_settings))
 async def accept_quiet_hours(query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData) -> None:
     """Handle accepting quiet hours."""
     user_id = query.from_user.id
@@ -447,16 +461,36 @@ async def get_daily_plan_time(settings: SettingsData) -> str:
     return f"{settings.daily_plans_time.strftime('%H:%M')}"
 
 
-@router.callback_query(F.data == "settings_daily_plans_time", SettingsStates.in_settings)
-async def settings_daily_plans_time(query: CallbackQuery, state: FSMContext, settings: SettingsData) -> None:
-    """Handle daily plans time setting."""
-    await state.set_state(SettingsStates.editing_daily_plans_time)
+@router.callback_query(F.data == "enable_disable_daily_plans", StateFilter(SettingsStates.in_daily_plans_menu))
+async def enable_disable_daily_plans(query: CallbackQuery, state: FSMContext, store: Store) -> None:
+    """Handle enabling/disabling daily plans."""
+    user_id = query.from_user.id
+    new_settings = await store.SettingsService.switch_daily_plans(user_id)
 
-    daily_plan_time = await get_daily_plan_time(settings)
+    text = None
+    if new_settings.daily_plans_enabled:
+        text = t("settings.daily.plans.enabled", lang=new_settings.language)
+    else:
+        text = t("settings.daily.plans.disabled", lang=new_settings.language)
+
+    await edit_message(
+        query.bot,
+        query.message.chat.id,
+        query.message.message_id,
+        state,
+        text,
+        back_button("menu_settings", lang=new_settings.language),
+        parse_mode="HTML",
+    )
+
+
+@router.callback_query(F.data == "set_daily_plan_time", StateFilter(SettingsStates.in_daily_plans_menu))
+async def set_daily_plan_time(query: CallbackQuery, state: FSMContext, settings: SettingsData) -> None:
+    """Handle setting daily plan time."""
+    await state.set_state(SettingsStates.editing_daily_plans_time)
 
     text = (
         f"{t('settings.daily.plans.time.title', lang=settings.lang)}\n\n"
-        f"{t('settings.daily.plans.time.current', lang=settings.lang, daily_plan=daily_plan_time)}\n\n"
         f"{t('settings.daily.plans.time.enter', lang=settings.lang)}"
     )
 
@@ -471,7 +505,31 @@ async def settings_daily_plans_time(query: CallbackQuery, state: FSMContext, set
     )
 
 
-@router.message(SettingsStates.editing_daily_plans_time)
+@router.callback_query(F.data == "settings_daily_plans_time", StateFilter(SettingsStates.in_settings))
+async def settings_daily_plans_time(query: CallbackQuery, state: FSMContext, settings: SettingsData) -> None:
+    """Handle daily plans time setting."""
+    await state.set_state(SettingsStates.in_daily_plans_menu)
+
+    daily_plan_time = await get_daily_plan_time(settings)
+
+    text = (
+        f"{t('settings.daily.plans.time.title', lang=settings.lang)}\n\n"
+        f"{t('settings.daily.plans.time.current', lang=settings.lang, daily_plan=daily_plan_time)}\n\n"
+        f"<i>{t('settings.daily.plans.time.description', lang=settings.lang)}</i>"
+    )
+
+    await edit_message(
+        query.bot,
+        query.message.chat.id,
+        query.message.message_id,
+        state,
+        text,
+        daily_plan_time_menu_inline(lang=settings.lang, enabled=settings.daily_plans_enabled),
+        parse_mode="HTML",
+    )
+
+
+@router.message(StateFilter(SettingsStates.editing_daily_plans_time))
 async def process_daily_plans_time(message: Message, state: FSMContext, settings: SettingsData) -> None:
     """Process user's daily plans time and set daily plans time."""
     daily_plans_time = message.text
@@ -503,7 +561,7 @@ async def process_daily_plans_time(message: Message, state: FSMContext, settings
         return
 
     await state.update_data(daily_plans_time=daily_plans_time)
-    await state.set_state(SettingsStates.in_settings)
+    await state.set_state(SettingsStates.editing_daily_plans_time)
     text = (
         f"{t('settings.daily.plans.time.title', lang=settings.lang)}\n\n"
         f"<i>{t('settings.daily.plans.time.accept.reject', lang=settings.lang, daily_plan=daily_plans_time)}</i>"
@@ -519,7 +577,7 @@ async def process_daily_plans_time(message: Message, state: FSMContext, settings
     )
 
 
-@router.callback_query(F.data == "accept_daily_plans_time", SettingsStates.in_settings)
+@router.callback_query(F.data == "accept_daily_plans_time", StateFilter(SettingsStates.editing_daily_plans_time))
 async def accept_daily_plans_time(
     query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData
 ) -> None:
@@ -533,13 +591,224 @@ async def accept_daily_plans_time(
         user_id,
         data=SettingsUpdateSchema(daily_plans_time=daily_plans_time),
     )
-    await state.set_state(SettingsStates.in_settings)
+    await state.set_state(SettingsStates.in_daily_plans_menu)
     await edit_message(
         query.bot,
         query.message.chat.id,
         query.message.message_id,
         state,
         t("settings.daily.plans.time.accepted", lang=settings.lang),
+        back_button("menu_settings", lang=settings.lang),
+        parse_mode="HTML",
+    )
+
+
+async def get_default_reminder_time(settings: SettingsData) -> str:
+    """Get default reminder time as string.
+
+    Args:
+        settings: Settings data.
+
+    Returns:
+        Formatted time string or "Disabled".
+    """
+    if not settings.default_reminder_enabled:
+        return "Disabled" if settings.lang == "en" else "Отключено"
+
+    # Convert offset (seconds) to time format (HH:MM:SS)
+    hours = settings.default_reminder_offset // 3600
+    minutes = (settings.default_reminder_offset % 3600) // 60
+    seconds = settings.default_reminder_offset % 60
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+
+@router.callback_query(F.data == "settings_default_reminder", StateFilter(SettingsStates.in_settings))
+async def settings_default_reminder(query: CallbackQuery, state: FSMContext, settings: SettingsData) -> None:
+    """Handle default reminder setting."""
+    await state.set_state(SettingsStates.in_default_reminder_menu)
+
+    reminder_time = await get_default_reminder_time(settings)
+
+    text = (
+        f"{t('settings.default.reminder.title', lang=settings.lang)}\n\n"
+        f"{t('settings.default.reminder.current', lang=settings.lang, reminder=reminder_time)}\n\n"
+        f"<i>{t('settings.default.reminder.description', lang=settings.lang)}</i>"
+    )
+
+    await edit_message(
+        query.bot,
+        query.message.chat.id,
+        query.message.message_id,
+        state,
+        text,
+        default_reminder_menu_inline(lang=settings.lang, enabled=settings.default_reminder_enabled),
+        parse_mode="HTML",
+    )
+
+
+@router.callback_query(
+    F.data == "enable_disable_default_reminder", StateFilter(SettingsStates.in_default_reminder_menu)
+)
+async def enable_disable_default_reminder(query: CallbackQuery, state: FSMContext, store: Store) -> None:
+    """Handle enabling/disabling default reminder."""
+    user_id = query.from_user.id
+    settings_service = store.SettingsService
+    reminder_service = store.ReminderService
+    current_settings = await settings_service.get_by_user_id(user_id)
+    if current_settings is None:
+        logger.error("Settings not found for user", extra={"user_id": user_id})
+        return
+
+    new_enabled = not current_settings.default_reminder_enabled
+
+    # First update settings
+    new_settings = await settings_service.update_by_user_id(
+        user_id,
+        data=SettingsUpdateSchema(default_reminder_enabled=new_enabled),
+    )
+
+    # Then delete or restore default reminders based on new settings
+    if new_enabled:
+        # Restore default reminders for all user's events
+        await reminder_service.restore_default_reminders_for_user(user_id)
+    else:
+        # Delete all default reminders
+        await reminder_service.delete_default_reminders_by_user_id(user_id)
+
+    text = None
+    if new_settings.default_reminder_enabled:
+        text = t("settings.default.reminder.enabled", lang=new_settings.language)
+    else:
+        text = t("settings.default.reminder.disabled", lang=new_settings.language)
+
+    await edit_message(
+        query.bot,
+        query.message.chat.id,
+        query.message.message_id,
+        state,
+        text,
+        back_button("menu_settings", lang=new_settings.language),
+        parse_mode="HTML",
+    )
+
+
+@router.callback_query(F.data == "set_default_reminder_time", StateFilter(SettingsStates.in_default_reminder_menu))
+async def set_default_reminder_time(query: CallbackQuery, state: FSMContext, settings: SettingsData) -> None:
+    """Handle setting default reminder time."""
+    await state.set_state(SettingsStates.editing_default_reminder_time)
+
+    text = (
+        f"{t('settings.default.reminder.title', lang=settings.lang)}\n\n"
+        f"{t('settings.default.reminder.time.enter', lang=settings.lang)}"
+    )
+
+    await edit_message(
+        query.bot,
+        query.message.chat.id,
+        query.message.message_id,
+        state,
+        text,
+        back_button("menu_settings", lang=settings.lang),
+        parse_mode="HTML",
+    )
+
+
+@router.message(StateFilter(SettingsStates.editing_default_reminder_time))
+async def process_default_reminder_time(message: Message, state: FSMContext, settings: SettingsData) -> None:
+    """Process user's default reminder time and set default reminder time."""
+    reminder_time = message.text
+
+    await message.delete()
+    last_message = await get_last_message_id(state)
+    if last_message is None:
+        logger.error("Last message is not found", extra={"state": await state.get_data()})
+        return
+
+    if reminder_time is None:
+        reminder_time = "nothing" if settings.lang == "en" else "ничего"
+
+    text = (
+        f"{t('settings.default.reminder.title', lang=settings.lang)}\n\n"
+        f"{t('settings.default.reminder.time.enter', lang=settings.lang)}\n\n"
+        f"<i>{t('settings.default.reminder.time.format.error', lang=settings.lang, user_input=reminder_time)}</i>"
+    )
+    if not is_valid_time_hhmmss(reminder_time):
+        await edit_message(
+            message.bot,
+            message.chat.id,
+            last_message,
+            state,
+            text,
+            back_button("menu_settings", lang=settings.lang),
+            parse_mode="HTML",
+        )
+        return
+
+    await state.update_data(default_reminder_time=reminder_time)
+    await state.set_state(SettingsStates.editing_default_reminder_time)
+    text = (
+        f"{t('settings.default.reminder.title', lang=settings.lang)}\n\n"
+        f"<i>{t('settings.default.reminder.time.accept.reject', lang=settings.lang, reminder=reminder_time)}</i>"
+    )
+    await edit_message(
+        message.bot,
+        message.chat.id,
+        last_message,
+        state,
+        text,
+        default_reminder_time_accept_reject_inline(lang=settings.lang),
+        parse_mode="HTML",
+    )
+
+
+@router.callback_query(
+    F.data == "accept_default_reminder_time", StateFilter(SettingsStates.editing_default_reminder_time)
+)
+async def accept_default_reminder_time(
+    query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData
+) -> None:
+    """Handle accepting default reminder time."""
+    # logger.debug("Accepting default reminder time", extra={"state": await state.get_data()})
+    user_id = query.from_user.id
+    reminder_time_str = (await state.get_data()).get("default_reminder_time")
+    if reminder_time_str is None:
+        logger.error("Default reminder time is not set", extra={"state": await state.get_data()})
+        return
+
+    # Parse time string and convert to offset (seconds)
+    time_parts = reminder_time_str.split(":")
+    hours = int(time_parts[0])
+    minutes = int(time_parts[1])
+    seconds = int(time_parts[2])
+    offset_seconds = hours * 3600 + minutes * 60 + seconds
+
+    settings_service = store.SettingsService
+    reminder_service = store.ReminderService
+
+    # Update settings
+    # logger.debug("Updating settings", extra={"user_id": user_id, "offset_seconds": offset_seconds})
+    updated_settings = await settings_service.update_by_user_id(
+        user_id,
+        data=SettingsUpdateSchema(default_reminder_offset=offset_seconds),
+    )
+    # logger.debug("Settings updated", extra={"user_id": user_id, "updated_settings": updated_settings})
+    if updated_settings is None:
+        logger.error("Settings not updated", extra={"user_id": user_id})
+        return
+
+    # Update or create default reminders if enabled
+    if settings.default_reminder_enabled:
+        # logger.debug("Updating default reminders", extra={"user_id": user_id})
+        await reminder_service.update_default_reminders_for_user(user_id)
+        # logger.debug("Default reminders updated", extra={"user_id": user_id})
+
+    await state.set_state(SettingsStates.in_settings)
+    await edit_message(
+        query.bot,
+        query.message.chat.id,
+        query.message.message_id,
+        state,
+        t("settings.default.reminder.time.accepted", lang=settings.lang),
         back_button("menu_settings", lang=settings.lang),
         parse_mode="HTML",
     )

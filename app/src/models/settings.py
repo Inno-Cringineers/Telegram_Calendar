@@ -35,6 +35,7 @@ class Settings(Base):
         daily_plans_enabled: bool - Whether the daily plans are enabled for the user. default - False.
         daily_plans_time: time - The time for daily plans for the user. default - 09:00.
 
+        default_reminder_enabled: bool - Whether the default reminder is enabled for the user. default - True.
         default_reminder_offset: int - The default seconds before start to send reminder. By default - 15 minutes.
     """  # noqa: E501
 
@@ -51,6 +52,7 @@ class Settings(Base):
     daily_plans_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     daily_plans_time: Mapped[time] = mapped_column(Time, nullable=False, default=time(hour=9, minute=0))
 
+    default_reminder_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     default_reminder_offset: Mapped[int] = mapped_column(
         Integer,
         nullable=False,

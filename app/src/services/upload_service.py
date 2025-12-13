@@ -10,6 +10,7 @@ import aiohttp
 from aiogram import Bot
 from aiogram.types import Message
 
+from logger.logger import logger
 from store.store import Store
 
 
@@ -18,33 +19,64 @@ class UploadService:
         self.store = store
 
     async def upload_ical_url(self, user_id: int, calendar_name: str, url: str) -> None:
+        """Upload calendar from URL.
+
+        Args:
+            user_id: User ID who owns the calendar.
+            calendar_name: Name of the calendar.
+            url: URL of the calendar file.
+        """
         # loads .ics file from internet by url
-        file_path = await self._download_ics_file(url)
+        file_path = await self._download_ics_file(url, user_id)
         # TODO: checks diff with old version if it exists
         # if no diff, does nothing
         # if not _is_diff(file_path):
         #    return
         # imports events from ics file
+        logger.debug(
+            "Upload service: uploading ics file from url, user_id: %s",
+            user_id,
+        )
         await self.store.ImportService.import_external_calendar_from_file(file_path, user_id, calendar_name, url)
 
         # delete old version of file
-        os.remove(file_path)  # TODO
+        try:
+            os.remove(file_path)
+        except Exception as e:
+            logger.error("Error deleting old version of file", exc_info=e, extra={"file_path": file_path})
         # saves ics file to local storage as old version
 
-    async def _download_ics_file(self, url: str) -> str:
+    async def _download_ics_file(self, url: str, user_id: int) -> str:
+        """Download .ics file from internet by url.
+
+        Args:
+            url: URL of the calendar file.
+            user_id: User ID to create unique file path.
+
+        Returns:
+            Path to the downloaded file.
+        """
         # downloads .ics file from internet by url
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 if response.status != 200:
                     raise ValueError(f"Failed to download .ics file from {url}")
                 file_content = await response.read()
-                file_path = f"downloads/{url.split('/')[-1]}"
+                # Include user_id in file path to avoid conflicts between users
+                url_filename = url.split("/")[-1] or "calendar.ics"
+                file_path = f"downloads/{user_id}_{url_filename}"
                 os.makedirs("downloads", exist_ok=True)
                 with open(file_path, "wb") as f:
                     f.write(file_content)
                 return file_path
 
     async def upload_ics_file(self, message: Message, bot: Bot) -> None:
+        """Upload .ics file from user message.
+
+        Args:
+            message: Message with document attachment.
+            bot: Bot instance for downloading file.
+        """
         # check if document is present
         if message.document is None:
             raise ValueError("Document is required in message")
@@ -58,6 +90,13 @@ class UploadService:
         if file_name[-4:] != ".ics":
             raise ValueError("File must be .ics file")
 
+        # get user id first (needed for file path)
+        if message.from_user is None:
+            raise ValueError("User is None")
+        user_id = message.from_user.id
+        if user_id is None:
+            raise ValueError("User id is None")
+
         # get file id
         file_id = message.document.file_id
         file = await bot.get_file(file_id)
@@ -67,21 +106,14 @@ class UploadService:
         if file_path is None:
             raise ValueError("File path is None")
 
-        # create save path
-        save_path = f"downloads/{file_name}"
+        # create save path with user_id to avoid conflicts
+        save_path = f"downloads/{user_id}_{file_name}"
 
         # create save directory
-        os.makedirs(save_path, exist_ok=True)
+        os.makedirs("downloads", exist_ok=True)
 
         # download file
         await bot.download_file(file_path, save_path)
-
-        # get user id
-        if message.from_user is None:
-            raise ValueError("User is None")
-        user_id = message.from_user.id
-        if user_id is None:
-            raise ValueError("User id is None")
 
         # import file
         await self.store.ImportService.import_local_calendar_from_file(save_path, user_id)

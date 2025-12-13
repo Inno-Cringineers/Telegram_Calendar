@@ -7,6 +7,7 @@ Provides CRUD operations and query methods for Reminder model.
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from models.event import Event
 from models.reminder import Reminder
 from repositories.exceptions import ReminderNotFoundError
 from repositories.schemas import NOT_SET, ReminderCreateSchema, ReminderFilter, ReminderResponse, ReminderUpdateSchema
@@ -48,7 +49,6 @@ class ReminderRepository:
             event_id=data.event_id,
             description=data.description,
             trigger_offset=data.trigger_offset,
-            sent=False,
         )
         self.session.add(reminder)
         await self.session.flush()
@@ -70,7 +70,6 @@ class ReminderRepository:
                 event_id=item.event_id,
                 description=item.description,
                 trigger_offset=item.trigger_offset,
-                sent=False,
             )
             self.session.add(reminder)
             await self.session.flush()
@@ -113,13 +112,20 @@ class ReminderRepository:
         Returns:
             The list of reminders as responses if found, empty list otherwise.
         """
+        if filter.user_id is not NOT_SET:
+            # Filter by user_id requires join with Event table
+            stmt = select(Reminder).join(Event).where(Event.user_id == filter.user_id)
+        else:
+            stmt = select(Reminder)
 
-        stmt = select(Reminder)
         conditions = [
-            getattr(Reminder, field) == value for field, value in vars(filter).items() if value is not NOT_SET
+            getattr(Reminder, field) == value
+            for field, value in vars(filter).items()
+            if value is not NOT_SET and field != "user_id"
         ]
 
-        stmt = stmt.where(*conditions)
+        if conditions:
+            stmt = stmt.where(*conditions)
 
         result = await self.session.execute(stmt)
         return [ReminderResponse.from_model(reminder) for reminder in result.scalars().all()]
@@ -134,4 +140,18 @@ class ReminderRepository:
         if reminder_model is None:
             raise ReminderNotFoundError(reminder_id=reminder_id)
         await self.session.delete(reminder_model)
+        await self.session.flush()
+
+    async def delete_by_description_and_user_id(self, description: str, user_id: int) -> None:
+        """Delete reminders by description and user_id.
+
+        Args:
+            description: The description to match.
+            user_id: The user ID to filter by.
+        """
+        stmt = select(Reminder).join(Event).where(Event.user_id == user_id, Reminder.description == description)
+        result = await self.session.execute(stmt)
+        reminders = result.scalars().all()
+        for reminder in reminders:
+            await self.session.delete(reminder)
         await self.session.flush()

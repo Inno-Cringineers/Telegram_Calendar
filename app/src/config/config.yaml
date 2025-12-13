@@ -39,7 +39,13 @@ bot:
   # Sync workers
   sync_workers: ${SYNC_WORKERS:-2}
   # Sync interval in seconds
-  sync_interval: ${SYNC_INTERVAL:-10}
+  sync_interval: ${SYNC_INTERVAL:-60}
+  # Metrics update interval in seconds (default: 5 minutes = 300 seconds)
+  metrics_interval: ${METRICS_INTERVAL:-300}
+  # User restriction enabled (restrict bot access to whitelisted users only)
+  user_restriction_enabled: ${USER_RESTRICTION_ENABLED:-false}
+  # Path to whitelist JSON file
+  whitelist_path: ${WHITELIST_PATH:-whitelist.json}
 
 # Default user settings
 settings:
@@ -57,5 +63,7 @@ settings:
   daily_plans_enabled: true
   # Daily plans time (HH:MM)
   daily_plans_time: "09:00"
+  # Default reminder enabled by default
+  default_reminder_enabled: true
   # Default reminder offset in seconds (15 minutes = 900 seconds)
   default_reminder_offset: 900

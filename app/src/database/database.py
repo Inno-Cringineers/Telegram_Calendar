@@ -83,6 +83,16 @@ def create_session_maker(engine: AsyncEngine) -> async_sessionmaker[AsyncSession
     Returns:
         async_sessionmaker bound to the engine.
     """
+    # Setup event listeners for scheduler rebuilds
+    # Import here to avoid circular dependencies
+    try:
+        from database.event_listeners import setup_event_listeners  # noqa: F401
+
+        setup_event_listeners()
+    except ImportError:
+        # Event listeners module may not be available in all contexts (e.g., tests)
+        logger.warning("Could not import event_listeners, scheduler rebuilds will not be automatic")
+
     return async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 
@@ -98,6 +108,7 @@ async def create_tables(engine: AsyncEngine) -> None:
         # Import known models (if they exist in your project)
         from models.calendar import Calendar  # noqa: F401 # pyright: ignore[reportUnusedImport]
         from models.event import Event  # noqa: F401 # pyright: ignore[reportUnusedImport]
+        from models.fsm_state import FSMState  # noqa: F401 # pyright: ignore[reportUnusedImport]
         from models.reminder import Reminder  # noqa: F401 # pyright: ignore[reportUnusedImport]
         from models.settings import Settings  # noqa: F401 # pyright: ignore[reportUnusedImport]
     except Exception:
@@ -142,7 +153,7 @@ class UnitOfWork:
             UnitOfWork: UnitOfWork instance to use inside the context.
         """
         self.session = self.session_maker()
-        logger.debug("UnitOfWork: opening session and beginning transaction")
+        # logger.debug("UnitOfWork: opening session and beginning transaction")
         # begin a transaction
         # TODO: возможно begin тут лишний и его стоит убрать, т.к. в сессии уже есть транзакция
         await self.session.begin()
@@ -160,11 +171,11 @@ class UnitOfWork:
 
         try:
             if exc_type:
-                logger.warning("UnitOfWork: exception detected, rolling back: %s", exc_val)
+                logger.warning("UnitOfWork: exception detected, rolling back: %s: %s", exc_type.__name__, exc_val)
                 await self.session.rollback()
             else:
-                logger.debug("UnitOfWork: committing transaction")
+                # logger.debug("UnitOfWork: committing transaction")
                 await self.session.commit()
         finally:
             await self.session.close()
-            logger.debug("UnitOfWork: session closed")
+            # logger.debug("UnitOfWork: session closed")

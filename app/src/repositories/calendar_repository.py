@@ -85,21 +85,28 @@ class CalendarRepository:
 
         return await self._update_model(calendar_model, data)
 
-    async def update_by_url(self, url: str, data: CalendarUpdateSchema) -> CalendarResponse:
-        """Update a calendar by URL.
+    async def update_by_url(self, url: str, user_id: int, data: CalendarUpdateSchema) -> CalendarResponse:
+        """Update a calendar by URL and user_id.
 
         Args:
             url: The URL of the calendar to update.
+            user_id: The user ID who owns the calendar.
             data: CalendarUpdateSchema with calendar data.
 
         Returns:
             The updated calendar response.
+
+        Raises:
+            CalendarNotFoundError: If calendar with given URL and user_id is not found.
         """
-        calendar_model = await self.session.execute(select(Calendar).where(Calendar.url == url))
-        if calendar_model is None:
+        calendar_model = await self.session.execute(
+            select(Calendar).where(Calendar.url == url, Calendar.user_id == user_id)
+        )
+        result = calendar_model.scalar_one_or_none()
+        if result is None:
             raise CalendarNotFoundError(calendar_id=None)
 
-        return await self._update_model(calendar_model.scalar_one(), data)
+        return await self._update_model(result, data)
 
     async def _update_model(self, calendar_model: Calendar, data: CalendarUpdateSchema) -> CalendarResponse:
         for field in data.__dataclass_fields__:

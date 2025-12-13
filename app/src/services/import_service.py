@@ -1,7 +1,7 @@
 """Import service for importing events from icalendar files."""
 
 import uuid
-from datetime import date, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from typing import TYPE_CHECKING
 
 from icalendar.prop import vDuration
@@ -94,10 +94,11 @@ class ImportService:
             calendar: CalendarResponse to create the event for.
             schema: VEventSchema to create the event from.
         """
-        # check if event already exists - then update it
-        event = await self.store.EventService.find(EventFilter(uid=schema.uid))
+        # check if event already exists in this calendar - then update it
+        # Filter by both uid and calendar_id to ensure events are user-specific
+        event = await self.store.EventService.find(EventFilter(uid=schema.uid, calendar_id=calendar.id))  # type: ignore[call-arg]
         if event != []:
-            await self.store.EventService.update_by_id(
+            updated_event = await self.store.EventService.update_by_id(
                 event[0].id,
                 EventUpdateSchema(
                     date_start=schema.date_start,
@@ -112,17 +113,19 @@ class ImportService:
                 ),
             )
             # delete reminders associated with the event
-            await self.store.ReminderService.delete_by_event_id(event[0].id)
-            # create reminders
+            # await self.store.ReminderService.delete_by_event_id(event[0].id)
+            # create reminders from schema alarms
             if schema.alarms is not None:
                 for alarm in schema.alarms:
-                    await self._create_reminder(event[0], alarm)
+                    await self._create_reminder(updated_event, alarm)
+            # Create default reminder if enabled and doesn't exist
+            await self.store.ReminderService.create_default(updated_event.id)
             return
 
         event = EventCreateSchema(
             user_id=calendar.user_id,
             calendar_id=calendar.id,
-            uid=schema.uid if schema.uid is not None else await self._generate_uid(),
+            uid=schema.uid if schema.uid is not None else await self._generate_uid(calendar.id),
             date_start=schema.date_start,
             date_end=schema.date_end,
             all_day=self._is_all_day(schema.date_start, schema.date_end),
@@ -139,25 +142,31 @@ class ImportService:
                 await self._create_reminder(created_event, alarm)
 
     async def _create_reminder(self, event: EventResponse, alarm: VAlarmSchema) -> None:
-        """Create a new reminder in the database.
-
-        Args:
-            event_id: ID of the event to create the reminder for.
-            alarm: VAlarmSchema to create the reminder from.
-        """
-
+        """Create a new reminder in the database, only for future occurrences."""
         trigger_offset = alarm.trigger_offset
+
         if trigger_offset is None:
             if alarm.trigger_datetime is None:
                 return
-            # calculate trigger offset from trigger datetime
-            trigger_offset = vDuration(alarm.trigger_datetime - event.date_start).to_ical().decode("utf-8")
+            # вычисляем offset из trigger_datetime
+            delta = alarm.trigger_datetime - event.date_start
+            trigger_offset = vDuration(delta).to_ical().decode("utf-8")
 
+        # Парсим offset в timedelta
+        delta = vDuration.from_ical(trigger_offset)  # timedelta
+
+        # Момент отправки напоминания
+        reminder_datetime = event.date_start + delta
+
+        # Скипаем прошедшие
+        if reminder_datetime <= datetime.now(UTC):
+            return
+
+        # Сохраняем
         reminder = ReminderCreateSchema(
             event_id=event.id,
             description=alarm.description,
             trigger_offset=trigger_offset,
-            sent=False,
         )
         await self.store.ReminderService.create(reminder)
 
@@ -178,7 +187,6 @@ class ImportService:
         """
         # loading entities from file using ICSParser
         schemas = ICSParser(file_path).get_schemas()
-
         # checking if calendar already exists
         calendar = await self.store.CalendarService.find(CalendarFilter(user_id=user_id, url=calendar_url))
         if calendar == []:
@@ -202,14 +210,17 @@ class ImportService:
             schema.alarms = None
             await self._create_event(calendar, schema)
 
-    async def _generate_uid(self) -> str:
-        """Generate a unique UID for an event.
+    async def _generate_uid(self, calendar_id: int) -> str:
+        """Generate a unique UID for an event within a calendar.
 
-        Generates UUID4 and checks if it already exists in the database.
+        Generates UUID4 and checks if it already exists in the specified calendar.
         Retries up to 1000 times before raising an error.
 
+        Args:
+            calendar_id: The calendar ID to check uniqueness within.
+
         Returns:
-            Unique UID string.
+            Unique UID string within the calendar.
 
         Raises:
             ValueError: If unable to generate a unique UID after 1000 attempts.
@@ -217,7 +228,8 @@ class ImportService:
         event_service = self.store.EventService
         for _ in range(1000):
             uid = str(uuid.uuid4())
-            if not await event_service.find(EventFilter(uid=uid)):
+            # Check uniqueness within the calendar, not globally
+            if not await event_service.find(EventFilter(uid=uid, calendar_id=calendar_id)):  # type: ignore[call-arg]
                 return uid
         raise ValueError("Failed to generate unique ID for event")
 

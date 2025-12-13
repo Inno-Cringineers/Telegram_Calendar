@@ -45,6 +45,7 @@ def settings_menu_inline(lang: str = "en") -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text=t("btn.language", lang=lang), callback_data="settings_language")],
         [InlineKeyboardButton(text=t("btn.quiet_hours", lang=lang), callback_data="settings_quiet_hours")],
         [InlineKeyboardButton(text=t("btn.daily_plans_time", lang=lang), callback_data="settings_daily_plans_time")],
+        [InlineKeyboardButton(text=t("btn.default_reminder", lang=lang), callback_data="settings_default_reminder")],
         [InlineKeyboardButton(text=t("btn.back", lang=lang), callback_data="back_to_main")],
     ]
     return _mk_markup(buttons)
@@ -53,10 +54,10 @@ def settings_menu_inline(lang: str = "en") -> InlineKeyboardMarkup:
 def events_menu_inline(lang: str = "en") -> InlineKeyboardMarkup:
     """Create events menu inline keyboard."""
     buttons = [
-        [InlineKeyboardButton(text=t("btn.import", lang=lang), callback_data="events_import")],
-        [InlineKeyboardButton(text=t("btn.export", lang=lang), callback_data="events_export")],
         [InlineKeyboardButton(text=t("btn.add", lang=lang), callback_data="events_create")],
         [InlineKeyboardButton(text=t("btn.view", lang=lang), callback_data="events_view")],
+        [InlineKeyboardButton(text=t("btn.import", lang=lang), callback_data="events_import")],
+        [InlineKeyboardButton(text=t("btn.export", lang=lang), callback_data="events_export")],
         [InlineKeyboardButton(text=t("btn.back", lang=lang), callback_data="back_to_main")],
     ]
     return _mk_markup(buttons)
@@ -152,9 +153,11 @@ def confirm_calendar_rename_inline(lang: str = "en") -> InlineKeyboardMarkup:
     return _mk_markup(buttons)
 
 
-def daily_plan_time_menu_inline(lang: str = "ru") -> InlineKeyboardMarkup:
+def daily_plan_time_menu_inline(lang: str = "ru", enabled: bool = False) -> InlineKeyboardMarkup:
     """Create daily plan time menu inline keyboard."""
+    enable_text = t("btn.daily_plan.disable", lang=lang) if enabled else t("btn.daily_plan.enable", lang=lang)
     buttons = [
+        [InlineKeyboardButton(text=enable_text, callback_data="enable_disable_daily_plans")],
         [InlineKeyboardButton(text=t("btn.daily_plan_time.enter", lang=lang), callback_data="set_daily_plan_time")],
         [InlineKeyboardButton(text=t("btn.back", lang=lang), callback_data="menu_settings")],
     ]
@@ -165,6 +168,32 @@ def daily_plans_time_accept_reject_inline(lang: str = "en") -> InlineKeyboardMar
     """Create daily plans time accept reject inline keyboard."""
     buttons = [
         [InlineKeyboardButton(text=t("btn.accept", lang=lang), callback_data="accept_daily_plans_time")],
+        [InlineKeyboardButton(text=t("btn.reject", lang=lang), callback_data="menu_settings")],
+    ]
+    return _mk_markup(buttons)
+
+
+def default_reminder_menu_inline(lang: str = "en", enabled: bool = False) -> InlineKeyboardMarkup:
+    """Create default reminder menu inline keyboard."""
+    enable_text = (
+        t("btn.default_reminder.disable", lang=lang) if enabled else t("btn.default_reminder.enable", lang=lang)
+    )
+    buttons = [
+        [InlineKeyboardButton(text=enable_text, callback_data="enable_disable_default_reminder")],
+        [
+            InlineKeyboardButton(
+                text=t("btn.default_reminder_time.enter", lang=lang), callback_data="set_default_reminder_time"
+            )
+        ],
+        [InlineKeyboardButton(text=t("btn.back", lang=lang), callback_data="menu_settings")],
+    ]
+    return _mk_markup(buttons)
+
+
+def default_reminder_time_accept_reject_inline(lang: str = "en") -> InlineKeyboardMarkup:
+    """Create default reminder time accept reject inline keyboard."""
+    buttons = [
+        [InlineKeyboardButton(text=t("btn.accept", lang=lang), callback_data="accept_default_reminder_time")],
         [InlineKeyboardButton(text=t("btn.reject", lang=lang), callback_data="menu_settings")],
     ]
     return _mk_markup(buttons)
@@ -192,19 +221,145 @@ def event_confirmation_inline(lang: str = "ru") -> InlineKeyboardMarkup:
     buttons = [
         [
             InlineKeyboardButton(text=t("btn.accept", lang=lang), callback_data="confirm_event"),
-            InlineKeyboardButton(text=t("btn.reject", lang=lang), callback_data="events_cancel"),
+            InlineKeyboardButton(text=t("btn.reject", lang=lang), callback_data="reject_event"),
         ]
     ]
     return _mk_markup(buttons)
 
 
-def create_calendar(year: int | None = None, month: int | None = None, lang: str = "ru") -> InlineKeyboardMarkup:
+def event_inline(event_id: int, is_local: bool, lang: str = "ru") -> InlineKeyboardMarkup:
+    """Create event inline keyboard with action buttons.
+
+    Args:
+        event_id: Event ID.
+        is_local: True if event is from local calendar.
+        lang: Language code.
+
+    Returns:
+        InlineKeyboardMarkup with event action buttons.
+    """
+    buttons = []
+    if is_local:
+        # For local events: delete, edit, reminders
+        buttons.append(
+            [
+                InlineKeyboardButton(text=t("btn.delete", lang=lang), callback_data=f"event_delete:{event_id}"),
+                InlineKeyboardButton(text=t("btn.edit", lang=lang), callback_data=f"event_edit:{event_id}"),
+                InlineKeyboardButton(text=t("btn.reminders", lang=lang), callback_data=f"event_reminders:{event_id}"),
+            ]
+        )
+    else:
+        # For external events: only reminders
+        buttons.append(
+            [
+                InlineKeyboardButton(text=t("btn.reminders", lang=lang), callback_data=f"event_reminders:{event_id}"),
+            ]
+        )
+    return _mk_markup(buttons)
+
+
+def reminder_list_inline(event_id: int, lang: str = "ru") -> InlineKeyboardMarkup:
+    """Create reminder list inline keyboard with create button.
+
+    Args:
+        event_id: Event ID.
+        lang: Language code.
+
+    Returns:
+        InlineKeyboardMarkup with create reminder button.
+    """
+    buttons = [
+        [InlineKeyboardButton(text=t("btn.create_reminder", lang=lang), callback_data=f"reminder_create:{event_id}")],
+    ]
+    return _mk_markup(buttons)
+
+
+def edit_event_fields_inline(lang: str = "en") -> InlineKeyboardMarkup:
+    """Create edit event fields selection inline keyboard.
+
+    Args:
+        lang: Language code.
+
+    Returns:
+        InlineKeyboardMarkup with field selection buttons.
+    """
+    buttons = [
+        [InlineKeyboardButton(text=t("events.edit.btn.title", lang=lang), callback_data="edit_event_title")],
+        [
+            InlineKeyboardButton(
+                text=t("events.edit.btn.description", lang=lang), callback_data="edit_event_description"
+            )
+        ],
+        [InlineKeyboardButton(text=t("events.edit.btn.start_date", lang=lang), callback_data="edit_event_start_date")],
+        [InlineKeyboardButton(text=t("events.edit.btn.start_time", lang=lang), callback_data="edit_event_start_time")],
+        [InlineKeyboardButton(text=t("events.edit.btn.end_date", lang=lang), callback_data="edit_event_end_date")],
+        [InlineKeyboardButton(text=t("events.edit.btn.end_time", lang=lang), callback_data="edit_event_end_time")],
+        [InlineKeyboardButton(text=t("events.edit.btn.all_day", lang=lang), callback_data="edit_event_all_day")],
+        [InlineKeyboardButton(text=t("events.edit.btn.confirm", lang=lang), callback_data="edit_event_show_preview")],
+        [InlineKeyboardButton(text=t("btn.cancel", lang=lang), callback_data="edit_event_cancel")],
+    ]
+    return _mk_markup(buttons)
+
+
+def reminder_inline(reminder_id: int, event_id: int, lang: str = "ru") -> InlineKeyboardMarkup:
+    """Create reminder inline keyboard with delete button.
+
+    Args:
+        reminder_id: Reminder ID.
+        event_id: Event ID.
+        lang: Language code.
+
+    Returns:
+        InlineKeyboardMarkup with delete reminder button.
+    """
+    buttons = [
+        [InlineKeyboardButton(text=t("btn.delete", lang=lang), callback_data=f"reminder_delete:{reminder_id}")],
+    ]
+    return _mk_markup(buttons)
+
+
+def reminder_confirm_inline(lang: str = "ru") -> InlineKeyboardMarkup:
+    """Create reminder confirmation inline keyboard.
+
+    Args:
+        lang: Language code.
+
+    Returns:
+        InlineKeyboardMarkup with confirm and back buttons.
+    """
+    buttons = [
+        [
+            InlineKeyboardButton(text=t("btn.accept", lang=lang), callback_data="reminder_confirm"),
+            InlineKeyboardButton(text=t("btn.back", lang=lang), callback_data="reminder_back"),
+        ]
+    ]
+    return _mk_markup(buttons)
+
+
+def start_time_inline(cancel_callback: str, lang: str = "ru") -> InlineKeyboardMarkup:
+    """Create start time input inline keyboard with all day option."""
+    buttons = [
+        [InlineKeyboardButton(text=t("btn.all_day", lang=lang), callback_data="event_all_day")],
+        [InlineKeyboardButton(text=t("btn.cancel", lang=lang), callback_data=cancel_callback)],
+    ]
+    return _mk_markup(buttons)
+
+
+def create_calendar(
+    year: int | None = None,
+    month: int | None = None,
+    lang: str = "ru",
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+) -> InlineKeyboardMarkup:
     """Create an interactive calendar inline keyboard.
 
     Args:
         year: Year to display. If None, uses current year.
         month: Month to display (1-12). If None, uses current month.
         lang: Language code for weekday labels. Defaults to "ru".
+        start_date: Selected start date. Dates before this will be hidden.
+        end_date: Selected end date.
 
     Returns:
         InlineKeyboardMarkup representing a calendar for the specified month and year.
@@ -236,8 +391,18 @@ def create_calendar(year: int | None = None, month: int | None = None, lang: str
             if day == 0:
                 row.append(InlineKeyboardButton(text=" ", callback_data="ignore"))
             else:
-                day_str = str(day).rjust(2, "0")
-                row.append(InlineKeyboardButton(text=day_str, callback_data=f"day_{day}"))
+                day_date = datetime(year, month, day)
+                # Hide dates before start_date if it's selected
+                if start_date is not None and day_date.date() < start_date.date():
+                    row.append(InlineKeyboardButton(text=" ", callback_data="ignore"))
+                else:
+                    day_str = str(day).rjust(2, "0")
+                    # Mark selected dates with brackets
+                    if start_date is not None and day_date.date() == start_date.date():
+                        day_str = f"[{day_str}"
+                    elif end_date is not None and day_date.date() == end_date.date():
+                        day_str = f"{day_str}]"
+                    row.append(InlineKeyboardButton(text=day_str, callback_data=f"day_{day}"))
         calendar_rows.append(row)
     cancel_row = [InlineKeyboardButton(text="❌", callback_data="menu_events")]
     calendar_rows.append(cancel_row)

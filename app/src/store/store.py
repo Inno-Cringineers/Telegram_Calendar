@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from repositories.settings_repository import SettingsRepository
     from services.calendar_service import CalendarService
     from services.event_service import EventService
+    from services.export_service import ExportService
     from services.import_service import ImportService
     from services.reminder_service import ReminderService
     from services.settings_service import SettingsService
@@ -48,7 +49,10 @@ class Store:
             # event = await store.event_service.create_with_reminder(...)
     """
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+    ) -> None:
         """Initialize Store with a database session.
 
         Args:
@@ -63,6 +67,7 @@ class Store:
         self._settings_repository: SettingsRepository | None = None
         self._upload_service: UploadService | None = None
         self._import_service: ImportService | None = None
+        self._export_service: ExportService | None = None
         self._settings_service: SettingsService | None = None
         self._calendar_service: CalendarService | None = None
         self._reminder_service: ReminderService | None = None
@@ -153,6 +158,19 @@ class Store:
 
             self._import_service = ImportService(self)
         return self._import_service
+
+    @property
+    def ExportService(self) -> "ExportService":
+        """Get ExportService instance.
+
+        Returns:
+            ExportService: The export service instance using Store's session.
+        """
+        if self._export_service is None:
+            from services.export_service import ExportService
+
+            self._export_service = ExportService(self)
+        return self._export_service
 
     @property
     def SettingsService(self) -> "SettingsService":

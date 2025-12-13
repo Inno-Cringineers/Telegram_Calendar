@@ -19,7 +19,9 @@ class CalendarQueueItem:
 
 class SyncWorker:
     def __init__(
-        self, queue: asyncio.Queue[CalendarQueueItem | None], session_maker: async_sessionmaker[AsyncSession]
+        self,
+        queue: asyncio.Queue[CalendarQueueItem | None],
+        session_maker: async_sessionmaker[AsyncSession],
     ) -> None:
         self.queue = queue
         self.session_maker = session_maker

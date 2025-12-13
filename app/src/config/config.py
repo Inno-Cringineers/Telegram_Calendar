@@ -32,6 +32,9 @@ class BotConfig:
     telegram_token: str
     sync_workers: int
     sync_interval: timedelta
+    metrics_interval: timedelta
+    user_restriction_enabled: bool
+    whitelist_path: str
 
 
 @dataclass
@@ -46,6 +49,7 @@ class SettingsConfig:
         quiet_hours_end: Default quiet hours end time as "HH:MM" string.
         daily_plans_enabled: Whether daily plans are enabled by default.
         daily_plans_time: Default daily plans time as "HH:MM" string.
+        default_reminder_enabled: Whether default reminder is enabled by default.
         default_reminder_offset: Default reminder offset in seconds.
     """
 
@@ -56,6 +60,7 @@ class SettingsConfig:
     quiet_hours_end: str
     daily_plans_enabled: bool
     daily_plans_time: str
+    default_reminder_enabled: bool
     default_reminder_offset: int
 
 
@@ -183,6 +188,11 @@ def load_config() -> Config:
         telegram_token=yaml_config.get("bot", {}).get("telegram_token"),
         sync_workers=int(yaml_config.get("bot", {}).get("sync_workers", 2)),
         sync_interval=timedelta(seconds=int(yaml_config.get("bot", {}).get("sync_interval", 60))),
+        metrics_interval=timedelta(seconds=int(yaml_config.get("bot", {}).get("metrics_interval", 300))),
+        user_restriction_enabled=str_to_bool(
+            yaml_config.get("bot", {}).get("user_restriction_enabled", os.getenv("USER_RESTRICTION_ENABLED", "false"))
+        ),
+        whitelist_path=yaml_config.get("bot", {}).get("whitelist_path", os.getenv("WHITELIST_PATH", "whitelist.json")),
     )
 
     settings_config_data = yaml_config.get("settings", {})
@@ -194,6 +204,7 @@ def load_config() -> Config:
         quiet_hours_end=settings_config_data.get("quiet_hours_end", "06:00"),
         daily_plans_enabled=str_to_bool(settings_config_data.get("daily_plans_enabled", True)),
         daily_plans_time=settings_config_data.get("daily_plans_time", "09:00"),
+        default_reminder_enabled=str_to_bool(settings_config_data.get("default_reminder_enabled", True)),
         default_reminder_offset=settings_config_data.get("default_reminder_offset", 900),
     )
 
