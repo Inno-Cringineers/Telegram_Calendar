@@ -1,4 +1,4 @@
-# Sprint 5 Retrospective
+# Sprint 6 Retrospective
 
 - Yes, we achieved the Sprint Goal.
 
