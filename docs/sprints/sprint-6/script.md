@@ -1,4 +1,4 @@
-# Sprint 4 Meeting Script
+# Sprint 6 Meeting Script
 
 1. [Tg bot](https://t.me/calendar_collection_bot)
     - Show tg bot.

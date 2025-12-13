@@ -15,15 +15,15 @@ https://drive.google.com/drive/folders/1lFrmgIr-B6MBpstlfxNTnKZliYNLUD5s?usp=dri
 
 **WHAT:** Fix errors in the Russian-language interface text of the bot.
    **WHO:** [rikire](https://github.com/rikire)
-   **WHEN:**  sprint 8
+   **WHEN:**  sprint 7
 
 **WHAT:** Split the combined "Enable/Disable" buttons into two separate buttons in the "Quiet Hours" settings.
    **WHO:** [rikire](https://github.com/rikire)
-   **WHEN:**  sprint 8
+   **WHEN:**  sprint 7
 
 **WHAT:** Add an error message for a broken calendar link. The text should explain what to do: "Delete this calendar and add a new one with an updated link."
    **WHO:** [rikire](https://github.com/rikire)
-   **WHEN:**  sprint 8
+   **WHEN:**  sprint 7
 
 
 
