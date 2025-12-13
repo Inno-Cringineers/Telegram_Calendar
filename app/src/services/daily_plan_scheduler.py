@@ -5,7 +5,7 @@ from aiogram import Bot
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from database.database import UnitOfWork
-from handlers.daily_plan import get_event_duration, get_event_source
+from handlers.daily_plan import get_event_duration, get_event_recurrence_info, get_event_source
 from i18n.strings import t
 from logger.logger import logger
 from repositories.schemas import EventDurationFilter
@@ -152,6 +152,16 @@ class DailyPlanScheduler:
                 except Exception as e:
                     logger.exception("Failed to send daily plan for user %s: %s", user_id, e)
 
+                # Recalculate next daily plan time after sending (to avoid sending twice)
+                # This ensures we get the next day's time
+                next = await self._get_next_daily_plan_for_user(user_id)
+                if next is None:
+                    # sleep while rebuild is requested by user
+                    await self._stop_event.wait()
+                    if self._stop_event.is_set():
+                        break
+                    continue
+
                 # small sleep to avoid tight loop
                 await asyncio.sleep(0.5)  # 0.5 seconds sleep TODO: make it configurable
 
@@ -208,6 +218,7 @@ class DailyPlanScheduler:
                         title=event.title or t("daily.plan.event.title.none", lang=settings.language),
                         description=event.description or t("daily.plan.event.description.none", lang=settings.language),
                         duration=get_event_duration(event, user_tz, settings.language),
+                        recurrence=get_event_recurrence_info(event, settings.language),
                         source=await get_event_source(event, store, settings.language),
                     ),
                     parse_mode="HTML",

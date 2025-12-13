@@ -1,10 +1,9 @@
 import asyncio
 
 from aiogram import Bot, Dispatcher
-from aiogram.fsm.storage.memory import MemoryStorage
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from config.config import load_config
+from config.config import Config, load_config
 from database.database import create_engine, create_session_maker, create_tables
 from logger.logger import logger, setup_logger
 from middlewares.logging_middleware import (
@@ -13,11 +12,14 @@ from middlewares.logging_middleware import (
 )
 from middlewares.settings_middleware import SettingsMiddleware
 from middlewares.store_middlware import StoreMiddleware
+from middlewares.whitelist_middleware import WhitelistMiddleware
 from router.router import router
 from services.daily_plan_scheduler import init_daily_plan_scheduler
 from services.metrics_service import MetricsService
 from services.reminder_scheduler import init_reminder_scheduler
 from services.sync_service import SyncService
+from storage.postgres_storage import PostgresStorage
+from utils.bot_commands import setup_bot_commands
 
 
 async def setup_database_and_store(db_url: str) -> async_sessionmaker[AsyncSession]:
@@ -39,15 +41,36 @@ async def setup_database_and_store(db_url: str) -> async_sessionmaker[AsyncSessi
     return session_maker
 
 
-def setup_middlewares(dp: Dispatcher) -> None:
-    """Setup all middlewares for dispatcher."""
+def setup_middlewares(dp: Dispatcher, cfg: Config) -> WhitelistMiddleware | None:
+    """Setup all middlewares for dispatcher.
+
+    Args:
+        dp: Dispatcher instance.
+        cfg: Configuration object.
+
+    Returns:
+        WhitelistMiddleware instance if enabled, None otherwise.
+    """
     # Logging middlewares
     dp.message.outer_middleware(MessageLoggingMiddleware())
     dp.callback_query.outer_middleware(CallbackQueryLoggingMiddleware())
     # Settings middleware
     dp.message.middleware(SettingsMiddleware())
     dp.callback_query.middleware(SettingsMiddleware())
+    # Whitelist middleware (if enabled)
+    whitelist_middleware: WhitelistMiddleware | None = None
+    if cfg.bot.user_restriction_enabled:
+        whitelist_middleware = WhitelistMiddleware(
+            whitelist_path=cfg.bot.whitelist_path, enabled=cfg.bot.user_restriction_enabled
+        )
+        # Whitelist should be checked first (outer middleware)
+        dp.message.outer_middleware(whitelist_middleware)
+        dp.callback_query.outer_middleware(whitelist_middleware)
+        logger.info(f"WhitelistMiddleware enabled with whitelist path: {cfg.bot.whitelist_path}")
+    else:
+        logger.debug("WhitelistMiddleware disabled")
     logger.debug("Middlewares setup completed")
+    return whitelist_middleware
 
 
 async def main() -> None:
@@ -80,14 +103,16 @@ async def main() -> None:
     logger.debug(f"Settings daily plans enabled: {cfg.settings.daily_plans_enabled}")
     logger.debug(f"Settings daily plans time: {cfg.settings.daily_plans_time}")
     logger.debug(f"Settings default reminder offset: {cfg.settings.default_reminder_offset}")
+    logger.debug(f"Bot user restriction enabled: {cfg.bot.user_restriction_enabled}")
+    logger.debug(f"Bot whitelist path: {cfg.bot.whitelist_path}")
 
     # Create bot
     bot = Bot(token=cfg.bot.telegram_token)
-    # Create dispatcher
-    dp = Dispatcher(storage=MemoryStorage())
-    # TODO: Add Redis storage for FSM
     # Setup database
     session_maker = await setup_database_and_store(cfg.database.url)
+    # Create dispatcher with PostgreSQL storage
+    storage = PostgresStorage(session_maker)
+    dp = Dispatcher(storage=storage)
     # Setup reminder scheduler
     reminder_scheduler = init_reminder_scheduler(session_maker, bot)
     daily_plan_scheduler = init_daily_plan_scheduler(session_maker, bot)
@@ -108,12 +133,23 @@ async def main() -> None:
     metrics_task = asyncio.create_task(metrics_service.start_metrics_service())
 
     # Setup middlewares
-    setup_middlewares(dp)
+    whitelist_middleware = setup_middlewares(dp, cfg)
+    # Start whitelist file watcher if enabled
+    if whitelist_middleware:
+        await whitelist_middleware.start_file_watcher()
+
+    # Setup bot commands menu
+    await setup_bot_commands(bot)
+
     # Include router
     dp.include_router(router)
     # Start bot
     logger.info("Bot is running in polling mode...")
     await dp.start_polling(bot, timeout=cfg.bot.timeout)
+
+    # Stop whitelist file watcher if enabled
+    if whitelist_middleware:
+        await whitelist_middleware.stop_file_watcher()
 
     # Stop daily plan scheduler
     stop_daily_plan_scheduler_task = asyncio.create_task(daily_plan_scheduler.stop())

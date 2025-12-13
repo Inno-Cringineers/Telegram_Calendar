@@ -42,6 +42,10 @@ bot:
   sync_interval: ${SYNC_INTERVAL:-60}
   # Metrics update interval in seconds (default: 5 minutes = 300 seconds)
   metrics_interval: ${METRICS_INTERVAL:-300}
+  # User restriction enabled (restrict bot access to whitelisted users only)
+  user_restriction_enabled: ${USER_RESTRICTION_ENABLED:-false}
+  # Path to whitelist JSON file
+  whitelist_path: ${WHITELIST_PATH:-whitelist.json}
 
 # Default user settings
 settings:

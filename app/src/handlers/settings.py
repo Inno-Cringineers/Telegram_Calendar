@@ -80,17 +80,18 @@ async def open_settings_menu(query: CallbackQuery, state: FSMContext, settings: 
     """Open settings menu."""
     await state.set_state(SettingsStates.in_settings)
 
-    message_id = query.message.message_id
-    chat_id = query.message.chat.id
-    await edit_message(
-        query.bot,
-        chat_id,
-        message_id,
-        state,
-        await get_settings_title(settings),
-        settings_menu_inline(lang=settings.lang),
-        parse_mode="HTML",
-    )
+    message_id = query.message.message_id if query.message else None
+    chat_id = query.message.chat.id if query.message else 0
+    if query.bot and query.message:
+        await edit_message(
+            query.bot,
+            chat_id,
+            message_id,
+            state,
+            await get_settings_title(settings),
+            settings_menu_inline(lang=settings.lang),
+            parse_mode="HTML",
+        )
 
 
 @router.callback_query(F.data == "settings_timezone", StateFilter(SettingsStates.in_settings))
@@ -560,7 +561,7 @@ async def process_daily_plans_time(message: Message, state: FSMContext, settings
         return
 
     await state.update_data(daily_plans_time=daily_plans_time)
-    await state.set_state(SettingsStates.in_settings)
+    await state.set_state(SettingsStates.editing_daily_plans_time)
     text = (
         f"{t('settings.daily.plans.time.title', lang=settings.lang)}\n\n"
         f"<i>{t('settings.daily.plans.time.accept.reject', lang=settings.lang, daily_plan=daily_plans_time)}</i>"
@@ -744,7 +745,7 @@ async def process_default_reminder_time(message: Message, state: FSMContext, set
         return
 
     await state.update_data(default_reminder_time=reminder_time)
-    await state.set_state(SettingsStates.in_settings)
+    await state.set_state(SettingsStates.editing_default_reminder_time)
     text = (
         f"{t('settings.default.reminder.title', lang=settings.lang)}\n\n"
         f"<i>{t('settings.default.reminder.time.accept.reject', lang=settings.lang, reminder=reminder_time)}</i>"
@@ -767,6 +768,7 @@ async def accept_default_reminder_time(
     query: CallbackQuery, state: FSMContext, store: Store, settings: SettingsData
 ) -> None:
     """Handle accepting default reminder time."""
+    # logger.debug("Accepting default reminder time", extra={"state": await state.get_data()})
     user_id = query.from_user.id
     reminder_time_str = (await state.get_data()).get("default_reminder_time")
     if reminder_time_str is None:
@@ -784,14 +786,22 @@ async def accept_default_reminder_time(
     reminder_service = store.ReminderService
 
     # Update settings
-    await settings_service.update_by_user_id(
+    # logger.debug("Updating settings", extra={"user_id": user_id, "offset_seconds": offset_seconds})
+    updated_settings = await settings_service.update_by_user_id(
         user_id,
         data=SettingsUpdateSchema(default_reminder_offset=offset_seconds),
     )
+    # logger.debug("Settings updated", extra={"user_id": user_id, "updated_settings": updated_settings})
+    if updated_settings is None:
+        logger.error("Settings not updated", extra={"user_id": user_id})
+        return
 
     # Update or create default reminders if enabled
     if settings.default_reminder_enabled:
+        # logger.debug("Updating default reminders", extra={"user_id": user_id})
         await reminder_service.update_default_reminders_for_user(user_id)
+        # logger.debug("Default reminders updated", extra={"user_id": user_id})
+
     await state.set_state(SettingsStates.in_settings)
     await edit_message(
         query.bot,

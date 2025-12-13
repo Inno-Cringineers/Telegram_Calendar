@@ -9,6 +9,7 @@ class EventsMenuStates(StatesGroup):
     in_events_export = State()
     in_events_create = State()
     in_events_view = State()
+    selecting_date_range = State()
 
 
 class CreateEventStates(StatesGroup):
@@ -18,6 +19,8 @@ class CreateEventStates(StatesGroup):
     waiting_for_description = State()
     waiting_for_start_date = State()
     waiting_for_start_time = State()
+    waiting_for_end_date = State()
+    waiting_for_end_time = State()
     waiting_for_confirmation = State()
 
 
@@ -26,7 +29,12 @@ class EditEventStates(StatesGroup):
 
     waiting_for_selection = State()
     waiting_for_new_title = State()
-    waiting_for_new_date = State()
+    waiting_for_new_description = State()
+    waiting_for_new_start_date = State()
+    waiting_for_new_start_time = State()
+    waiting_for_new_end_date = State()
+    waiting_for_new_end_time = State()
+    waiting_for_edit_confirmation = State()
 
 
 class DeleteEventStates(StatesGroup):
@@ -68,3 +76,12 @@ class MainMenuStates(StatesGroup):
     """States for main menu."""
 
     in_main_menu = State()
+
+
+class ReminderManagementStates(StatesGroup):
+    """States for managing reminders."""
+
+    viewing_reminders = State()
+    waiting_for_reminder_description = State()
+    waiting_for_reminder_time = State()
+    waiting_for_reminder_confirmation = State()

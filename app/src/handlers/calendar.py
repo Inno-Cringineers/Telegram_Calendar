@@ -27,18 +27,16 @@ router = Router()
 async def open_calendar_menu(query: CallbackQuery, state: FSMContext, settings: SettingsData) -> None:
     """Open calendar linking menu."""
     await state.set_state(CalendarLinkingStates.in_calendar_menu)
-    await clean_messages(query.bot, query.message.chat.id, state)
+    await clean_messages(query.bot, query.message.chat.id, state, delete_all=True)
 
-    await edit_message(
+    await send_message(
         query.bot,
         query.message.chat.id,
-        query.message.message_id,
         state,
         f"{t('calendar_link_title', lang=settings.lang)}\n\n{t('calendar_link_description', lang=settings.lang)}",
         calendar_menu_inline(lang=settings.lang),
         parse_mode="HTML",
         delete_keyboard=True,
-        delete_message=False,
     )
 
 
@@ -112,10 +110,16 @@ async def calendar_unlink(query: CallbackQuery, state: FSMContext, store: Store,
         return
 
     calendar_id = int(query.data.split(":")[1])
+    user_id = query.from_user.id
 
     calendar = await store.CalendarService.get_by_id(calendar_id)
     if calendar is None:
         logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
+        return
+
+    # Verify calendar belongs to the user
+    if calendar.user_id != user_id:
+        logger.error("Calendar does not belong to user", extra={"calendar_id": calendar_id, "user_id": user_id})
         return
 
     # Check if we're enabling sync (was False, will be True)
@@ -194,6 +198,16 @@ async def calendar_delete(query: CallbackQuery, state: FSMContext, store: Store,
         return
 
     calendar_id = int(query.data.split(":")[1])
+    user_id = query.from_user.id
+
+    # Verify calendar belongs to the user before deletion
+    calendar = await store.CalendarService.get_by_id(calendar_id)
+    if calendar is None:
+        logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
+        return
+    if calendar.user_id != user_id:
+        logger.error("Calendar does not belong to user", extra={"calendar_id": calendar_id, "user_id": user_id})
+        return
 
     messages = await get_messages(state)
 
@@ -217,16 +231,16 @@ async def calendar_delete(query: CallbackQuery, state: FSMContext, store: Store,
 async def calendar_new(query: CallbackQuery, state: FSMContext, settings: SettingsData) -> None:
     """Link a new calendar."""
     await state.set_state(CalendarLinkingStates.waiting_for_calendar_link)
+    await clean_messages(query.bot, query.message.chat.id, state, delete_all=True)
 
     text = f"{t('calendar.new.title', lang=settings.lang)}\n\n{t('calendar.new.enter_link', lang=settings.lang)}\n\n"
-    await edit_message(
+    await send_message(
         query.bot,
         query.message.chat.id,
-        query.message.message_id,
         state,
         text=text,
         parse_mode="HTML",
-        reply_markup=back_button(lang=settings.lang),
+        reply_markup=back_button("menu_link_calendar", lang=settings.lang),
     )
 
 
@@ -254,7 +268,7 @@ async def process_calendar_link(message: Message, state: FSMContext, settings: S
                 f"{t('calendar.link.url.empty', lang=settings.lang)}\n\n"
             ),
             parse_mode="HTML",
-            reply_markup=back_button(lang=settings.lang),
+            reply_markup=back_button("menu_link_calendar", lang=settings.lang),
         )
         return
     if len(url) > 255:
@@ -268,7 +282,7 @@ async def process_calendar_link(message: Message, state: FSMContext, settings: S
                 f"{t('calendar.link.url_too_long', lang=settings.lang)}\n\n"
             ),
             parse_mode="HTML",
-            reply_markup=back_button(lang=settings.lang),
+            reply_markup=back_button("menu_link_calendar", lang=settings.lang),
         )
         return
 
@@ -283,7 +297,7 @@ async def process_calendar_link(message: Message, state: FSMContext, settings: S
                 f"{t('calendar.link.url.invalid', lang=settings.lang)}\n\n"
             ),
             parse_mode="HTML",
-            reply_markup=back_button(lang=settings.lang),
+            reply_markup=back_button("menu_link_calendar", lang=settings.lang),
         )
         return
 
@@ -300,7 +314,7 @@ async def process_calendar_link(message: Message, state: FSMContext, settings: S
                 f"{t('calendar.link.url.exists', lang=settings.lang)}\n\n"
             ),
             parse_mode="HTML",
-            reply_markup=back_button(lang=settings.lang),
+            reply_markup=back_button("menu_link_calendar", lang=settings.lang),
         )
         return
 
@@ -315,7 +329,7 @@ async def process_calendar_link(message: Message, state: FSMContext, settings: S
             f"{t('calendar.new.title', lang=settings.lang)}\n\n{t('calendar.link.enter_name', lang=settings.lang)}\n\n"
         ),
         parse_mode="HTML",
-        reply_markup=back_button(lang=settings.lang),
+        reply_markup=back_button("menu_link_calendar", lang=settings.lang),
     )
 
 
@@ -341,7 +355,7 @@ async def process_calendar_name(message: Message, state: FSMContext, settings: S
                 f"{t('calendar.link.name.empty', lang=settings.lang)}\n\n"
             ),
             parse_mode="HTML",
-            reply_markup=back_button(lang=settings.lang),
+            reply_markup=back_button("menu_link_calendar", lang=settings.lang),
         )
         return
 
@@ -356,7 +370,7 @@ async def process_calendar_name(message: Message, state: FSMContext, settings: S
                 f"{t('calendar.link.name.too.long', lang=settings.lang)}\n\n"
             ),
             parse_mode="HTML",
-            reply_markup=back_button(lang=settings.lang),
+            reply_markup=back_button("menu_link_calendar", lang=settings.lang),
         )
         return
 
@@ -433,10 +447,16 @@ async def calendar_rename(query: CallbackQuery, state: FSMContext, store: Store,
         return
 
     calendar_id = int(query.data.split(":")[1])
+    user_id = query.from_user.id
 
     calendar = await store.CalendarService.get_by_id(calendar_id)
     if calendar is None:
         logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
+        return
+
+    # Verify calendar belongs to the user
+    if calendar.user_id != user_id:
+        logger.error("Calendar does not belong to user", extra={"calendar_id": calendar_id, "user_id": user_id})
         return
 
     await clean_messages(query.bot, query.message.chat.id, state)
@@ -462,7 +482,7 @@ async def calendar_rename(query: CallbackQuery, state: FSMContext, store: Store,
         state,
         text=text,
         parse_mode="HTML",
-        reply_markup=back_button(lang=settings.lang),
+        reply_markup=back_button("menu_link_calendar", lang=settings.lang),
     )
 
 
@@ -481,9 +501,16 @@ async def process_calendar_name_rename(
     if calendar_id is None:
         logger.error("Calendar id is not found", extra={"state": state})
         return
+    user_id = message.from_user.id
+
     calendar = await store.CalendarService.get_by_id(calendar_id)
     if calendar is None:
         logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
+        return
+
+    # Verify calendar belongs to the user
+    if calendar.user_id != user_id:
+        logger.error("Calendar does not belong to user", extra={"calendar_id": calendar_id, "user_id": user_id})
         return
 
     name = message.text
@@ -500,7 +527,7 @@ async def process_calendar_name_rename(
                 f"{t('calendar.rename.name.empty', lang=settings.lang)}\n\n"
             ),
             parse_mode="HTML",
-            reply_markup=back_button(lang=settings.lang),
+            reply_markup=back_button("menu_link_calendar", lang=settings.lang),
         )
         return
 
@@ -515,7 +542,7 @@ async def process_calendar_name_rename(
                 f"{t('calendar.link.name.too.long', lang=settings.lang)}\n\n"
             ),
             parse_mode="HTML",
-            reply_markup=back_button(lang=settings.lang),
+            reply_markup=back_button("menu_link_calendar", lang=settings.lang),
         )
         return
 
@@ -548,6 +575,17 @@ async def calendar_rename_confirm(
     if calendar_id is None:
         logger.error("Calendar id is not found", extra={"state": state})
         return
+    user_id = query.from_user.id
+
+    # Verify calendar belongs to the user
+    calendar = await store.CalendarService.get_by_id(calendar_id)
+    if calendar is None:
+        logger.error("Calendar is not found", extra={"calendar_id": calendar_id})
+        return
+    if calendar.user_id != user_id:
+        logger.error("Calendar does not belong to user", extra={"calendar_id": calendar_id, "user_id": user_id})
+        return
+
     name = data.get("name")
     if name is None:
         logger.error("New name is not found", extra={"state": state})

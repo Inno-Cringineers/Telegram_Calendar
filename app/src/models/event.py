@@ -5,7 +5,7 @@ This module defines the `Event` class, which represents calendar events in the a
 from datetime import datetime
 from typing import Literal
 
-from sqlalchemy import ARRAY, Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String
+from sqlalchemy import ARRAY, Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from database.database import Base
@@ -61,7 +61,7 @@ class Event(Base):
         --- content section ---
 
         title: string | None - SUMMARY. RFC 5545 format. Event title, max 255 chars. Not empty.
-        description: string | None - DESCRIPTION, max 1024 chars.
+        description: string | None - DESCRIPTION, unlimited size.
 
     """  # noqa: E501
 
@@ -94,10 +94,15 @@ class Event(Base):
 
     # --- content section ---
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    description: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # --- SQL-level constraints ---
-    __table_args__ = (CheckConstraint("date_end >= date_start", name="end_after_start"),)
+    __table_args__ = (
+        CheckConstraint("date_end >= date_start", name="end_after_start"),
+        # UID must be unique within a calendar, not globally
+        # This allows different users to have events with the same UID from the same calendar source
+        UniqueConstraint("uid", "calendar_id", name="unique_uid_per_calendar"),
+    )
 
     # --- ORM-level validation ---
     @validates("title")
@@ -113,8 +118,16 @@ class Event(Base):
 
     @validates("description")
     def validate_description(self, key: Literal["description"], value: str | None) -> str | None:
-        if value is not None and len(value) > 1024:
-            raise ValueError("Event description (DESCRIPTION) cannot exceed 1024 characters.")
+        """Validate event description.
+
+        Args:
+            key: Field name (always "description").
+            value: Description value to validate, can be None.
+
+        Returns:
+            Description value (no size limit).
+        """
+        # Description has no size limit
         return value
 
     @validates("date_end")
