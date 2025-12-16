@@ -7,7 +7,6 @@
 # POSTGRES_PASSWORD - PostgreSQL password
 # POSTGRES_DB - PostgreSQL database
 # POSTGRES_PORT - PostgreSQL port
-# SINGLE_USER - Single user mode (True) or multi-user mode (False)
 
 # Database settings
 database:
@@ -16,7 +15,7 @@ database:
 # Logger settings
 logger:
   # Console output level
-  level: ${LOG_LEVEL:-DEBUG}
+  level: ${LOG_LEVEL:-INFO}
   # Format: 'simple' or 'detailed'
   format: detailed
   # Show in console
@@ -32,8 +31,6 @@ logger:
 bot:
   # Timeout for polling
   timeout: 30
-  # Single user mode
-  single_user: ${SINGLE_USER:-false}
   # Telegram token
   telegram_token: ${TELEGRAM_TOKEN}
   # Sync workers
