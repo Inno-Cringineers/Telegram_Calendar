@@ -5,7 +5,12 @@ from aiogram import Bot
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from database.database import UnitOfWork
-from handlers.daily_plan import get_event_duration, get_event_recurrence_info, get_event_source
+from handlers.daily_plan import (
+    get_event_end_datetime,
+    get_event_recurrence_info,
+    get_event_source,
+    get_event_start_datetime,
+)
 from i18n.strings import t
 from logger.logger import logger
 from repositories.schemas import EventDurationFilter
@@ -216,8 +221,9 @@ class DailyPlanScheduler:
                         "daily.plan.event.content",
                         lang=settings.language,
                         title=event.title or t("daily.plan.event.title.none", lang=settings.language),
+                        start_datetime=get_event_start_datetime(event, user_tz, settings.language),
+                        end_datetime=get_event_end_datetime(event, user_tz, settings.language),
                         description=event.description or t("daily.plan.event.description.none", lang=settings.language),
-                        duration=get_event_duration(event, user_tz, settings.language),
                         recurrence=get_event_recurrence_info(event, settings.language),
                         source=await get_event_source(event, store, settings.language),
                     ),

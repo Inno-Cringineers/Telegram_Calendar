@@ -26,16 +26,16 @@ msgid "btn_daily_plan"
 msgstr "📋 Получить ежедневный план"
 
 msgid "btn_daily_plan_time_enter"
-msgstr "ввести время ежедневных планов"
+msgstr "Ввести время ежедневных планов"
 
 msgid "btn_daily_plans_time"
 msgstr "⏰ Время ежедневных планов"
 
 msgid "btn_delete"
-msgstr "❌ удалить"
+msgstr "❌ Удалить"
 
 msgid "btn_edit"
-msgstr "✎ редактировать"
+msgstr "✎ Редактировать"
 
 msgid "btn_events"
 msgstr "📅 События"
@@ -65,10 +65,10 @@ msgid "btn_quiet_hours"
 msgstr "🔇 Тихие часы"
 
 msgid "btn_quiet_hours_enter"
-msgstr "ввести тихие часы"
+msgstr "Ввести тихие часы"
 
 msgid "btn_quiet_hours_enable"
-msgstr "включить/выключить"
+msgstr "Включить/выключить"
 
 msgid "btn_reject"
 msgstr "❌ Отклонить"
@@ -127,8 +127,6 @@ msgstr "Здесь вы можете просмотреть список свя�
 msgid "calendar_list_answer"
 msgstr "📑 Ваши календари"
 
-msgid "calendar_list_feature_dev"
-msgstr "Функция находится в разработке. Здесь вы можете отвязать календари."
 
 msgid "calendar_list_linked"
 msgstr "<b>Связанные календари:</b>"
@@ -304,8 +302,6 @@ msgstr "📥 Экспорт событий выбран"
 msgid "events_export_title"
 msgstr "📥 <b>Экспорт событий</b>"
 
-msgid "events_feature_dev"
-msgstr "Функция находится в разработке."
 
 msgid "events_import_description"
 msgstr "Пожалуйста, загрузите файл в формате .ics в чат"
@@ -347,7 +343,7 @@ msgid "events_view_end"
 msgstr "Конец списка событий"
 
 msgid "events_view_event_content"
-msgstr "🗓️ <b>{title}</b>\nописание: {description}\n{duration}\n{recurrence}\n{source}"
+msgstr "🗓️ <b>{title}</b>\n🕒 Начало: {start_datetime}\n🕐 Конец: {end_datetime}\n📝 Описание: {description}\n{recurrence}\n{source}"
 
 msgid "events_view_event_title_none"
 msgstr "без названия"
@@ -355,11 +351,17 @@ msgstr "без названия"
 msgid "events_view_event_description_none"
 msgstr "пусто"
 
-msgid "events_view_event_duration_all_day"
-msgstr "событие на весь день {date}"
+msgid "events_view_event_start_all_day"
+msgstr "Событие на весь день {date}"
 
-msgid "events_view_event_duration_not_all_day"
-msgstr "{date} {start} - {end}"
+msgid "events_view_event_start_not_all_day"
+msgstr "{datetime}"
+
+msgid "events_view_event_end_all_day"
+msgstr "Событие на весь день заканчивается {date}"
+
+msgid "events_view_event_end_not_all_day"
+msgstr "{datetime}"
 
 msgid "events_view_event_source_external"
 msgstr "источник: <a href=\"{link}\">{name}</a>"
@@ -401,7 +403,7 @@ msgid "settings_daily_plans_time_current"
 msgstr "Текущее время: 09:00 (Заглушка)"
 
 msgid "settings_daily_plans_time_description"
-msgstr "Функция находится в разработке. Ежедневный план будет отправляться в это время каждый день."
+msgstr "Ежедневный план будет отправляться в это время каждый день."
 
 msgid "settings_daily_plans_time_selected"
 msgstr "✅ Настройка времени ежедневных планов выбрана"
@@ -482,8 +484,6 @@ msgstr "✅ Время ежедневных планов изменено"
 msgid "settings_timezone_current"
 msgstr "Текущий часовой пояс: UTC+2 (Заглушка)"
 
-msgid "settings_timezone_feature_dev"
-msgstr "Функция находится в разработке."
 
 msgid "settings_timezone_select"
 msgstr "Выберите часовой пояс:"
@@ -546,13 +546,19 @@ msgid "daily_plan_no_events"
 msgstr "Сегодня у вас нет событий"
 
 msgid "daily_plan_event_content"
-msgstr "🗓️ <b>{title}</b>\nописание: {description}\n{duration}\n{recurrence}\n{source}"
+msgstr "🗓️ <b>{title}</b>\n🕒 Начало: {start_datetime}\n🕐 Конец: {end_datetime}\n📝 Описание: {description}\n{recurrence}\n{source}"
 
-msgid "daily_plan_event_duration_all_day"
-msgstr "событие на весь день {date}"
+msgid "daily_plan_event_start_all_day"
+msgstr "Событие на весь день {date}"
 
-msgid "daily_plan_event_duration_not_all_day"
-msgstr "{start} - {end}"
+msgid "daily_plan_event_start_not_all_day"
+msgstr "{datetime}"
+
+msgid "daily_plan_event_end_all_day"
+msgstr "Событие на весь день заканчивается {date}"
+
+msgid "daily_plan_event_end_not_all_day"
+msgstr "{datetime}"
 
 msgid "daily_plan_event_source_external"
 msgstr "источник: <a href=\"{link}\">{name}</a>"
@@ -896,8 +902,6 @@ msgstr "✅ Подтвердить изменения"
 msgid "events_edit_all_day_saved"
 msgstr "Событие на весь день: {value}"
 
-msgid "help_in_development"
-msgstr "Раздел помощи находится в разработке."
 
 msgid "reminder_message"
 msgstr "🔔 Напоминание: <b>{event_name}</b>\n\n🕒 начинается: {start}"

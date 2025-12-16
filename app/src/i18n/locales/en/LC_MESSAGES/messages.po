@@ -26,7 +26,7 @@ msgid "btn_daily_plan"
 msgstr "📋 Get Daily Plan"
 
 msgid "btn_daily_plan_time_enter"
-msgstr "enter daily plans time"
+msgstr "Enter daily plans time"
 
 msgid "btn_daily_plans_time"
 msgstr "📋 Daily Plans Time"
@@ -65,10 +65,10 @@ msgid "btn_quiet_hours"
 msgstr "🔇 Quiet Hours"
 
 msgid "btn_quiet_hours_enter"
-msgstr "enter quiet hours"
+msgstr "Enter quiet hours"
 
 msgid "btn_quiet_hours_enable"
-msgstr "enable/disable"
+msgstr "Enable/Disable"
 
 msgid "btn_reject"
 msgstr "❌ Reject"
@@ -136,8 +136,6 @@ msgstr "📅 Calendar name: {calendar_name}\n\n <a href=\"{link}\">link to ics</
 msgid "calendar_list_answer"
 msgstr "📑 Your calendars"
 
-msgid "calendar_list_feature_dev"
-msgstr "Feature is under development. You can unlink calendars here."
 
 msgid "calendar_list_linked"
 msgstr "<b>Linked Calendars:</b>"
@@ -308,8 +306,6 @@ msgstr "📥 Event export selected"
 msgid "events_export_title"
 msgstr "📥 <b>Events export</b>"
 
-msgid "events_feature_dev"
-msgstr "Feature is under development."
 
 msgid "events_import_description"
 msgstr "Please load file in .ics format to the chat"
@@ -351,7 +347,7 @@ msgid "events_view_end"
 msgstr "End of events list"
 
 msgid "events_view_event_content"
-msgstr "🗓️ <b>{title}</b>\ndescription: {description}\n{duration}\n{recurrence}\n{source}"
+msgstr "🗓️ <b>{title}</b>\n🕒 Start: {start_datetime}\n🕐 End: {end_datetime}\n📝 Description: {description}\n{recurrence}\n{source}"
 
 msgid "events_view_event_title_none"
 msgstr "unnamed"
@@ -359,11 +355,17 @@ msgstr "unnamed"
 msgid "events_view_event_description_none"
 msgstr "empty"
 
-msgid "events_view_event_duration_all_day"
-msgstr "all day event {date}"
+msgid "events_view_event_start_all_day"
+msgstr "All day event on {date}"
 
-msgid "events_view_event_duration_not_all_day"
-msgstr "{date} {start} - {end}"
+msgid "events_view_event_start_not_all_day"
+msgstr "{datetime}"
+
+msgid "events_view_event_end_all_day"
+msgstr "All day event ends on {date}"
+
+msgid "events_view_event_end_not_all_day"
+msgstr "{datetime}"
 
 msgid "events_view_event_source_external"
 msgstr "source: <a href=\"{link}\">{name}</a>"
@@ -487,8 +489,6 @@ msgstr "✅ Daily plan time changed"
 msgid "settings_timezone_current"
 msgstr "Current timezone: UTC+2 (Mocked)"
 
-msgid "settings_timezone_feature_dev"
-msgstr "Feature is under development."
 
 msgid "settings_timezone_select"
 msgstr "Select timezone:"
@@ -551,13 +551,19 @@ msgid "daily_plan_no_events"
 msgstr "Today you have no events"
 
 msgid "daily_plan_event_content"
-msgstr "🗓️ <b>{title}</b>\ndescription: {description}\n{duration}\n{recurrence}\n{source}"
+msgstr "🗓️ <b>{title}</b>\n🕒 Start: {start_datetime}\n🕐 End: {end_datetime}\n📝 Description: {description}\n{recurrence}\n{source}"
 
-msgid "daily_plan_event_duration_all_day"
-msgstr "all day event {date}"
+msgid "daily_plan_event_start_all_day"
+msgstr "All day event on {date}"
 
-msgid "daily_plan_event_duration_not_all_day"
-msgstr "{start} - {end}"
+msgid "daily_plan_event_start_not_all_day"
+msgstr "{datetime}"
+
+msgid "daily_plan_event_end_all_day"
+msgstr "All day event ends on {date}"
+
+msgid "daily_plan_event_end_not_all_day"
+msgstr "{datetime}"
 
 msgid "daily_plan_event_source_external"
 msgstr "source: <a href="{link}">{name}</a>"
@@ -904,5 +910,3 @@ msgstr "✅ Confirm Changes"
 msgid "events_edit_all_day_saved"
 msgstr "All day event: {value}"
 
-msgid "help_in_development"
-msgstr "Help section is under development."
