@@ -120,9 +120,7 @@ async def ensure_database_exists(db_url: str, max_retries: int = 5, retry_delay:
 
             try:
                 # Check if database exists
-                exists = await conn.fetchval(
-                    "SELECT 1 FROM pg_database WHERE datname = $1", target_db
-                )
+                exists = await conn.fetchval("SELECT 1 FROM pg_database WHERE datname = $1", target_db)
 
                 if exists:
                     logger.info(f"Database '{target_db}' already exists")
@@ -140,7 +138,7 @@ async def ensure_database_exists(db_url: str, max_retries: int = 5, retry_delay:
             # These errors won't be fixed by retrying
             logger.error(f"Database connection failed with unrecoverable error: {e}")
             raise
-        except (asyncpg.exceptions.PostgresConnectionError, OSError, asyncio.TimeoutError) as e:
+        except (TimeoutError, asyncpg.exceptions.PostgresConnectionError, OSError) as e:
             last_exception = e
             if attempt < max_retries:
                 logger.warning(
