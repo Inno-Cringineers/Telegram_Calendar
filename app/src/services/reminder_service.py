@@ -21,6 +21,20 @@ if TYPE_CHECKING:
     pass
 
 
+def _normalize_trigger_offset(trigger_offset: str) -> str:
+    """Normalize trigger_offset to ensure it's negative (before event).
+
+    Args:
+        trigger_offset: RFC 5545 trigger offset string.
+
+    Returns:
+        Normalized trigger offset string with negative sign.
+    """
+    if not trigger_offset.startswith("-"):
+        trigger_offset = "-" + trigger_offset
+    return trigger_offset
+
+
 class ReminderService:
     """Service for managing user calendars.
 
@@ -100,6 +114,7 @@ class ReminderService:
 
         default_reminder_offset = settings.default_reminder_offset
         trigger_offset = vDuration(timedelta(seconds=default_reminder_offset)).to_ical().decode("utf-8")
+        trigger_offset = _normalize_trigger_offset(trigger_offset)
         created_reminder = await self.create(
             ReminderCreateSchema(
                 event_id=event_id,
@@ -185,6 +200,7 @@ class ReminderService:
         events = await self.store.EventService.find(EventFilter(user_id=user_id))  # type: ignore[call-arg]
         default_reminder_offset = settings.default_reminder_offset
         trigger_offset = vDuration(timedelta(seconds=default_reminder_offset)).to_ical().decode("utf-8")
+        trigger_offset = _normalize_trigger_offset(trigger_offset)
 
         for event in events:
             # Check if default reminder already exists
@@ -221,6 +237,7 @@ class ReminderService:
         events = await self.store.EventService.find(EventFilter(user_id=user_id))  # type: ignore[call-arg]
         default_reminder_offset = settings.default_reminder_offset
         trigger_offset = vDuration(timedelta(seconds=default_reminder_offset)).to_ical().decode("utf-8")
+        trigger_offset = _normalize_trigger_offset(trigger_offset)
 
         for event in events:
             # Get all reminders for this event

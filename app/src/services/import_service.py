@@ -152,6 +152,10 @@ class ImportService:
             delta = alarm.trigger_datetime - event.date_start
             trigger_offset = vDuration(delta).to_ical().decode("utf-8")
 
+        # Нормализуем offset: убеждаемся, что он отрицательный (напоминание до события)
+        if not trigger_offset.startswith("-"):
+            trigger_offset = "-" + trigger_offset
+
         # Парсим offset в timedelta
         delta = vDuration.from_ical(trigger_offset)  # timedelta
 

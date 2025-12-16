@@ -73,8 +73,9 @@ async def get_daily_plan(query: CallbackQuery, state: FSMContext, store: Store, 
                 "daily.plan.event.content",
                 lang=lang,
                 title=event.title or t("daily.plan.event.title.none", lang=lang),
+                start_datetime=get_event_start_datetime(event, user_tz, lang),
+                end_datetime=get_event_end_datetime(event, user_tz, lang),
                 description=event.description or t("daily.plan.event.description.none", lang=lang),
-                duration=get_event_duration(event, user_tz, lang),
                 recurrence=get_event_recurrence_info(event, lang),
                 source=await get_event_source(event, store, lang),
             ),
@@ -348,24 +349,49 @@ def get_event_recurrence_info(event: EventResponse, lang: str) -> str:
         return t("daily.plan.event.recurrence.custom", lang=lang)
 
 
-def get_event_duration(event: EventResponse, tz_info: timezone, lang: str) -> str:
-    """Format event duration for display."""
-    # Get the date to display (next occurrence for recurring events)
+def get_event_start_datetime(event: EventResponse, tz_info: timezone, lang: str) -> str:
+    """Format event start datetime for display.
+
+    Args:
+        event: Event to format.
+        tz_info: User's timezone.
+        lang: Language code.
+
+    Returns:
+        Formatted start datetime string.
+    """
     display_date = _get_next_occurrence_date(event, tz_info)
+    start_local = display_date.astimezone(tz_info)
 
     if event.all_day:
-        date_str = display_date.astimezone(tz_info).strftime("%d.%m.%Y")
-        return t("daily.plan.event.duration.all.day", lang=lang, date=date_str)
+        date_str = start_local.strftime("%d.%m.%Y")
+        return t("daily.plan.event.start.all.day", lang=lang, date=date_str)
 
-    start = display_date.astimezone(tz_info).strftime("%H:%M")
-    end = (display_date + (event.date_end - event.date_start)).astimezone(tz_info).strftime("%H:%M")
+    datetime_str = start_local.strftime("%H:%M %d.%m.%Y")
+    return t("daily.plan.event.start.not.all.day", lang=lang, datetime=datetime_str)
 
-    return t(
-        "daily.plan.event.duration.not.all.day",
-        lang=lang,
-        start=start,
-        end=end,
-    )
+
+def get_event_end_datetime(event: EventResponse, tz_info: timezone, lang: str) -> str:
+    """Format event end datetime for display.
+
+    Args:
+        event: Event to format.
+        tz_info: User's timezone.
+        lang: Language code.
+
+    Returns:
+        Formatted end datetime string.
+    """
+    display_date = _get_next_occurrence_date(event, tz_info)
+    end_date = display_date + (event.date_end - event.date_start)
+    end_local = end_date.astimezone(tz_info)
+
+    if event.all_day:
+        date_str = end_local.strftime("%d.%m.%Y")
+        return t("daily.plan.event.end.all.day", lang=lang, date=date_str)
+
+    datetime_str = end_local.strftime("%H:%M %d.%m.%Y")
+    return t("daily.plan.event.end.not.all.day", lang=lang, datetime=datetime_str)
 
 
 async def is_local_event(event: EventResponse, store: Store) -> bool:

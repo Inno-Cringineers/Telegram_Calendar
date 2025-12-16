@@ -13,6 +13,25 @@ from repositories.exceptions import ReminderNotFoundError
 from repositories.schemas import NOT_SET, ReminderCreateSchema, ReminderFilter, ReminderResponse, ReminderUpdateSchema
 
 
+def _normalize_trigger_offset(trigger_offset: str) -> str:
+    """Normalize trigger_offset to ensure it's negative (before event).
+
+    Args:
+        trigger_offset: RFC 5545 trigger offset string.
+
+    Returns:
+        Normalized trigger offset string with negative sign.
+
+    Raises:
+        ValueError: If trigger_offset is empty or invalid.
+    """
+    if not trigger_offset:
+        raise ValueError("trigger_offset cannot be empty")
+    if not trigger_offset.startswith("-"):
+        trigger_offset = "-" + trigger_offset
+    return trigger_offset
+
+
 class ReminderRepository:
     def __init__(self, session: AsyncSession) -> None:
         """Initialize SettingsRepository with a database session.
@@ -44,11 +63,16 @@ class ReminderRepository:
 
         Returns:
             The created reminder as response.
+
+        Raises:
+            ValueError: If trigger_offset is invalid.
         """
+        # Нормализуем trigger_offset: убеждаемся, что он отрицательный
+        normalized_offset = _normalize_trigger_offset(data.trigger_offset)
         reminder = Reminder(
             event_id=data.event_id,
             description=data.description,
-            trigger_offset=data.trigger_offset,
+            trigger_offset=normalized_offset,
         )
         self.session.add(reminder)
         await self.session.flush()
@@ -63,13 +87,18 @@ class ReminderRepository:
 
         Returns:
             The created reminders as responses.
+
+        Raises:
+            ValueError: If trigger_offset is invalid for any reminder.
         """
         reminders = []
         for item in data:
+            # Нормализуем trigger_offset: убеждаемся, что он отрицательный
+            normalized_offset = _normalize_trigger_offset(item.trigger_offset)
             reminder = Reminder(
                 event_id=item.event_id,
                 description=item.description,
-                trigger_offset=item.trigger_offset,
+                trigger_offset=normalized_offset,
             )
             self.session.add(reminder)
             await self.session.flush()
@@ -94,9 +123,24 @@ class ReminderRepository:
         return await self._update_model(reminder_model, data)
 
     async def _update_model(self, reminder_model: Reminder, data: ReminderUpdateSchema) -> ReminderResponse:
+        """Update reminder model with data from schema.
+
+        Args:
+            reminder_model: Reminder model to update.
+            data: ReminderUpdateSchema with fields to update.
+
+        Returns:
+            Updated reminder response.
+
+        Raises:
+            ValueError: If trigger_offset is invalid.
+        """
         for field in data.__dataclass_fields__:
             value = getattr(data, field)
             if value is not NOT_SET:
+                # Нормализуем trigger_offset, если он обновляется
+                if field == "trigger_offset":
+                    value = _normalize_trigger_offset(value)
                 setattr(reminder_model, field, value)
 
         await self.session.flush()

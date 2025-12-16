@@ -4,7 +4,12 @@ from aiogram import Bot, Dispatcher
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from config.config import Config, load_config
-from database.database import create_engine, create_session_maker, create_tables
+from database.database import (
+    create_engine,
+    create_session_maker,
+    create_tables,
+    ensure_database_exists,
+)
 from logger.logger import logger, setup_logger
 from middlewares.logging_middleware import (
     CallbackQueryLoggingMiddleware,
@@ -25,12 +30,16 @@ from utils.bot_commands import setup_bot_commands
 async def setup_database_and_store(db_url: str) -> async_sessionmaker[AsyncSession]:
     """Setup database and return session maker.
 
+    Ensures the database exists, creates it if needed, then initializes tables.
+
     Args:
         db_url: Database connection URL.
 
     Returns:
         Session maker for creating database sessions.
     """
+    # Ensure database exists (create if it doesn't)
+    await ensure_database_exists(db_url)
     # Create async SQLAlchemy engine
     engine = create_engine(db_url)
     # Create tables

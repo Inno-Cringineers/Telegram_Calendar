@@ -10,8 +10,11 @@ Provides:
 - UnitOfWork: async context manager for transactional sessions
 """
 
+import asyncio
 from typing import Any, ClassVar
+from urllib.parse import urlparse
 
+import asyncpg
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -55,6 +58,109 @@ def normalize_db_url(db_url: str) -> str:
     if db_url.startswith("postgresql://") and "+asyncpg" not in db_url:
         db_url = db_url.replace("postgresql://", "postgresql+asyncpg://")
     return db_url
+
+
+def parse_db_url(db_url: str) -> dict[str, str | int]:
+    """Parse database URL into connection parameters.
+
+    Args:
+        db_url: Database connection URL.
+
+    Returns:
+        Dictionary with connection parameters: host, port, user, password, database.
+    """
+    # Remove async driver prefix if present
+    url_for_parsing = db_url.replace("postgresql+asyncpg://", "postgresql://")
+    parsed = urlparse(url_for_parsing)
+
+    return {
+        "host": parsed.hostname or "localhost",
+        "port": parsed.port or 5432,
+        "user": parsed.username or "postgres",
+        "password": parsed.password or "",
+        "database": parsed.path.lstrip("/") if parsed.path else "postgres",
+    }
+
+
+async def ensure_database_exists(db_url: str, max_retries: int = 5, retry_delay: float = 2.0) -> None:
+    """Ensure that the target database exists, create it if it doesn't.
+
+    Connects to the default PostgreSQL database (postgres) to check and create
+    the target database if needed. This is necessary because PostgreSQL doesn't
+    allow creating databases from within the target database connection.
+
+    Includes retry logic to handle cases where PostgreSQL is still starting up.
+
+    Args:
+        db_url: Database connection URL for the target database.
+        max_retries: Maximum number of connection retry attempts.
+        retry_delay: Delay in seconds between retry attempts.
+
+    Raises:
+        Exception: If unable to connect to PostgreSQL or create the database after retries.
+    """
+    params = parse_db_url(db_url)
+    target_db = params["database"]
+
+    # Retry connection logic
+    last_exception: Exception | None = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            logger.info(f"Checking if database '{target_db}' exists (attempt {attempt}/{max_retries})...")
+            conn = await asyncio.wait_for(
+                asyncpg.connect(
+                    host=str(params["host"]),
+                    port=int(params["port"]),
+                    user=str(params["user"]),
+                    password=str(params["password"]),
+                    database="postgres",  # Connect to default database
+                ),
+                timeout=10.0,
+            )
+
+            try:
+                # Check if database exists
+                exists = await conn.fetchval("SELECT 1 FROM pg_database WHERE datname = $1", target_db)
+
+                if exists:
+                    logger.info(f"Database '{target_db}' already exists")
+                else:
+                    logger.warning(f"Database '{target_db}' does not exist, creating it...")
+                    # Create database (must be done outside of a transaction)
+                    # Escape double quotes in database name for safety
+                    escaped_db_name = target_db.replace('"', '""')
+                    await conn.execute(f'CREATE DATABASE "{escaped_db_name}"')
+                    logger.info(f"Database '{target_db}' created successfully")
+                return  # Success, exit function
+            finally:
+                await conn.close()
+        except (asyncpg.exceptions.ConnectionDoesNotExistError, asyncpg.exceptions.InvalidPasswordError) as e:
+            # These errors won't be fixed by retrying
+            logger.error(f"Database connection failed with unrecoverable error: {e}")
+            raise
+        except (TimeoutError, asyncpg.exceptions.PostgresConnectionError, OSError) as e:
+            last_exception = e
+            if attempt < max_retries:
+                logger.warning(
+                    f"Failed to connect to PostgreSQL (attempt {attempt}/{max_retries}): {e}. "
+                    f"Retrying in {retry_delay} seconds..."
+                )
+                await asyncio.sleep(retry_delay)
+            else:
+                logger.error(f"Failed to connect to PostgreSQL after {max_retries} attempts: {e}")
+        except Exception as e:
+            last_exception = e
+            logger.error(f"Unexpected error while ensuring database exists: {e}")
+            if attempt < max_retries:
+                logger.warning(f"Retrying in {retry_delay} seconds...")
+                await asyncio.sleep(retry_delay)
+            else:
+                raise
+
+    # If we get here, all retries failed
+    if last_exception:
+        raise RuntimeError(f"Failed to ensure database exists after {max_retries} attempts") from last_exception
+    raise RuntimeError(f"Failed to ensure database exists after {max_retries} attempts")
 
 
 def create_engine(db_url: str) -> AsyncEngine:
@@ -118,7 +224,7 @@ async def create_tables(engine: AsyncEngine) -> None:
     logger.debug("Initializing database schema")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    logger.info("Database initialized")
+    logger.info("Database tables initialized")
 
 
 class UnitOfWork:
