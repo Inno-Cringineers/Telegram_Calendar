@@ -24,7 +24,6 @@ services:
     container_name: bot-stage
     environment:
       - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
-      - SINGLE_USER=${SINGLE_USER:-false}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - POSTGRES_DB=${POSTGRES_DB:-telegram_calendar}
@@ -36,8 +35,13 @@ services:
       # TZ should be in IANA format (e.g., Europe/Moscow, Asia/Almaty, America/New_York)
       # If not set, will use timezone from mounted /etc/localtime
       - TZ=${TZ:-}
-      - SYNC_INTERVAL=${SYNC_INTERVAL:-10}
-      - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
+      - SYNC_INTERVAL=${SYNC_INTERVAL:-60}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      # User restriction settings
+      - USER_RESTRICTION_ENABLED=${USER_RESTRICTION_ENABLED:-false}
+      - WHITELIST_PATH=${WHITELIST_PATH:-/app/whitelist.json}
+      # Whitelist host path (path on host machine, defaults to ./whitelist.json)
+      - WHITELIST_HOST_PATH=${WHITELIST_HOST_PATH:-./whitelist.json}
 
     depends_on:
       postgres:
@@ -46,6 +50,9 @@ services:
     volumes:
       # Mount source code for hot reload in development
       - ./src:/app/src
+      # Mount whitelist.json for hot reload (changes apply without restart)
+      # Path on host is controlled by WHITELIST_HOST_PATH environment variable
+      - ${WHITELIST_HOST_PATH:-./whitelist.json}:${WHITELIST_PATH:-/app/whitelist.json}:ro
       # Sync timezone with host machine
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro

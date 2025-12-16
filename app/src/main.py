@@ -100,7 +100,6 @@ async def main() -> None:
     logger.debug(f"Logger file max bytes: {cfg.logger.max_bytes}")
     logger.debug(f"Logger file backup count: {cfg.logger.backup_count}")
     logger.debug(f"Bot timeout: {cfg.bot.timeout}")
-    logger.debug(f"Bot single user: {cfg.bot.single_user}")
     logger.debug(f"Bot sync workers: {cfg.bot.sync_workers}")
     logger.debug(f"Bot sync interval: {cfg.bot.sync_interval}")
     logger.debug(f"Bot metrics interval: {cfg.bot.metrics_interval}")

@@ -28,7 +28,6 @@ class DatabaseConfig:
 @dataclass
 class BotConfig:
     timeout: int
-    single_user: bool
     telegram_token: str
     sync_workers: int
     sync_interval: timedelta
@@ -184,7 +183,6 @@ def load_config() -> Config:
     database_config = DatabaseConfig(url=yaml_config.get("database", {}).get("url"))
     bot_config = BotConfig(
         timeout=yaml_config.get("bot", {}).get("timeout", 30),
-        single_user=str_to_bool(yaml_config.get("bot", {}).get("single_user", False)),
         telegram_token=yaml_config.get("bot", {}).get("telegram_token"),
         sync_workers=int(yaml_config.get("bot", {}).get("sync_workers", 2)),
         sync_interval=timedelta(seconds=int(yaml_config.get("bot", {}).get("sync_interval", 60))),
