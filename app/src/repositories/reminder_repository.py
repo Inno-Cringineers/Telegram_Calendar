@@ -14,7 +14,7 @@ from repositories.schemas import NOT_SET, ReminderCreateSchema, ReminderFilter, 
 
 
 def _normalize_trigger_offset(trigger_offset: str) -> str:
-    """Normalize trigger_offset to ensure it's negative (before event).
+    """Normalize trigger_offset to ensure it's non negative.
 
     Args:
         trigger_offset: RFC 5545 trigger offset string.
@@ -27,8 +27,8 @@ def _normalize_trigger_offset(trigger_offset: str) -> str:
     """
     if not trigger_offset:
         raise ValueError("trigger_offset cannot be empty")
-    if not trigger_offset.startswith("-"):
-        trigger_offset = "-" + trigger_offset
+    if trigger_offset.startswith("-"):
+        trigger_offset = trigger_offset[1:]
     return trigger_offset
 
 
