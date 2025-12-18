@@ -35,7 +35,7 @@ def sample_reminder() -> Reminder:
     reminder = Reminder(
         event_id=1,
         description="Test reminder",
-        trigger_offset="-PT30M",
+        trigger_offset="PT30M",
     )
     # Set id manually for testing (normally set by database)
     reminder.id = 1
@@ -74,7 +74,7 @@ async def test_create_creates_reminder(reminder_repository: ReminderRepository, 
     create_data = ReminderCreateSchema(
         event_id=1,
         description="New reminder",
-        trigger_offset="-PT30M",
+        trigger_offset="PT30M",
     )
 
     await reminder_repository.create_one(create_data)
@@ -89,8 +89,8 @@ async def test_create_many_creates_multiple_reminders(
 ) -> None:
     """Test that create_many creates multiple reminders."""
     create_data = [
-        ReminderCreateSchema(event_id=1, description="New reminder 1", trigger_offset="-PT30M"),
-        ReminderCreateSchema(event_id=2, description="New reminder 2", trigger_offset="-PT1H"),
+        ReminderCreateSchema(event_id=1, description="New reminder 1", trigger_offset="PT30M"),
+        ReminderCreateSchema(event_id=2, description="New reminder 2", trigger_offset="PT1H"),
     ]
 
     result = await reminder_repository.create_many(create_data)
@@ -98,10 +98,10 @@ async def test_create_many_creates_multiple_reminders(
     assert isinstance(result, list)
     assert len(result) == 2
     assert result[0] == ReminderResponse.from_model(
-        Reminder(event_id=1, description="New reminder 1", trigger_offset="-PT30M")
+        Reminder(event_id=1, description="New reminder 1", trigger_offset="PT30M")
     )
     assert result[1] == ReminderResponse.from_model(
-        Reminder(event_id=2, description="New reminder 2", trigger_offset="-PT1H")
+        Reminder(event_id=2, description="New reminder 2", trigger_offset="PT1H")
     )
     mock_session.add.assert_called()
     assert mock_session.add.call_count == 2
@@ -116,13 +116,13 @@ async def test_create_creates_reminder_with_minimal_data(
     create_data = ReminderCreateSchema(
         event_id=1,
         description="New reminder",
-        trigger_offset="-PT30M",
+        trigger_offset="PT30M",
     )
 
     result = await reminder_repository.create_one(create_data)
 
     assert result == ReminderResponse.from_model(
-        Reminder(event_id=1, description="New reminder", trigger_offset="-PT30M")
+        Reminder(event_id=1, description="New reminder", trigger_offset="PT30M")
     )
     mock_session.add.assert_called_once()
     mock_session.flush.assert_called_once()
@@ -139,7 +139,7 @@ async def test_update_updates_existing_reminder(
     result = await reminder_repository.update_by_id(1, update_data)
 
     assert result == ReminderResponse.from_model(
-        Reminder(id=1, event_id=1, description="Updated reminder", trigger_offset="-PT1H")
+        Reminder(id=1, event_id=1, description="Updated reminder", trigger_offset="PT1H")
     )
     mock_session.get.assert_called_once_with(Reminder, 1)
     mock_session.flush.assert_called_once()
@@ -153,13 +153,13 @@ async def test_update_updates_multiple_fields(
     mock_session.get.return_value = sample_reminder
     update_data = ReminderUpdateSchema(
         description="Updated description",
-        trigger_offset="-PT1H",
+        trigger_offset="PT1H",
     )
 
     result = await reminder_repository.update_by_id(1, update_data)
 
     assert result.description == "Updated description"
-    assert result.trigger_offset == "-PT1H"
+    assert result.trigger_offset == "PT1H"
     mock_session.get.assert_called_once_with(Reminder, 1)
     mock_session.flush.assert_called_once()
 
@@ -170,7 +170,7 @@ async def test_update_raises_error_when_reminder_not_found(
 ) -> None:
     """Test that update_by_id raises ReminderNotFoundError when reminder not found."""
     mock_session.get.return_value = None
-    update_data = ReminderUpdateSchema(description="Updated reminder", trigger_offset="-PT1H")
+    update_data = ReminderUpdateSchema(description="Updated reminder", trigger_offset="PT1H")
 
     with pytest.raises(ReminderNotFoundError) as exc_info:
         await reminder_repository.update_by_id(999, update_data)

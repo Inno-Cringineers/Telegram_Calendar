@@ -220,7 +220,7 @@ async def events_create(query: CallbackQuery, state: FSMContext, lang: str) -> N
     await query.answer(t("events.create.selected", lang=lang))
 
     if query.message and hasattr(query.message, "edit_text"):
-        text = f"{t('events.create.title', lang=lang)}\n\n<i>{t('events.feature_dev', lang=lang)}</i>"
+        text = f"{t('events.create.title', lang=lang)}\n\n"
         await query.message.edit_text(
             text,
             parse_mode="HTML",
