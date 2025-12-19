@@ -14,7 +14,7 @@ from repositories.schemas import NOT_SET, ReminderCreateSchema, ReminderFilter, 
 
 
 def _normalize_trigger_offset(trigger_offset: str) -> str:
-    """Normalize trigger_offset to ensure it's negative (before event).
+    """Normalize trigger_offset to ensure it's non negative.
 
     Args:
         trigger_offset: RFC 5545 trigger offset string.
@@ -27,8 +27,8 @@ def _normalize_trigger_offset(trigger_offset: str) -> str:
     """
     if not trigger_offset:
         raise ValueError("trigger_offset cannot be empty")
-    if not trigger_offset.startswith("-"):
-        trigger_offset = "-" + trigger_offset
+    if trigger_offset.startswith("-"):
+        trigger_offset = trigger_offset[1:]
     return trigger_offset
 
 
@@ -67,7 +67,6 @@ class ReminderRepository:
         Raises:
             ValueError: If trigger_offset is invalid.
         """
-        # Нормализуем trigger_offset: убеждаемся, что он отрицательный
         normalized_offset = _normalize_trigger_offset(data.trigger_offset)
         reminder = Reminder(
             event_id=data.event_id,
@@ -93,7 +92,6 @@ class ReminderRepository:
         """
         reminders = []
         for item in data:
-            # Нормализуем trigger_offset: убеждаемся, что он отрицательный
             normalized_offset = _normalize_trigger_offset(item.trigger_offset)
             reminder = Reminder(
                 event_id=item.event_id,
@@ -138,7 +136,6 @@ class ReminderRepository:
         for field in data.__dataclass_fields__:
             value = getattr(data, field)
             if value is not NOT_SET:
-                # Нормализуем trigger_offset, если он обновляется
                 if field == "trigger_offset":
                     value = _normalize_trigger_offset(value)
                 setattr(reminder_model, field, value)
@@ -157,7 +154,6 @@ class ReminderRepository:
             The list of reminders as responses if found, empty list otherwise.
         """
         if filter.user_id is not NOT_SET:
-            # Filter by user_id requires join with Event table
             stmt = select(Reminder).join(Event).where(Event.user_id == filter.user_id)
         else:
             stmt = select(Reminder)

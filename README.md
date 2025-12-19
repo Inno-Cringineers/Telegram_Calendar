@@ -89,7 +89,8 @@ POSTGRES_USER=postgres                    # Default: postgres
 POSTGRES_PASSWORD=postgres                # Default: postgres
 POSTGRES_DB=telegram_calendar             # Default: telegram_calendar
 POSTGRES_HOST=postgres                    # Default: postgres (service name in docker-compose)
-POSTGRES_PORT=5432                        # Default: 5432
+POSTGRES_PORT=5432                        # Default: 5432 (internal port inside Docker network)
+POSTGRES_HOST_PORT=5432                   # Default: 5432 (external port on host machine)
 
 # ============================================
 # BOT CONFIGURATION
@@ -346,7 +347,8 @@ docker compose -f docker-compose.yml up -d --build
 | `POSTGRES_PASSWORD` | PostgreSQL password | `postgres` | No |
 | `POSTGRES_DB` | Database name | `telegram_calendar` | No |
 | `POSTGRES_HOST` | Database host (service name in docker-compose) | `postgres` | No |
-| `POSTGRES_PORT` | Database port | `5432` | No |
+| `POSTGRES_PORT` | Internal database port inside Docker network | `5432` | No |
+| `POSTGRES_HOST_PORT` | External database port on host machine (used for local connections like `localhost:<port>`) | `5432` | No |
 
 ### Bot Configuration Variables
 
@@ -463,9 +465,9 @@ PgAdmin is a web-based administration tool for PostgreSQL databases. It provides
 
 If ports 5432 or 5050 are already in use:
 
-1. Change `POSTGRES_PORT` in `.env` (e.g., `5433`)
-2. Change `PGADMIN_PORT` in `.env` (e.g., `5051`)
-3. Update docker-compose.yml port mappings if needed
+1. Change `POSTGRES_HOST_PORT` in `.env` (e.g., `5433`) — this changes **only the external port on the host**; the bot will still connect to `postgres:5432` inside the Docker network.
+2. Change `PGADMIN_PORT` in `.env` (e.g., `5051`) — this is the PgAdmin port on the host (`http://localhost:<PGADMIN_PORT>`).
+3. In most cases you should not change `POSTGRES_PORT` (internal port inside the Docker network). Modify it only if you intentionally run PostgreSQL on a non-standard internal port **inside** the container and have updated all dependent services accordingly.
 
 ## Production Deployment
 
