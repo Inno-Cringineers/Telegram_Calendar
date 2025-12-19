@@ -906,3 +906,6 @@ msgstr "Событие на весь день: {value}"
 msgid "reminder_message"
 msgstr "🔔 Напоминание: <b>{event_name}</b>\n\n🕒 начинается: {start}"
 
+
+msgid "help_message"
+msgstr "Вы можете найти инструкцию пользователя на нашем github <a href="https://github.com/Inno-Cringineers/Telegram_Calendar/blob/main/User_guide.md"> нажмите на эту ссылку </a>"

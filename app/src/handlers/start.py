@@ -27,7 +27,7 @@ async def help_handler(message: Message, state: FSMContext, lang: str) -> None:
 
     await clean_messages(message.bot, message.chat.id, state, delete_all=True)
 
-    help_text = t("help.in.development", lang=lang)
+    help_text = t("help.message", lang=lang)
 
     await send_message(
         message.bot,
