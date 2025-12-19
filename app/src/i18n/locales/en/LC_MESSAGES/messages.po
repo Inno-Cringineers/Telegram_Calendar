@@ -910,3 +910,5 @@ msgstr "✅ Confirm Changes"
 msgid "events_edit_all_day_saved"
 msgstr "All day event: {value}"
 
+msgid "help_message"
+msgstr "You can read user guide in our github <a href="https://github.com/Inno-Cringineers/Telegram_Calendar/blob/main/User_guide.md"> click this link </a>"
