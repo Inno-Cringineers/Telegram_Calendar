@@ -18,7 +18,7 @@ The project is a self-hosted solution that allows the user to run it on their se
 
 # Documentation
 
-will be soon - user guides will be added when project will be created
+[User guide](/User_guide.md)
 
 # How to build and run project
 
